@@ -929,33 +929,20 @@
 ">
   by Dr Ahmad Akmal Bin Ahmad Nizam, 2025
 </footer>
-  <!-- Build / version badge -->
 <div id="buildInfo" style="
-  position: fixed;
-  right: 10px;
-  bottom: 10px;
-  z-index: 10000;
-  font-size: 11px;
-  opacity: 0.85;
-  padding: 6px 10px;
-  border-radius: 10px;
-  pointer-events: none;
-  user-select: none;
-  background: rgba(255,255,255,0.75);
-">
-  Loading version…
-</div>
-
+  position: fixed; right: 10px; bottom: 10px; z-index: 10000;
+  font-size: 11px; opacity: 0.85; padding: 6px 10px; border-radius: 10px;
+  pointer-events: none; user-select: none; background: rgba(255,255,255,0.75);
+">Loading…</div>
 <script>
-  // Update these 2 lines every time you publish a new version
-  const APP_VERSION = "v2025.12.17-01";
-  const LAST_UPDATED = "2025-12-17 15:00 MYT";
-
   window.addEventListener("DOMContentLoaded", () => {
     const el = document.getElementById("buildInfo");
-    if (el) el.textContent = `${APP_VERSION} | ${LAST_UPDATED}`;
+    const d = new Date(document.lastModified); // depends on server/browser
+    if (!el || isNaN(d.getTime())) return;
+    el.textContent = "Build updated: " + d.toLocaleString();
   });
 </script>
 </body>
 </html>
+
 
