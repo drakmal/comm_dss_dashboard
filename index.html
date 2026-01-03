@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>District Health Office eNotifikasi Dashboard</title>
+  <title>District Health Office Communicable Disease Dashboards</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
@@ -162,54 +162,137 @@
       font-weight: 600;
       color: #374151;
     }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin: 14px 0 0;
+      flex-wrap: wrap;
+      
+      /* make ONLY the tabs bar stick */
+      position: sticky;
+      top: 0;
+      z-index: 999;
+
+      /* keep it clean when it overlays content */
+      background: #f5f5f5;
+      --tabs-bottom-space: 10px;
+      padding: 10px 0 var(--tabs-bottom-space);
+
+      /* spacing around it */
+      margin: 14px 0 0;
+
+      /* optional: a subtle separator */
+      box-shadow: none;
+      border-bottom: 1px solid rgba(0,0,0,0.10);
+    }
+
+    .tab-btn {
+      border: 1px solid #d0d0d0;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .tab-btn.active {
+      border-color: #111827;
+      font-weight: 600;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+    }
+
+    /* Each dashboard section becomes its own sticky boundary */
+    .dash-section{
+      position: relative;
+    }
+
+    /* Sticky "lane" so charts don't show behind it */
+    .dash-section > h2{
+      position: sticky;
+      top: calc(var(--tabs-bar-height, 64px) - var(--tabs-bottom-space, 10px));
+      z-index: 40;
+
+      /* lane that hides content behind */
+      margin: 0;
+      background: #f5f5f5;  /* match your page background */
+      border-bottom: 1px solid rgba(0,0,0,0.10);
+      
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 5px 12px 2px;
+    }
+
+    /* reduce space between a header and the next card */
+    .dash-section > h2 + .card{
+      margin-top: 6px;
+    }
+
+    /* reduce space between sections (last card before next header) */
+    .dash-section .card:last-child{
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
 <div class="page">
-  <h1>District Health Office eNotifikasi Dashboard</h1>
-  <p class="subtitle">for a quick overview of your district eNotifications</p>
+  <h1>District Health Office Communicable Disease Dashboards</h1>
+  <p class="subtitle">Choose a dashboard tab, then upload the related Excel file</p>
 
-  <!-- Section 1: Upload -->
-  <h2>1. Upload Enotis Excel file</h2>
-  <p class="subtitle">from eNotis > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
+<div class="tabs">
+    <button class="tab-btn active" data-tab="enotis">Enotis Dashboard</button>
+    <button class="tab-btn" data-tab="tb">Tuberculosis Dashboard</button>
+    <button class="tab-btn" data-tab="measles">Measles Dashboard</button>
+</div>
+
+<section class="tab-panel is-active" data-tab="enotis" id="tab-enotis">
+  <h2>1. Upload Enotifikasi Excel file</h2>
+  <p class="subtitle">from eNotifikasi > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
   <div class="card">
     <div class="upload-row">
       <div>
-        <label for="fileInput"><strong>Excel file (.xls / .xlsx):</strong></label>
-        <input type="file" id="fileInput" accept=".xls,.xlsx" />
+        <label for="fileInput_enotis"><strong>Excel file (.xls / .xlsx):</strong></label>
+        <input type="file" id="fileInput_enotis" accept=".xls,.xlsx" />
       </div>
-      <div class="muted" id="fileInfo">No file loaded yet.</div>
+      <div class="muted" id="fileInfo_enotis">No file loaded yet.</div>
     </div>
   </div>
 
-  <!-- Section 2: Filters and key numbers -->
   <h2>2. Filters and key numbers</h2>
   <div class="card">
     <div class="filters-row">
       <div>
-        <label for="filterDiagnosis">Diagnosis:</label>
-        <select id="filterDiagnosis" disabled>
+        <label for="filterDiagnosis_enotis">Diagnosis:</label>
+        <select id="filterDiagnosis_enotis" disabled>
           <option value="ALL">All diagnosis</option>
         </select>
       </div>
 
       <div>
-        <label for="filterStatus">Notifikasi Status:</label>
-        <select id="filterStatus" disabled>
+        <label for="filterStatus_enotis">Notifikasi Status:</label>
+        <select id="filterStatus_enotis" disabled>
           <option value="ALL">All status</option>
         </select>
       </div>
 
       <div>
-        <label for="filterWeek">Epid Week (Tkh Notifikasi):</label>
-        <select id="filterWeek" disabled>
+        <label for="filterWeek_enotis">Epid Week (Tkh Notifikasi):</label>
+        <select id="filterWeek_enotis" disabled>
           <option value="ALL">All weeks</option>
         </select>
       </div>
 
       <div>
-        <label for="filterDate">Date:</label>
-        <select id="filterDate" disabled>
+        <label for="filterDate_enotis">Date:</label>
+        <select id="filterDate_enotis" disabled>
           <option value="ALL">All dates</option>
         </select>
       </div>
@@ -218,12 +301,12 @@
     <div class="kpi-grid">
       <div class="kpi-box">
         <div class="kpi-title">Total notifications</div>
-        <div class="kpi-value" id="kpiTotal">0</div>
+        <div class="kpi-value" id="kpiTotal_enotis">0</div>
       </div>
 
       <div class="kpi-box">
         <div class="kpi-title">Number of diagnosis</div>
-        <div class="kpi-value" id="kpiDiseases">0</div>
+        <div class="kpi-value" id="kpiDiseases_enotis">0</div>
       </div>
     </div>
 
@@ -232,7 +315,6 @@
     </div>
   </div>
 
-  <!-- Section 3: Diagnosis breakdown -->
   <h2>3. Diagnosis breakdown</h2>
   <div class="card">
     <p class="muted">
@@ -245,7 +327,7 @@
           <th>Notifications</th>
         </tr>
       </thead>
-      <tbody id="diagnosisTableBody">
+      <tbody id="diagnosisTableBody_enotis">
         <tr>
           <td>No data</td>
           <td>0</td>
@@ -254,16 +336,14 @@
     </table>
   </div>
 
-  <!-- Section 4: Weekly trend -->
   <h2>4. Weekly trend</h2>
   <div class="card">
     <p class="muted">
       Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
     </p>
-    <canvas id="weeklyChart"></canvas>
+    <canvas id="weeklyChart_enotis"></canvas>
   </div>
 
-  <!-- Section 5: Demography -->
   <h2>5. Demography</h2>
   <div class="card">
     <p class="muted">
@@ -272,22 +352,545 @@
     <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Jantina</div>
-        <canvas id="genderChart"></canvas>
+        <canvas id="genderChart_enotis"></canvas>
       </div>
       <div class="demo-card">
         <div class="demo-block-title">Umur</div>
-        <canvas id="ageChart"></canvas>
+        <canvas id="ageChart_enotis"></canvas>
       </div>
       <div class="demo-card">
         <div class="demo-block-title">Status Kewarganegaraan</div>
-        <canvas id="citizenChart"></canvas>
+        <canvas id="citizenChart_enotis"></canvas>
       </div>
       <div class="demo-card">
         <div class="demo-block-title">Bangsa</div>
-        <canvas id="ethnicityChart"></canvas>
+        <canvas id="ethnicityChart_enotis"></canvas>
       </div>
     </div>
   </div>
+</section>
+
+<section class="tab-panel" data-tab="tb" id="tab-tb">
+
+  <h2>1. Upload National Tuberculosis Registry Excel file</h2>
+  <p class="subtitle">from NTBR > Modul > TB > Download > pilih 'Daerah' > klik kategori 'TBIS 101A: Daftar Tibi Daerah' > klik 'Minggu Epid' > pilih tahun yang dikehendaki > klik 'Pilihan Medan' > klik 'Tambah Semua' > klik 'Export Excel'</p>
+  <div class="card">
+    <div class="upload-row">
+      <div>
+        <label for="tb_fileInput"><strong>Excel file (.xls / .xlsx):</strong></label>
+        <input type="file" id="tb_fileInput" accept=".xls,.xlsx" />
+      </div>
+      <div class="muted" id="tb_fileInfo">No file loaded yet.</div>
+    </div>
+  </div>
+
+  <h2>2. Filters and key numbers</h2>
+  <div class="card">
+    <div class="filters-row">
+
+      <div>
+        <label for="tb_month">Month (Notification):</label>
+        <select id="tb_month" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_week">Epid Week (Tarikh Notifikasi):</label>
+        <select id="tb_week" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_detect">Cara Pengesanan:</label>
+        <select id="tb_detect" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_outcome">Outcome:</label>
+        <select id="tb_outcome" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_category">Kategori Kes TB:</label>
+        <select id="tb_category" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_site">Lokasi Anatomi:</label>
+        <select id="tb_site" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tb_confirm">Kategori Pengesahan Kes:</label>
+        <select id="tb_confirm" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Total TB cases</div>
+        <div class="kpi-value" id="tb_kpi_total">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">New cases</div>
+        <div class="kpi-value" id="tb_kpi_new">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Pulmonary TB</div>
+        <div class="kpi-value" id="tb_kpi_ptb">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">DRTB cases</div>
+        <div class="kpi-value" id="tb_kpi_drtb">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Deaths</div>
+        <div class="kpi-value" id="tb_kpi_death">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Death due to TB</div>
+        <div class="kpi-value" id="tb_kpi_death_tb">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Treatment success rate</div>
+        <div class="kpi-value" id="tb_kpi_tsr">0%</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Known outcomes</div>
+        <div class="kpi-value" id="tb_kpi_known_outcome">0</div>
+      </div>
+
+    </div>
+
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>3. Weekly trend (Notification)</h2>
+  <div class="card">
+    <p class="muted">Notifications by epidemiological week of input date, according to the filters above</p>
+    <canvas id="tb_trendChart"></canvas>
+  </div>
+
+  <h2>4. Program profile</h2>
+  <div class="card">
+    <div class="demography-grid">
+
+      <div class="demo-card">
+        <div class="demo-block-title">Lokasi Anatomi Tibi</div>
+        <canvas id="tb_pie_site"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kategori Kes Tibi</div>
+        <canvas id="tb_pie_category"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kategori Pengesahan Kes</div>
+        <canvas id="tb_pie_confirm"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Hasil Rawatan</div>
+        <canvas id="tb_pie_outcome"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Chest X-ray Findings</div>
+        <canvas id="tb_pie_xray"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kaedah DOT</div>
+        <canvas id="tb_pie_dot"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">DOT Fasa Intensif 80% tercapai</div>
+        <canvas id="tb_pie_dot_int80"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">DOT Fasa Sambungan 80% tercapai</div>
+        <canvas id="tb_pie_dot_cont80"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <h2>5. Demography</h2>
+  <div class="card">
+    <div class="demography-grid">
+
+      <div class="demo-card">
+        <div class="demo-block-title">Jantina</div>
+        <canvas id="tb_demo_gender"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kategori Umur (Tahun)</div>
+        <canvas id="tb_demo_age"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Warganegara</div>
+        <canvas id="tb_demo_citizen"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Keturunan</div>
+        <canvas id="tb_demo_ethnicity"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Mukim</div>
+        <canvas id="tb_demo_mukim"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Tahap Pendidikan</div>
+        <canvas id="tb_demo_edu"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <h2>6. Gejala</h2>
+  <div class="card">
+    <div class="demography-grid">
+
+      <div class="demo-card">
+        <div class="demo-block-title">Batuk &gt; 2 Minggu</div>
+        <canvas id="tb_sx_cough2w"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Demam</div>
+        <canvas id="tb_sx_fever"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Hemoptysis</div>
+        <canvas id="tb_sx_hemo"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kurang selera makan</div>
+        <canvas id="tb_sx_loa"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kurang berat badan</div>
+        <canvas id="tb_sx_low"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Berpeluh malam</div>
+        <canvas id="tb_sx_nightsweat"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <h2>7. Risk Factors</h2>
+  <div class="card">
+    <div class="demography-grid">
+
+      <div class="demo-card">
+        <div class="demo-block-title">Diabetes mellitus</div>
+        <canvas id="tb_rf_dm"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Chronic renal failure</div>
+        <canvas id="tb_rf_crf"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Malignancy</div>
+        <canvas id="tb_rf_malignancy"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">HIV infection</div>
+        <canvas id="tb_rf_hiv"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Chronic lung disease</div>
+        <canvas id="tb_rf_cld"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Pendedahan dengan kes Tibi</div>
+        <canvas id="tb_rf_exposure"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<section class="tab-panel" data-tab="measles" id="tab-measles">
+
+  <h2>1. Upload Measles Excel file</h2>
+  <p>Upload eNotis measles export (first sheet will be read).</p>
+
+  <div class="card">
+    <div class="upload-row">
+      <label><b>Excel file (.xls / .xlsx):</b></label>
+      <input type="file" id="fileInput_measles" accept=".xls,.xlsx">
+      <div id="fileStatus_measles" style="color:#666;">No file loaded yet.</div>
+    </div>
+  </div>
+
+  <h2>2. Filters and key numbers</h2>
+  <div class="card">
+    <div class="filters-row">
+      <label>Month (Notification):</label>
+      <select id="measles_month" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Epid Week (Tarikh Notifikasi):</label>
+      <select id="measles_week" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Status Kes:</label>
+      <select id="measles_status" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Keputusan Measles (IgM):</label>
+      <select id="measles_igm" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Ujian makmal dibuat:</label>
+      <select id="measles_lab" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Imunisasi campak:</label>
+      <select id="measles_imun" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Bilangan dos:</label>
+      <select id="measles_dos" disabled>
+        <option value="ALL">All</option>
+      </select>
+
+      <label>Klasifikasi penularan:</label>
+      <select id="measles_penularan" disabled>
+        <option value="ALL">All</option>
+      </select>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Total notifications</div>
+        <div class="kpi-value" id="measles_kpi_total">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Lab confirmed measles</div>
+        <div class="kpi-value" id="measles_kpi_labconf">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Clinically compatible</div>
+        <div class="kpi-value" id="measles_kpi_clinical">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Pending</div>
+        <div class="kpi-value" id="measles_kpi_pending">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Discarded</div>
+        <div class="kpi-value" id="measles_kpi_discarded">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">IgM positive</div>
+        <div class="kpi-value" id="measles_kpi_igmpos">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Vaccinated (≥1 dose)</div>
+        <div class="kpi-value" id="measles_kpi_vax1">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Median tempoh siasatan (hari)</div>
+        <div class="kpi-value" id="measles_kpi_medianinv">-</div>
+      </div>
+    </div>
+
+    <div style="color:#666; margin-top:10px;">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>3. Weekly trend (Notification basis)</h2>
+  <div class="card">
+    <div style="color:#666; margin-bottom:10px;">Counts by Epid Week (1–52). Weeks with zero notifications are shown.</div>
+    <canvas id="measles_trend"></canvas>
+  </div>
+
+  <h2>4. Surveillance & lab profile</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Status Kes</div>
+        <canvas id="measles_pie_status"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Ujian makmal dibuat</div>
+        <canvas id="measles_pie_labdone"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Keputusan Measles (IgM)</div>
+        <canvas id="measles_pie_igm"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Keputusan Rubella</div>
+        <canvas id="measles_pie_rubella"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Klasifikasi penularan</div>
+        <canvas id="measles_pie_penularan"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Sebab discarded</div>
+        <canvas id="measles_pie_discardreason"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kemasukan hospital</div>
+        <canvas id="measles_pie_hosp"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>5. Demography</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Jantina</div>
+        <canvas id="measles_demo_gender"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Kategori Umur</div>
+        <canvas id="measles_demo_agegroup"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Warganegara</div>
+        <canvas id="measles_demo_citizen"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Keturunan</div>
+        <canvas id="measles_demo_ethnicity"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Daerah</div>
+        <canvas id="measles_demo_district"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Negara asal</div>
+        <canvas id="measles_demo_country"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>6. Clinical features</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Fever</div>
+        <canvas id="measles_sx_fever"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Rash</div>
+        <canvas id="measles_sx_rash"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Cough</div>
+        <canvas id="measles_sx_cough"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Coryza</div>
+        <canvas id="measles_sx_coryza"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Conjunctivitis</div>
+        <canvas id="measles_sx_conj"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Lymphadenopathy</div>
+        <canvas id="measles_sx_lymph"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>7. Immunisation</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Ada imunisasi campak</div>
+        <canvas id="measles_imm_have"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Bilangan dos</div>
+        <canvas id="measles_imm_doses"></canvas>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-block-title">Sumber imunisasi</div>
+        <canvas id="measles_imm_source"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
 </div>
 
 <script>
@@ -304,26 +907,26 @@
   };
 
   let rawData = [];
-  let weeklyChart = null;
-  let genderChart = null;
-  let ageChart = null;
-  let citizenChart = null;
-  let ethnicityChart = null;
+  let weeklyChart_enotis = null;
+  let genderChart_enotis = null;
+  let ageChart_enotis = null;
+  let citizenChart_enotis = null;
+  let ethnicityChart_enotis = null;
 
-  const fileInput = document.getElementById('fileInput');
-  const fileInfo = document.getElementById('fileInfo');
+  const fileInput_enotis = document.getElementById('fileInput_enotis');
+  const fileInfo_enotis = document.getElementById('fileInfo_enotis');
 
-  const diagnosisSelect = document.getElementById('filterDiagnosis');
-  const statusSelect = document.getElementById('filterStatus');
-  const weekSelect = document.getElementById('filterWeek');
-  const dateSelect = document.getElementById('filterDate');
+  const diagnosisSelect = document.getElementById('filterDiagnosis_enotis');
+  const statusSelect = document.getElementById('filterStatus_enotis');
+  const weekSelect = document.getElementById('filterWeek_enotis');
+  const dateSelect = document.getElementById('filterDate_enotis');
 
-  const kpiTotal = document.getElementById('kpiTotal');
-  const kpiDiseases = document.getElementById('kpiDiseases');
+  const kpiTotal_enotis = document.getElementById('kpiTotal_enotis');
+  const kpiDiseases_enotis = document.getElementById('kpiDiseases_enotis');
 
-  const diagnosisTableBody = document.getElementById('diagnosisTableBody');
+  const diagnosisTableBody_enotis = document.getElementById('diagnosisTableBody_enotis');
 
-  fileInput.addEventListener('change', handleFileSelect);
+  fileInput_enotis.addEventListener('change', handleFileSelect);
   diagnosisSelect.addEventListener('change', () => {
     rebuildDateOptions();
     updateDashboard();
@@ -347,7 +950,7 @@
     const file = evt.target.files[0];
     if (!file) return;
 
-    fileInfo.textContent = `Loading ${file.name} ...`;
+    fileInfo_enotis.textContent = `Loading ${file.name} ...`;
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -359,7 +962,7 @@
 
       rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
 
-      fileInfo.textContent = `Loaded ${file.name} with ${rawData.length} rows.`;
+      fileInfo_enotis.textContent = `Loaded ${file.name} with ${rawData.length} rows.`;
 
       if (!rawData || rawData.length === 0) {
         alert("No rows found in the first sheet.");
@@ -663,12 +1266,12 @@
     const filtered = getFilteredData();
     updateKpis(filtered);
     updateDiagnosisTable(filtered);
-    updateWeeklyChart(filtered);
+    updateWeeklyChart_enotis(filtered);
     updateDemographyCharts(filtered);
   }
 
   function updateKpis(data) {
-    kpiTotal.textContent = data.length;
+    kpiTotal_enotis.textContent = data.length;
 
     const diseaseSet = new Set();
     const dxKey = columnMap.diagnosis;
@@ -680,19 +1283,19 @@
       }
     });
 
-    kpiDiseases.textContent = diseaseSet.size;
+    kpiDiseases_enotis.textContent = diseaseSet.size;
   }
 
   // New: update diagnosis breakdown table
   function updateDiagnosisTable(data) {
     // Clear table body
-    diagnosisTableBody.innerHTML = '';
+    diagnosisTableBody_enotis.innerHTML = '';
 
     const dxKey = columnMap.diagnosis;
     if (!dxKey) {
       const tr = document.createElement('tr');
       tr.innerHTML = '<td>No diagnosis column found</td><td>0</td>';
-      diagnosisTableBody.appendChild(tr);
+      diagnosisTableBody_enotis.appendChild(tr);
       return;
     }
 
@@ -712,7 +1315,7 @@
     if (!entries.length) {
       const tr = document.createElement('tr');
       tr.innerHTML = '<td>No data</td><td>0</td>';
-      diagnosisTableBody.appendChild(tr);
+      diagnosisTableBody_enotis.appendChild(tr);
       return;
     }
 
@@ -724,11 +1327,11 @@
       tdCt.textContent = count;
       tr.appendChild(tdDx);
       tr.appendChild(tdCt);
-      diagnosisTableBody.appendChild(tr);
+      diagnosisTableBody_enotis.appendChild(tr);
     });
   }
 
-  function updateWeeklyChart(data) {
+  function updateWeeklyChart_enotis(data) {
     const wkKey = columnMap.week;
     if (!wkKey || !rawData || rawData.length === 0) return;
 
@@ -743,9 +1346,9 @@
     });
 
     if (!maxWeek || maxWeek < 1) {
-      if (weeklyChart) {
-        weeklyChart.destroy();
-        weeklyChart = null;
+      if (weeklyChart_enotis) {
+        weeklyChart_enotis.destroy();
+        weeklyChart_enotis = null;
       }
       return;
     }
@@ -769,13 +1372,13 @@
       counts.push(weekCounts[w] || 0);
     }
 
-    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    const ctx = document.getElementById('weeklyChart_enotis').getContext('2d');
 
-    if (weeklyChart) {
-      weeklyChart.destroy();
+    if (weeklyChart_enotis) {
+      weeklyChart_enotis.destroy();
     }
 
-    weeklyChart = new Chart(ctx, {
+    weeklyChart_enotis = new Chart(ctx, {
       type: 'line',
       data: {
         labels: weeks,
@@ -839,6 +1442,18 @@
     return map;
   }
 
+  function yesNoColorForLabel(lbl) {
+    const n = String(lbl ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+    if (n === 'ya' || n === 'yes' || n === '1') return '#ef4444';      // red
+    if (n === 'tidak' || n === 'no' || n === '0') return '#06b6d4';    // blue
+
+    if (n.includes('tidak pasti') || n.includes('unknown')) return '#a3a3a3'; // grey
+    if (n.includes('no data')) return '#a3a3a3';
+
+    return '#9ca3af'; // default grey for other categories
+}
+
   function createOrUpdatePie(chartRef, canvasId, labels, counts) {
     const ctx = document.getElementById(canvasId).getContext('2d');
 
@@ -876,9 +1491,9 @@
     const genderLabels = Array.from(genderCounts.keys());
     const genderValues = Array.from(genderCounts.values());
 
-    genderChart = createOrUpdatePie(
-      genderChart,
-      'genderChart',
+    genderChart_enotis = createOrUpdatePie(
+      genderChart_enotis,
+      'genderChart_enotis',
       genderLabels.length ? genderLabels : ['No data'],
       genderLabels.length ? genderValues : [1]
     );
@@ -888,9 +1503,9 @@
     const ageLabels = Array.from(ageCounts.keys());
     const ageValues = Array.from(ageCounts.values());
 
-    ageChart = createOrUpdatePie(
-      ageChart,
-      'ageChart',
+    ageChart_enotis = createOrUpdatePie(
+      ageChart_enotis,
+      'ageChart_enotis',
       ageLabels.length ? ageLabels : ['No data'],
       ageLabels.length ? ageValues : [1]
     );
@@ -900,9 +1515,9 @@
     const citizenLabels = Array.from(citizenCounts.keys());
     const citizenValues = Array.from(citizenCounts.values());
 
-    citizenChart = createOrUpdatePie(
-      citizenChart,
-      'citizenChart',
+    citizenChart_enotis = createOrUpdatePie(
+      citizenChart_enotis,
+      'citizenChart_enotis',
       citizenLabels.length ? citizenLabels : ['No data'],
       citizenLabels.length ? citizenValues : [1]
     );
@@ -912,14 +1527,479 @@
     const ethLabels = Array.from(ethCounts.keys());
     const ethValues = Array.from(ethCounts.values());
 
-    ethnicityChart = createOrUpdatePie(
-      ethnicityChart,
-      'ethnicityChart',
+    ethnicityChart_enotis = createOrUpdatePie(
+      ethnicityChart_enotis,
+      'ethnicityChart_enotis',
       ethLabels.length ? ethLabels : ['No data'],
       ethLabels.length ? ethValues : [1]
     );
   }
 </script>
+
+<script>
+/* =======================
+   TB DASHBOARD (Tab 2)
+   Notification basis default
+   Summary-only
+======================= */
+(function () {
+  const tb = {
+    fileInput: document.getElementById('tb_fileInput'),
+    fileInfo: document.getElementById('tb_fileInfo'),
+
+    month: document.getElementById('tb_month'),
+    week: document.getElementById('tb_week'),
+    detect: document.getElementById('tb_detect'),
+
+    outcome: document.getElementById('tb_outcome'),
+    category: document.getElementById('tb_category'),
+    site: document.getElementById('tb_site'),
+    confirm: document.getElementById('tb_confirm'),
+
+    kpiTotal: document.getElementById('tb_kpi_total'),
+    kpiNew: document.getElementById('tb_kpi_new'),
+    kpiPtb: document.getElementById('tb_kpi_ptb'),
+    kpiDrtb: document.getElementById('tb_kpi_drtb'),
+    kpiDeath: document.getElementById('tb_kpi_death'),
+    kpiDeathTb: document.getElementById('tb_kpi_death_tb'),
+    kpiTsr: document.getElementById('tb_kpi_tsr'),
+    kpiKnownOutcome: document.getElementById('tb_kpi_known_outcome'),
+
+    trendCanvasId: 'tb_trendChart'
+  };
+
+  if (!tb.fileInput) return;
+
+  let raw = [];
+  let col = {};
+  let trendChart = null;
+
+  // store pie chart instances by canvas id
+  const pieCharts = {};
+
+  function niceName(s) {
+    const x = String(s ?? '').trim();
+    if (!x) return '';
+    return x.includes('_')
+      ? x.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      : x;
+  }
+
+  function escapeHtml(str) {
+          return String(str ?? '')
+                  .replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;');
+     }
+
+  const norm = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+  function findColumnKey(keys, candidates) {
+    const nk = keys.map(k => ({ k, n: norm(k) }));
+    const nc = candidates.map(c => norm(c));
+
+    for (const { k, n } of nk) if (nc.includes(n)) return k;
+    for (const { k, n } of nk) for (const c of nc) if (n.startsWith(c)) return k;
+    for (const { k, n } of nk) for (const c of nc) if (n.includes(c)) return k;
+    return null;
+  }
+
+  function toInt(v) {
+    const n = parseInt(String(v ?? '').trim(), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function val(row, key) {
+    if (!key) return null;
+    const v = row[key];
+    if (v == null) return null;
+    const s = String(v).trim();
+    return s === '' ? null : s;
+  }
+
+  function buildCounts(data, key) {
+    const m = new Map();
+    if (!key) return m;
+    data.forEach(r => {
+      const v = val(r, key);
+      if (!v) return;
+      const vv = String(v).trim();
+      if (!vv) return;
+      m.set(vv, (m.get(vv) || 0) + 1);
+    });
+    return m;
+  }
+
+  function createOrUpdatePie(canvasId, labels, values, mode = 'default') {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (pieCharts[canvasId] && pieCharts[canvasId].destroy) {
+    pieCharts[canvasId].destroy();
+    }
+
+    let bg;
+    if (mode === 'yesno') {
+      bg = labels.map(l => yesNoColorForLabel(l));
+  } else {
+      const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+    bg = labels.map((_, i) => palette[i % palette.length]);
+    }
+
+    pieCharts[canvasId] = new Chart(ctx, {
+      type: 'pie',
+      data: { labels, datasets: [{ data: values, backgroundColor: bg }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function pieFromColumn(data, canvasId, key) {
+    if (!key) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno'); // grey
+      return;
+    }
+
+    const m = buildCounts(data, key);
+    if (!key || m.size === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+
+    // Sort by count (desc) so slices/legend are stable & readable
+    const entries = Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+
+    createOrUpdatePie(canvasId, labels, values, 'default');
+  }
+
+  // Yes/No (and optional Tidak Pasti) pie with fixed order + fixed colours
+  function pieYesNoFromColumn(data, canvasId, key) {
+    if (!key) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+
+    const counts = { 'Ya': 0, 'Tidak': 0, 'Tidak Pasti': 0 };
+
+    data.forEach(r => {
+      const raw = val(r, key);
+      if (!raw) return;
+
+      const n = String(raw).toLowerCase().replace(/\s+/g, ' ').trim();
+
+      if (n === 'ya' || n === 'yes' || n === '1') counts['Ya'] += 1;
+      else if (n === 'tidak' || n === 'no' || n === '0') counts['Tidak'] += 1;
+      else if (n.includes('tidak pasti') || n.includes('unknown')) counts['Tidak Pasti'] += 1;
+    });
+
+    const order = ['Ya', 'Tidak', 'Tidak Pasti'];   // always Yes first, then No
+    const labels = order.filter(k => counts[k] > 0);
+    const values = labels.map(k => counts[k]);
+
+    if (labels.length === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+
+    createOrUpdatePie(canvasId, labels, values, 'yesno');
+  }
+
+
+  function inferColumns() {
+    const keys = Object.keys(raw[0] || {});
+    col = {
+      notifMonth: findColumnKey(keys, ['Bulan Epid (Tarikh Notifikasi)', 'Bulan (Tarikh Notifikasi)', 'Bulan Epid']),
+      notifWeek:  findColumnKey(keys, ['Minggu Epid (Tarikh Notifikasi)', 'Epid Week', 'Minggu Epid']),
+
+      detect:     findColumnKey(keys, ['Cara Pengesanan', 'Cara Pengesanan Kes', 'Kaedah Pengesanan']),
+      category:   findColumnKey(keys, ['(Recode) Kategori Kes Tibi', 'Kategori Kes Tibi']),
+      site:       findColumnKey(keys, ['(Recode) Lokasi Anatomi Tibi (Diagnosa)', 'Lokasi Anatomi Tibi (Diagnosa)']),
+      confirm:    findColumnKey(keys, ['Kategori pengesahan kes', 'Pengesahan', 'Confirmation']),
+      outcome:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']),
+      drtb:       findColumnKey(keys, ['Jenis DRTB', 'DRTB']),
+      causeDeath: findColumnKey(keys, ['Sebab Kematian']),
+
+      xray:       findColumnKey(keys, ['Ujian Radiologi, X-ray Dada', 'X-ray Dada', 'Ujian Radiologi']),
+      dotMethod:  findColumnKey(keys, ['Kaedah DOT']),
+      dotInt80:   findColumnKey(keys, ['DOT Fasa Intensif 80% tercapai']),
+      dotCont80:  findColumnKey(keys, ['DOT Fasa Sambungan 80% tercapai']),
+
+      // Demography
+      gender:     findColumnKey(keys, ['Jantina', 'Sex', 'Gender']),
+      ageRec:     findColumnKey(keys, ['(Recode) Umur (Tahun)']),
+      citizen:    findColumnKey(keys, ['Warganegara', 'Status Warganegara', 'Kewarganegaraan']),
+      ethnicity:  findColumnKey(keys, ['Keturunan', 'Bangsa', 'Etnik']),
+      mukim:      findColumnKey(keys, ['Mukim (alamat enotis)', 'Mukim']),
+      edu:        findColumnKey(keys, ['Tahap Pendidikan', 'Pendidikan']),
+
+      // Symptoms
+      sxCough2w:  findColumnKey(keys, ['Gejala (Batuk 2 > Minggu)']),
+      sxFever:    findColumnKey(keys, ['Gejala (Demam)']),
+      sxHemo:     findColumnKey(keys, ['Gejala (Hemoptysis)']),
+      sxLOA:      findColumnKey(keys, ['Gejala (LOA)']),
+      sxLOW:      findColumnKey(keys, ['Gejala (LOW)']),
+      sxNight:    findColumnKey(keys, ['Gejala (Berpeluh Waktu Malam)']),
+
+      // Risk factors
+      rfDM:       findColumnKey(keys, ['Sejarah Penyakit (Diabetes mellitus)']),
+      rfCRF:      findColumnKey(keys, ['Sejarah Penyakit (Chronic renal failure)']),
+      rfMal:      findColumnKey(keys, ['Sejarah Penyakit (malignancy)']),
+      rfHIV:      findColumnKey(keys, ['Sejarah Penyakit (HIV infection)']),
+      rfCLD:      findColumnKey(keys, ['Sejarah Penyakit (Chronic lung disease)']),
+      rfExpose:   findColumnKey(keys, ['Sejarah pendedahan dengan kes Tibi'])
+    };
+
+    console.log('TB detected columns:', col);
+  }
+
+  function setOptions(select, items, firstLabel, firstValue = 'ALL') {
+    select.innerHTML = '';
+    select.appendChild(new Option(firstLabel, firstValue));
+    items.forEach(x => select.appendChild(new Option(x, x)));
+  }
+
+  function buildFilters() {
+    // Month
+    const months = new Set();
+    raw.forEach(r => {
+      const m = val(r, col.notifMonth);
+      if (m != null) months.add(String(toInt(m) ?? m));
+    });
+    const monthsSorted = Array.from(months).sort((a, b) => (toInt(a) ?? 0) - (toInt(b) ?? 0));
+    setOptions(tb.month, monthsSorted, 'All', 'ALL');
+    tb.month.disabled = false;
+
+    // Week
+    const weeks = new Set();
+    raw.forEach(r => {
+      const w = toInt(val(r, col.notifWeek));
+      if (w != null && w >= 1 && w <= 52) weeks.add(w);
+    });
+    const weeksSorted = Array.from(weeks).sort((a, b) => a - b).map(String);
+    setOptions(tb.week, weeksSorted, 'All', 'ALL');
+    tb.week.disabled = false;
+
+    // Other filters
+    const detects = new Set(), outcomes = new Set(), cats = new Set(), sites = new Set(), confs = new Set();
+    raw.forEach(r => {
+      const d = val(r, col.detect);   if (d) detects.add(d);
+      const o = val(r, col.outcome);  if (o) outcomes.add(o);
+      const c = val(r, col.category); if (c) cats.add(c);
+      const s = val(r, col.site);     if (s) sites.add(s);
+      const f = val(r, col.confirm);  if (f) confs.add(f);
+    });
+
+    setOptions(tb.detect, Array.from(detects).sort(), 'All', 'ALL');
+    setOptions(tb.outcome, Array.from(outcomes).sort(), 'All', 'ALL');
+    setOptions(tb.category, Array.from(cats).sort(), 'All', 'ALL');
+    setOptions(tb.site, Array.from(sites).sort(), 'All', 'ALL');
+    setOptions(tb.confirm, Array.from(confs).sort(), 'All', 'ALL');
+
+    tb.detect.disabled = tb.outcome.disabled = tb.category.disabled = tb.site.disabled = tb.confirm.disabled = false;
+  }
+
+  function filteredData() {
+    const m = tb.month.value;
+    const w = tb.week.value;
+    const d = tb.detect.value;
+    const out = tb.outcome.value;
+    const cat = tb.category.value;
+    const site = tb.site.value;
+    const conf = tb.confirm.value;
+
+    return raw.filter(r => {
+      const rm = String(toInt(val(r, col.notifMonth)) ?? val(r, col.notifMonth) ?? '');
+      const rw = toInt(val(r, col.notifWeek));
+
+      if (m !== 'ALL' && rm !== String(m)) return false;
+      if (w !== 'ALL' && (rw == null || String(rw) !== String(w))) return false;
+
+      if (d !== 'ALL' && val(r, col.detect) !== d) return false;
+      if (out !== 'ALL' && val(r, col.outcome) !== out) return false;
+      if (cat !== 'ALL' && val(r, col.category) !== cat) return false;
+      if (site !== 'ALL' && val(r, col.site) !== site) return false;
+      if (conf !== 'ALL' && val(r, col.confirm) !== conf) return false;
+
+      return true;
+    });
+  }
+
+  function calcKPIs(data) {
+    const total = data.length;
+
+    const isNew = (r) => {
+      const c = norm(val(r, col.category));
+      return c === 'kes baru' || c === 'kes baharu';
+    };
+
+    // Pulmonary TB from "(Recode) Lokasi Anatomi Tibi (Diagnosa)" = "Tibi Pulmonari"
+    const isPTB = (r) => {
+      const s = norm(val(r, col.site));
+      return s.includes('pulmonari') && !s.includes('ekstrapulmonari');
+    };
+
+
+    const isDRTB = (r) => {
+      const v = norm(val(r, col.drtb));
+      return !!v && v !== 'tiada' && v !== 'none' && v !== '0';
+    };
+
+    const outcome = (r) => norm(val(r, col.outcome));
+    const isDeath = (r) => outcome(r) === 'mati';
+    const isCured = (r) => outcome(r) === 'sembuh';
+    const isCompleted = (r) => outcome(r) === 'sempurna rawatan';
+
+    // Kematian Sebab TB: "Sebab Kematian" = "Sebab Tibi"
+    const isDeathTb = (r) => norm(val(r, col.causeDeath)) === 'sebab tibi';
+
+    const knownOutcome = data.filter(r => !!val(r, col.outcome));
+    const denomTSR = knownOutcome.filter(r => {
+      const o = outcome(r);
+      return o === 'sembuh' || o === 'sempurna rawatan' || o === 'mati';
+    });
+
+    const successNum = denomTSR.filter(r => isCured(r) || isCompleted(r)).length;
+    const successDen = denomTSR.length;
+    const tsr = successDen > 0 ? Math.round((successNum / successDen) * 100) : 0;
+
+    tb.kpiTotal.textContent = total;
+    tb.kpiNew.textContent = data.filter(isNew).length;
+    tb.kpiPtb.textContent = data.filter(isPTB).length;
+    tb.kpiDrtb.textContent = data.filter(isDRTB).length;
+    tb.kpiDeath.textContent = data.filter(isDeath).length;
+    tb.kpiDeathTb.textContent = data.filter(isDeathTb).length;
+    tb.kpiKnownOutcome.textContent = knownOutcome.length;
+    tb.kpiTsr.textContent = `${tsr}%`;
+  }
+
+  function updateTrend(data) {
+    const canvas = document.getElementById(tb.trendCanvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+    const counts = Array(52).fill(0);
+    data.forEach(r => {
+      const wk = toInt(val(r, col.notifWeek));
+      if (!wk || wk < 1 || wk > 52) return;
+      counts[wk - 1] += 1;
+    });
+
+    const labels = Array.from({ length: 52 }, (_, i) => String(i + 1));
+
+    trendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'TB cases per week',
+          data: counts,
+          tension: 0.2,
+          pointRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Minggu Epid (Tarikh Notifikasi)' } },
+          y: { title: { display: true, text: 'Count' }, beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  function updateAllPies(data) {
+    // Section 4 Program profile
+    pieFromColumn(data, 'tb_pie_site', col.site);
+    pieFromColumn(data, 'tb_pie_category', col.category);
+    pieFromColumn(data, 'tb_pie_confirm', col.confirm);
+    pieFromColumn(data, 'tb_pie_outcome', col.outcome);
+    pieFromColumn(data, 'tb_pie_xray', col.xray);
+    pieFromColumn(data, 'tb_pie_dot', col.dotMethod);
+    pieYesNoFromColumn(data, 'tb_pie_dot_int80', col.dotInt80);
+    pieYesNoFromColumn(data, 'tb_pie_dot_cont80', col.dotCont80);
+
+    // Section 5 Demography
+    pieFromColumn(data, 'tb_demo_gender', col.gender);
+    pieFromColumn(data, 'tb_demo_age', col.ageRec);
+    pieFromColumn(data, 'tb_demo_citizen', col.citizen);
+    pieFromColumn(data, 'tb_demo_ethnicity', col.ethnicity);
+    pieFromColumn(data, 'tb_demo_mukim', col.mukim);
+    pieFromColumn(data, 'tb_demo_edu', col.edu);
+
+    // Section 6 Symptoms
+    pieYesNoFromColumn(data, 'tb_sx_cough2w', col.sxCough2w);
+    pieYesNoFromColumn(data, 'tb_sx_fever', col.sxFever);
+    pieYesNoFromColumn(data, 'tb_sx_hemo', col.sxHemo);
+    pieYesNoFromColumn(data, 'tb_sx_loa', col.sxLOA);
+    pieYesNoFromColumn(data, 'tb_sx_low', col.sxLOW);
+    pieYesNoFromColumn(data, 'tb_sx_nightsweat', col.sxNight);
+
+    // Section 7 Risk factors
+    pieYesNoFromColumn(data, 'tb_rf_dm', col.rfDM);
+    pieYesNoFromColumn(data, 'tb_rf_crf', col.rfCRF);
+    pieYesNoFromColumn(data, 'tb_rf_malignancy', col.rfMal);
+    pieYesNoFromColumn(data, 'tb_rf_hiv', col.rfHIV);
+    pieYesNoFromColumn(data, 'tb_rf_cld', col.rfCLD);
+    pieYesNoFromColumn(data, 'tb_rf_exposure', col.rfExpose);
+  }
+
+async function renderAll() {
+  // If Excel not loaded yet, do nothing
+  const hasData = Array.isArray(raw) && raw.length && col;
+
+  const data = hasData ? filteredData() : [];
+
+  if (hasData) {
+    calcKPIs(data);
+    updateTrend(data);
+    updateAllPies(data);
+  }
+}
+
+  tb.fileInput.addEventListener('change', (evt) => {
+    const file = evt.target.files[0];
+    if (!file) return;
+
+    tb.fileInfo.textContent = `Loading ${file.name} ...`;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const bytes = new Uint8Array(e.target.result);
+      const wb = XLSX.read(bytes, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      raw = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      tb.fileInfo.textContent = `Loaded ${file.name} with ${raw.length} rows.`;
+      if (!raw.length) return;
+
+      inferColumns();
+      buildFilters();
+      renderAll();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // Events
+  tb.month.addEventListener('change', renderAll);
+  tb.week.addEventListener('change', renderAll);
+  tb.detect.addEventListener('change', renderAll);
+
+  tb.outcome.addEventListener('change', renderAll);
+  tb.category.addEventListener('change', renderAll);
+  tb.site.addEventListener('change', renderAll);
+  tb.confirm.addEventListener('change', renderAll);
+
+})();
+
+</script>
+
 <footer id="creditFooter" style="
   margin-top: 14px;
   padding: 10px 12px;
@@ -927,21 +2007,629 @@
   opacity: 0.85;
   text-align: center;
 ">
-  <div>by Dr Ahmad Akmal Bin Ahmad Nizam, 2025</div>
-  <div id="buildInfo" style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
-    Build updated: Loading…
-  </div>
+  by Dr Ahmad Akmal Bin Ahmad Nizam, 2025
 </footer>
+
 <script>
-  window.addEventListener("DOMContentLoaded", () => {
-    const el = document.getElementById("buildInfo");
-    const d = new Date(document.lastModified); // depends on server/browser
-    if (!el || isNaN(d.getTime())) return;
-    el.textContent = "Build updated: " + d.toLocaleString();
+/* =======================
+   MEASLES DASHBOARD (Tab 3)
+   eNotis export (Measles)
+========================= */
+
+(function () {
+
+  // ----------- DOM -----------
+  const fileInput = document.getElementById('fileInput_measles');
+  const fileStatus = document.getElementById('fileStatus_measles');
+
+  const el = {
+    month: document.getElementById('measles_month'),
+    week: document.getElementById('measles_week'),
+    status: document.getElementById('measles_status'),
+    igm: document.getElementById('measles_igm'),
+    lab: document.getElementById('measles_lab'),
+    imun: document.getElementById('measles_imun'),
+    dos: document.getElementById('measles_dos'),
+    penularan: document.getElementById('measles_penularan'),
+  };
+
+  const kpi = {
+    total: document.getElementById('measles_kpi_total'),
+    labconf: document.getElementById('measles_kpi_labconf'),
+    clinical: document.getElementById('measles_kpi_clinical'),
+    pending: document.getElementById('measles_kpi_pending'),
+    discarded: document.getElementById('measles_kpi_discarded'),
+    igmpos: document.getElementById('measles_kpi_igmpos'),
+    vax1: document.getElementById('measles_kpi_vax1'),
+    medianinv: document.getElementById('measles_kpi_medianinv'),
+  };
+
+  // ----------- State -----------
+  let rawRows = [];
+  let col = null;
+
+  let trendChart = null;
+  const pieCharts = {};
+
+  // ----------- Helpers -----------
+  function norm(s) {
+    return String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function val(row, key) {
+    if (!row || !key) return '';
+    const v = row[key];
+    if (v === null || v === undefined) return '';
+    return String(v).trim();
+  }
+
+  function findColumnKey(keys, candidates) {
+    const normKeys = keys.map(k => ({ key: k, n: norm(k) }));
+    for (const cand of candidates) {
+      const nc = norm(cand);
+      // exact
+      const exact = normKeys.find(x => x.n === nc);
+      if (exact) return exact.key;
+      // contains
+      const contains = normKeys.find(x => x.n.includes(nc));
+      if (contains) return contains.key;
+    }
+    return null;
+  }
+
+  function parseDateAny(v) {
+    if (!v && v !== 0) return null;
+
+    // already Date
+    if (v instanceof Date && !isNaN(v.getTime())) return v;
+
+    // excel serial
+    if (typeof v === 'number' && isFinite(v)) {
+      // Excel epoch (1900); 25569 = 1970-01-01
+      const ms = Math.round((v - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // dd/mm/yyyy
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m1) {
+      const dd = parseInt(m1[1], 10);
+      const mm = parseInt(m1[2], 10);
+      const yy = parseInt(m1[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // yyyy-mm-dd
+    const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m2) {
+      const yy = parseInt(m2[1], 10);
+      const mm = parseInt(m2[2], 10);
+      const dd = parseInt(m2[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // fallback
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // ISO week number (1-53)
+  function isoWeek(d) {
+    if (!(d instanceof Date)) return null;
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return week;
+  }
+
+  function median(nums) {
+    const arr = nums.filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
+    if (arr.length === 0) return null;
+    const mid = Math.floor(arr.length / 2);
+    return (arr.length % 2 === 0) ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+  }
+
+  function yesNoColorForLabel(lbl) {
+    const n = norm(lbl);
+    if (n === 'ya' || n === 'yes' || n === '1') return '#ef4444';      // red
+    if (n === 'tidak' || n === 'no' || n === '0' || n === 't') return '#06b6d4'; // teal-blue
+    if (n.includes('tidak pasti') || n.includes('unknown')) return '#9ca3af';
+    return '#9ca3af';
+  }
+
+  function createOrUpdatePie(canvasId, labels, values, mode = 'default') {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (pieCharts[canvasId] && pieCharts[canvasId].destroy) {
+      pieCharts[canvasId].destroy();
+    }
+
+    let bg;
+    if (mode === 'yesno') {
+      bg = labels.map(l => yesNoColorForLabel(l));
+    } else {
+      const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+      bg = labels.map((_, i) => palette[i % palette.length]);
+    }
+
+    pieCharts[canvasId] = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: bg, borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: (tt) => `${tt.label}: ${tt.raw}` } }
+        }
+      }
+    });
+  }
+
+  function buildCounts(data, key) {
+    const m = new Map();
+    data.forEach(r => {
+      const raw = val(r, key);
+      if (!raw) return;
+      const label = String(raw).trim();
+      m.set(label, (m.get(label) || 0) + 1);
+    });
+    return m;
+  }
+
+  function pieFromColumn(data, canvasId, key) {
+    if (!key) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+    const m = buildCounts(data, key);
+    if (m.size === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+    const entries = Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+    createOrUpdatePie(canvasId, labels, values, 'default');
+  }
+
+  // fixed order: Ya then Tidak (and optional Tidak Pasti)
+  function pieYesNoFromColumn(data, canvasId, key) {
+    if (!key) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+
+    const counts = { 'Ya': 0, 'Tidak': 0, 'Tidak Pasti': 0 };
+
+    data.forEach(r => {
+      const raw = val(r, key);
+      if (!raw) return;
+
+      const n = norm(raw);
+      if (n === 'ya' || n === 'yes' || n === 'y' || n === '1') counts['Ya'] += 1;
+      else if (n === 'tidak' || n === 'no' || n === 't' || n === '0') counts['Tidak'] += 1;
+      else if (n.includes('tidak pasti') || n.includes('unknown')) counts['Tidak Pasti'] += 1;
+    });
+
+    const order = ['Ya', 'Tidak', 'Tidak Pasti'];
+    const labels = order.filter(k => counts[k] > 0);
+    const values = labels.map(k => counts[k]);
+
+    if (labels.length === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+    createOrUpdatePie(canvasId, labels, values, 'yesno');
+  }
+
+  function pieYesNoFromFn(data, canvasId, fn) {
+    const counts = { 'Ya': 0, 'Tidak': 0, 'Tidak Pasti': 0 };
+    data.forEach(r => {
+      const label = fn(r);
+      if (!label) return;
+      if (label === 'Ya') counts['Ya'] += 1;
+      else if (label === 'Tidak') counts['Tidak'] += 1;
+      else if (label === 'Tidak Pasti') counts['Tidak Pasti'] += 1;
+    });
+
+    const order = ['Ya', 'Tidak', 'Tidak Pasti'];
+    const labels = order.filter(k => counts[k] > 0);
+    const values = labels.map(k => counts[k]);
+
+    if (labels.length === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+    createOrUpdatePie(canvasId, labels, values, 'yesno');
+  }
+
+  function pieFromFn(data, canvasId, fn) {
+    const m = new Map();
+    data.forEach(r => {
+      const label = fn(r);
+      if (!label) return;
+      m.set(label, (m.get(label) || 0) + 1);
+    });
+
+    if (m.size === 0) {
+      createOrUpdatePie(canvasId, ['No data'], [1], 'yesno');
+      return;
+    }
+
+    const entries = Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    createOrUpdatePie(canvasId, entries.map(e => e[0]), entries.map(e => e[1]), 'default');
+  }
+
+  function monthName(m) {
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return names[m-1] || String(m);
+  }
+
+  function setSelectOptions(selectEl, values, formatter = null) {
+    if (!selectEl) return;
+    const keep = selectEl.value;
+    selectEl.innerHTML = '<option value="ALL">All</option>';
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = formatter ? formatter(v) : String(v);
+      selectEl.appendChild(opt);
+    });
+    // restore if possible
+    if (Array.from(selectEl.options).some(o => o.value === keep)) selectEl.value = keep;
+    else selectEl.value = 'ALL';
+    selectEl.disabled = false;
+  }
+
+  function inferColumns(keys) {
+    return {
+      notiDate: findColumnKey(keys, ['Tarikh_Notifikasi', 'TkhDafNoti', 'TkhDafNotifikasi', 'Tarikh Notifikasi']),
+      status: findColumnKey(keys, ['StatusKes', 'Status Kes']),
+      discardedAs: findColumnKey(keys, ['DiscardedAs', 'Discarded As', 'Sebab Discarded']),
+      warga: findColumnKey(keys, ['StatusWarga', 'Status Warga']),
+      country: findColumnKey(keys, ['NegaraAsal', 'Negara Asal']),
+      ethnicity: findColumnKey(keys, ['Keturunan', 'Bangsa']),
+      district: findColumnKey(keys, ['Daerah']),
+      gender: findColumnKey(keys, ['Jantina']),
+      umur: findColumnKey(keys, ['Umur']),
+      umurDlm: findColumnKey(keys, ['UmurDlm', 'Umur Dlm']),
+      lab: findColumnKey(keys, ['UjianMakmal', 'Ujian Makmal']),
+      igm: findColumnKey(keys, ['KepMeasles1', 'Kep Measles 1']),
+      rubella: findColumnKey(keys, ['KepRubella1', 'Kep Rubella 1']),
+      penularan: findColumnKey(keys, ['StatPenularanKes', 'Penularan']),
+      imun: findColumnKey(keys, ['AdaImunCampak', 'Imun Campak']),
+      dos: findColumnKey(keys, ['BilDos', 'Bil Dos']),
+      sumberImun: findColumnKey(keys, ['SumberImun', 'Sumber Imun']),
+      tempohSiasat: findColumnKey(keys, ['TempohSiasatan', 'Tempoh Siasatan']),
+      hosp: findColumnKey(keys, ['MaskHospital', 'Hospital']),
+      // symptoms
+      demam: findColumnKey(keys, ['StatusDemam', 'Demam']),
+      ruam: findColumnKey(keys, ['StatusRuam', 'Ruam']),
+      batuk: findColumnKey(keys, ['Batuk']),
+      coryza: findColumnKey(keys, ['Coryza']),
+      conj: findColumnKey(keys, ['Konjunktivitis']),
+      lymph: findColumnKey(keys, ['Lymphadenopathy'])
+    };
+  }
+
+  function preprocessRow(r) {
+    if (!col) return r;
+
+    const d = parseDateAny(r[col.notiDate]);
+    r._notiDate = d;
+    r._month = d ? (d.getMonth() + 1) : null;
+    const w = d ? isoWeek(d) : null;
+    r._week = (w && w >= 1 && w <= 53) ? w : null;
+
+    // age group from Umur + UmurDlm (T = tahun, B = bulan)
+    const umurRaw = val(r, col.umur);
+    const unit = norm(val(r, col.umurDlm));
+    const num = parseFloat(umurRaw);
+    let ageYears = null;
+    if (isFinite(num)) {
+      if (unit === 'b' || unit === 'bulan') ageYears = num / 12.0;
+      else ageYears = num; // assume years
+    }
+    r._ageYears = ageYears;
+
+    r._ageGroup = (function () {
+      if (ageYears === null || !isFinite(ageYears)) return null;
+      if (ageYears < 1) return '<1 tahun';
+      if (ageYears < 5) return '1–4';
+      if (ageYears < 10) return '5–9';
+      if (ageYears < 15) return '10–14';
+      return '≥15';
+    })();
+
+    return r;
+  }
+
+  function filteredData() {
+    let data = rawRows.slice();
+
+    const month = el.month.value;
+    const week = el.week.value;
+    const status = el.status.value;
+    const igm = el.igm.value;
+    const lab = el.lab.value;
+    const imun = el.imun.value;
+    const dos = el.dos.value;
+    const pen = el.penularan.value;
+
+    if (month !== 'ALL') data = data.filter(r => String(r._month ?? '') === month);
+    if (week !== 'ALL') data = data.filter(r => String(r._week ?? '') === week);
+
+    if (status !== 'ALL' && col.status) data = data.filter(r => val(r, col.status) === status);
+    if (igm !== 'ALL' && col.igm) data = data.filter(r => val(r, col.igm) === igm);
+    if (lab !== 'ALL' && col.lab) data = data.filter(r => val(r, col.lab) === lab);
+    if (imun !== 'ALL' && col.imun) data = data.filter(r => val(r, col.imun) === imun);
+    if (dos !== 'ALL' && col.dos) data = data.filter(r => val(r, col.dos) === dos);
+    if (pen !== 'ALL' && col.penularan) data = data.filter(r => val(r, col.penularan) === pen);
+
+    return data;
+  }
+
+  function updateKPIs(data) {
+    const total = data.length;
+
+    const statusKey = col.status;
+    const igmKey = col.igm;
+
+    const nLabConf = statusKey ? data.filter(r => val(r, statusKey) === 'LABORATORY CONFIRMED MEASLES').length : 0;
+    const nClinical = statusKey ? data.filter(r => val(r, statusKey) === 'CLINICALLY COMPATIBLE WITH MEASLES').length : 0;
+    const nPending = statusKey ? data.filter(r => val(r, statusKey) === 'PENDING').length : 0;
+    const nDiscard = statusKey ? data.filter(r => val(r, statusKey) === 'DISCARDED').length : 0;
+
+    const nIgmPos = igmKey ? data.filter(r => val(r, igmKey) === 'Positif').length : 0;
+
+    let nVax1 = 0;
+    if (col.dos) {
+      nVax1 = data.filter(r => {
+        const d = parseFloat(val(r, col.dos));
+        return isFinite(d) && d >= 1;
+      }).length;
+    }
+
+    let med = null;
+    if (col.tempohSiasat) {
+      const nums = data.map(r => parseFloat(val(r, col.tempohSiasat))).filter(x => isFinite(x));
+      med = median(nums);
+    }
+
+    kpi.total.textContent = String(total);
+    kpi.labconf.textContent = String(nLabConf);
+    kpi.clinical.textContent = String(nClinical);
+    kpi.pending.textContent = String(nPending);
+    kpi.discarded.textContent = String(nDiscard);
+    kpi.igmpos.textContent = String(nIgmPos);
+    kpi.vax1.textContent = String(nVax1);
+    kpi.medianinv.textContent = (med === null) ? '-' : String(Math.round(med));
+  }
+
+  function updateTrend(data) {
+    const canvas = document.getElementById('measles_trend');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    const counts = Array.from({ length: 52 }, () => 0);
+    data.forEach(r => {
+      const wk = r._week;
+      if (!wk || wk < 1 || wk > 52) return;
+      counts[wk - 1] += 1;
+    });
+
+    const labels = Array.from({ length: 52 }, (_, i) => i + 1);
+
+    if (trendChart && trendChart.destroy) trendChart.destroy();
+
+    trendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Measles notifications per week',
+          data: counts,
+          tension: 0.2,
+          pointRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { title: { display: true, text: 'Epid Week (Tarikh Notifikasi)' } },
+          y: { title: { display: true, text: 'Count' }, beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  function updatePies(data) {
+    // Section 4
+    pieFromColumn(data, 'measles_pie_status', col.status);
+    pieYesNoFromColumn(data, 'measles_pie_labdone', col.lab);
+    pieFromColumn(data, 'measles_pie_igm', col.igm);
+    pieFromColumn(data, 'measles_pie_rubella', col.rubella);
+    pieFromColumn(data, 'measles_pie_penularan', col.penularan);
+
+    // discarded reason (only discarded cases)
+    const disc = col.status ? data.filter(r => val(r, col.status) === 'DISCARDED') : [];
+    pieFromColumn(disc, 'measles_pie_discardreason', col.discardedAs);
+
+    // hospital admission: MaskHospital (1 = yes)
+    pieYesNoFromFn(data, 'measles_pie_hosp', (r) => {
+      if (!col.hosp) return null;
+      const raw = val(r, col.hosp);
+      const n = norm(raw);
+      if (n === '1' || n === 'ya' || n === 'y') return 'Ya';
+      return 'Tidak';
+    });
+
+    // Section 5: Demography
+    pieFromColumn(data, 'measles_demo_gender', col.gender);
+    pieFromFn(data, 'measles_demo_agegroup', (r) => r._ageGroup);
+    pieFromFn(data, 'measles_demo_citizen', (r) => {
+      if (!col.warga) return null;
+      const n = norm(val(r, col.warga));
+      if (!n) return null;
+      return (n === 'y' || n === 'ya' || n === '1') ? 'Warganegara' : 'Bukan Warganegara';
+    });
+    pieFromColumn(data, 'measles_demo_ethnicity', col.ethnicity);
+    pieFromColumn(data, 'measles_demo_district', col.district);
+    pieFromColumn(data, 'measles_demo_country', col.country);
+
+    // Section 6: Clinical features (Yes/No)
+    pieYesNoFromColumn(data, 'measles_sx_fever', col.demam);
+    pieYesNoFromColumn(data, 'measles_sx_rash', col.ruam);
+    pieYesNoFromColumn(data, 'measles_sx_cough', col.batuk);
+    pieYesNoFromColumn(data, 'measles_sx_coryza', col.coryza);
+    pieYesNoFromColumn(data, 'measles_sx_conj', col.conj);
+    pieYesNoFromColumn(data, 'measles_sx_lymph', col.lymph);
+
+    // Section 7: Immunisation
+    pieFromColumn(data, 'measles_imm_have', col.imun);
+    pieFromColumn(data, 'measles_imm_doses', col.dos);
+    pieFromColumn(data, 'measles_imm_source', col.sumberImun);
+  }
+
+  function updateAll() {
+    const data = filteredData();
+    updateKPIs(data);
+    updateTrend(data);
+    updatePies(data);
+  }
+
+  function buildFiltersFromData() {
+    // enable all selects and populate options
+    const months = Array.from(new Set(rawRows.map(r => r._month).filter(Boolean))).sort((a, b) => a - b);
+    const weeks = Array.from(new Set(rawRows.map(r => r._week).filter(w => w && w >= 1 && w <= 52))).sort((a, b) => a - b);
+
+    setSelectOptions(el.month, months, (m) => `${m} (${monthName(m)})`);
+    setSelectOptions(el.week, weeks);
+
+    // other filters from raw values
+    function uniqFromKey(key) {
+      if (!key) return [];
+      const s = new Set();
+      rawRows.forEach(r => {
+        const v = val(r, key);
+        if (v) s.add(v);
+      });
+      return Array.from(s).sort();
+    }
+
+    setSelectOptions(el.status, uniqFromKey(col.status));
+    setSelectOptions(el.igm, uniqFromKey(col.igm));
+    setSelectOptions(el.lab, uniqFromKey(col.lab));
+    setSelectOptions(el.imun, uniqFromKey(col.imun));
+    setSelectOptions(el.dos, uniqFromKey(col.dos));
+    setSelectOptions(el.penularan, uniqFromKey(col.penularan));
+  }
+
+  // ----------- Events -----------
+  Object.values(el).forEach(s => {
+    if (!s) return;
+    s.addEventListener('change', updateAll);
+  });
+
+  fileInput.addEventListener('change', async (evt) => {
+    const file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+
+    fileStatus.textContent = `Loading ${file.name} ...`;
+
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      rawRows = json;
+
+      const keys = json.length ? Object.keys(json[0]) : [];
+      col = inferColumns(keys);
+
+      // preprocess
+      rawRows = rawRows.map(preprocessRow);
+
+      fileStatus.textContent = `Loaded ${file.name} with ${rawRows.length} rows.`;
+      buildFiltersFromData();
+      updateAll();
+
+    } catch (err) {
+      console.error(err);
+      fileStatus.textContent = `Error reading file: ${err.message || err}`;
+    }
+  });
+
+})();
+</script>
+
+<script>
+  function syncStickyOffsets(){
+  const tabs = document.querySelector('.tabs');
+  if(!tabs) return;
+  const h = Math.ceil(tabs.getBoundingClientRect().height);
+  document.documentElement.style.setProperty('--tabs-bar-height', h + 'px');
+}
+window.addEventListener('resize', syncStickyOffsets);
+document.addEventListener('DOMContentLoaded', syncStickyOffsets);
+
+
+  // Tabs: switch panel visibility
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+
+      // button active style
+      document.querySelectorAll('.tab-btn').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+
+      // panel visibility
+      document.querySelectorAll('.tab-panel').forEach(p =>
+        p.classList.toggle('is-active', p.dataset.tab === tab)
+      );
+    });
   });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // 1) Wrap each H2 + following elements into a section container
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    const kids = Array.from(panel.children); // snapshot before we move nodes
+    let currentSection = null;
+
+    kids.forEach(el => {
+      if (el.tagName === 'H2') {
+        current = document.createElement('section');
+        current.className = 'dash-section';
+        panel.insertBefore(current, el);
+        current.appendChild(el);
+      } else if (current) {
+        current.appendChild(el);
+      }
+    });
+  });
+});
+
+</script>
+
+
 </body>
 </html>
-
-
-
