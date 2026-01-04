@@ -103,6 +103,13 @@
       font-weight: 600;
     }
 
+    .kpi-sub {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: #777;
+      line-height: 1.1;
+    }
+
     .note {
       margin-top: 8px;
       font-size: 0.8rem;
@@ -529,6 +536,12 @@
       <div class="kpi-box">
         <div class="kpi-title">Total TB cases</div>
         <div class="kpi-value" id="tb_kpi_total">0</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">Case Detection Rate</div>
+        <div class="kpi-value" id="tb_kpi_cdr">-</div>
+        <div class="kpi-sub">per 100,000 population</div>
       </div>
 
       <div class="kpi-box">
@@ -1223,8 +1236,13 @@ function getStateLatest(stateDisplay) {
     if (!info) {
       populationEl.textContent = '-';
       yearEl.textContent = '-';
-      return;
-    }
+      window.dosmSelectedPopulation = null;
+               window.dosmSelectedYear = null;
+               return;
+           }
+           window.dosmSelectedPopulation = Number(info.population);
+           window.dosmSelectedYear = info.year ?? null;
+
     populationEl.textContent = Number(info.population).toLocaleString('en-US');
     yearEl.textContent = info.year ?? '-';
   }
@@ -1983,6 +2001,7 @@ function getStateLatest(stateDisplay) {
     confirm: document.getElementById('tb_confirm'),
 
     kpiTotal: document.getElementById('tb_kpi_total'),
+    kpiCdr: document.getElementById('tb_kpi_cdr'),
     kpiNew: document.getElementById('tb_kpi_new'),
     kpiPtb: document.getElementById('tb_kpi_ptb'),
     kpiDrtb: document.getElementById('tb_kpi_drtb'),
@@ -2294,6 +2313,20 @@ function getStateLatest(stateDisplay) {
     const tsr = successDen > 0 ? Math.round((successNum / successDen) * 100) : 0;
 
     tb.kpiTotal.textContent = total;
+    const denomPop = Number(window.dosmSelectedPopulation ?? NaN);
+    let cdrText = '-';
+
+    if (Number.isFinite(denomPop) && denomPop > 0) {
+               const rate = (total / denomPop) * 100000;
+               const rounded = Math.round(rate * 10) / 10; // 1 decimal
+               cdrText = rounded.toLocaleString('en-US', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1
+               });
+          }
+
+    if (tb.kpiCdr) tb.kpiCdr.textContent = cdrText;
+
     tb.kpiNew.textContent = data.filter(isNew).length;
     tb.kpiPtb.textContent = data.filter(isPTB).length;
     tb.kpiDrtb.textContent = data.filter(isDRTB).length;
