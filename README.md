@@ -1,1 +1,1 @@
-# enotis_dashboard
+# communicable_diseases_dashboard
