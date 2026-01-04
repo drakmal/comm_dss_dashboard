@@ -219,6 +219,16 @@
       font-weight: 600;
       color: #374151;
     }
+
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable:hover {
+      background: #e5e7eb;
+    }
+
     /* Tabs */
     .tabs {
       display: flex;
@@ -330,7 +340,7 @@
       </div>
 
       <div class="muted dosm-note">
-        This selection is used as denominator for per-100,000 rates. It does not filter your Excel rows.
+        Population figures are sourced from DOSM and used only as the denominator for per-100,000 rates. They do not filter your Excel data.
       </div>
     </div>
 
@@ -568,18 +578,7 @@
         <div class="kpi-title">Death due to TB</div>
         <div class="kpi-value" id="tb_kpi_death_tb">0</div>
       </div>
-
-      <div class="kpi-box">
-        <div class="kpi-title">Treatment success rate</div>
-        <div class="kpi-value" id="tb_kpi_tsr">0%</div>
-      </div>
-
-      <div class="kpi-box">
-        <div class="kpi-title">Known outcomes</div>
-        <div class="kpi-value" id="tb_kpi_known_outcome">0</div>
-      </div>
-
-    </div>
+</div>
 
     <div class="note">All numbers update based on filters above.</div>
   </div>
@@ -590,7 +589,31 @@
     <canvas id="tb_trendChart"></canvas>
   </div>
 
-  <h2>4. Program profile</h2>
+  
+  <h2>4. Pusat Rawatan</h2>
+  <div class="card">
+    <p class="muted">
+      Ringkasan mengikut pusat rawatan yang menyambung rawatan selepas menggunakan semua filter di atas.
+    </p>
+
+    <div style="overflow-x:auto;">
+      <table id="tb_facility_table">
+        <thead>
+          <tr>
+            <th data-sort="bil">Bil.</th>
+            <th data-sort="facility">Pusat Rawatan</th>
+            <th data-sort="patients">Bil. Pesakit</th>
+            <th data-sort="incomplete">Hasil Rawatan Tidak Diisi</th>
+          </tr>
+        </thead>
+        <tbody id="tb_facility_tbody">
+          <tr><td colspan="4" class="muted">No data.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<h2>5. Program profile</h2>
   <div class="card">
     <div class="demography-grid">
 
@@ -637,7 +660,7 @@
     </div>
   </div>
 
-  <h2>5. Demography</h2>
+  <h2>6. Demography</h2>
   <div class="card">
     <div class="demography-grid">
 
@@ -674,7 +697,7 @@
     </div>
   </div>
 
-  <h2>6. Gejala</h2>
+  <h2>7. Gejala</h2>
   <div class="card">
     <div class="demography-grid">
 
@@ -711,7 +734,7 @@
     </div>
   </div>
 
-  <h2>7. Risk Factors</h2>
+  <h2>8. Risk Factors</h2>
   <div class="card">
     <div class="demography-grid">
 
@@ -2007,11 +2030,105 @@ function getStateLatest(stateDisplay) {
     kpiDrtb: document.getElementById('tb_kpi_drtb'),
     kpiDeath: document.getElementById('tb_kpi_death'),
     kpiDeathTb: document.getElementById('tb_kpi_death_tb'),
-    kpiTsr: document.getElementById('tb_kpi_tsr'),
-    kpiKnownOutcome: document.getElementById('tb_kpi_known_outcome'),
 
-    trendCanvasId: 'tb_trendChart'
+
+    facilityTable: document.getElementById('tb_facility_table'),
+    facilityTbody: document.getElementById('tb_facility_tbody'),
+trendCanvasId: 'tb_trendChart'
   };
+
+
+
+  // ----------- Pusat Rawatan table (sortable) -----------
+  let facilitySort = { key: 'patients', dir: 'desc' };
+  let lastFilteredForFacility = [];
+
+  function setFacilitySort(key) {
+    if (facilitySort.key === key) {
+      facilitySort.dir = (facilitySort.dir === 'asc') ? 'desc' : 'asc';
+    } else {
+      facilitySort.key = key;
+      // sensible default directions
+      facilitySort.dir = (key === 'facility' || key === 'bil') ? 'asc' : 'desc';
+    }
+  }
+
+  function setupFacilitySort() {
+    if (!tb.facilityTable) return;
+    tb.facilityTable.querySelectorAll('th[data-sort]').forEach(th => {
+      th.classList.add('sortable');
+      th.addEventListener('click', () => {
+        setFacilitySort(th.dataset.sort);
+        updatePusatRawatanTable(lastFilteredForFacility);
+      });
+    });
+  }
+
+  function updatePusatRawatanTable(data) {
+    if (!tb.facilityTbody) return;
+
+    // Column CP: Pusat Rawatan, Column I: Nama Pesakit, Column FH: Outcome (blank = tidak lengkap)
+    const kFacility = col?.facilityCP;
+    const kName = col?.patientNameI;
+    const kOutcome = col?.outcomeFH;
+
+    if (!kFacility || !kName) {
+      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted">Kolum CP / I tidak dijumpai dalam fail Excel (rujuk kolum CP dan I seperti diminta).</td></tr>';
+      return;
+    }
+
+    const m = new Map(); // facility -> { patients, incomplete }
+    (data || []).forEach(r => {
+      const fac = String(val(r, kFacility) ?? '').trim();
+      if (!fac) return;
+
+      const name = String(val(r, kName) ?? '').trim();
+      const out = String(val(r, kOutcome) ?? '').trim();
+
+      const cur = m.get(fac) || { facility: fac, patients: 0, incomplete: 0 };
+      if (name) cur.patients += 1;
+
+      // "Hasil Rawatan Tidak Lengkap" = blank outcome (FH)
+      if (!out) cur.incomplete += 1;
+
+      m.set(fac, cur);
+    });
+
+    let rows = Array.from(m.values());
+
+    // Sort
+    const dir = (facilitySort.dir === 'asc') ? 1 : -1;
+    rows.sort((a, b) => {
+      switch (facilitySort.key) {
+        case 'facility':
+          return dir * a.facility.localeCompare(b.facility, undefined, { sensitivity: 'base' });
+        case 'patients':
+          return dir * ((a.patients || 0) - (b.patients || 0));
+        case 'incomplete':
+          return dir * ((a.incomplete || 0) - (b.incomplete || 0));
+        case 'bil':
+        default:
+          // default: alphabetical by facility
+          return dir * a.facility.localeCompare(b.facility, undefined, { sensitivity: 'base' });
+      }
+    });
+
+    if (!rows.length) {
+      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted">No data.</td></tr>';
+      return;
+    }
+
+    tb.facilityTbody.innerHTML = rows.map((r, i) => {
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(r.facility)}</td>
+        <td>${r.patients}</td>
+        <td>${r.incomplete}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  setupFacilitySort();
 
   if (!tb.fileInput) return;
 
@@ -2049,6 +2166,25 @@ function getStateLatest(stateDisplay) {
     for (const { k, n } of nk) for (const c of nc) if (n.startsWith(c)) return k;
     for (const { k, n } of nk) for (const c of nc) if (n.includes(c)) return k;
     return null;
+  }
+
+
+  function excelColIndex(letter) {
+    // A -> 0, B -> 1, ..., Z -> 25, AA -> 26, etc.
+    const s = String(letter || '').toUpperCase().trim();
+    let n = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      if (c < 65 || c > 90) continue;
+      n = n * 26 + (c - 64);
+    }
+    return n > 0 ? (n - 1) : null;
+  }
+
+  function keyFromExcelLetter(keys, letter) {
+    const idx = excelColIndex(letter);
+    if (idx == null) return null;
+    return (idx >= 0 && idx < keys.length) ? keys[idx] : null;
   }
 
   function toInt(v) {
@@ -2199,6 +2335,16 @@ function getStateLatest(stateDisplay) {
       rfExpose:   findColumnKey(keys, ['Sejarah pendedahan dengan kes Tibi'])
     };
 
+    // Pusat Rawatan table (by Excel column letter fallback)
+    col.facilityCP = findColumnKey(keys, ['Pusat Rawatan', 'Pusat_Rawatan', 'PusatRawatan', 'Fasiliti Rawatan', 'Fasiliti_Rawatan', 'Health Facility', 'Treatment Centre'])
+      || keyFromExcelLetter(keys, 'CP');
+
+    col.patientNameI = findColumnKey(keys, ['Nama Pesakit', 'Nama_Pesakit', 'Patient Name', 'Nama'])
+      || keyFromExcelLetter(keys, 'I');
+
+    // Prefer FH (as requested) but fall back to the detected outcome column
+    col.outcomeFH = keyFromExcelLetter(keys, 'FH') || col.outcome;
+
     console.log('TB detected columns:', col);
   }
 
@@ -2302,16 +2448,6 @@ function getStateLatest(stateDisplay) {
     // Kematian Sebab TB: "Sebab Kematian" = "Sebab Tibi"
     const isDeathTb = (r) => norm(val(r, col.causeDeath)) === 'sebab tibi';
 
-    const knownOutcome = data.filter(r => !!val(r, col.outcome));
-    const denomTSR = knownOutcome.filter(r => {
-      const o = outcome(r);
-      return o === 'sembuh' || o === 'sempurna rawatan' || o === 'mati';
-    });
-
-    const successNum = denomTSR.filter(r => isCured(r) || isCompleted(r)).length;
-    const successDen = denomTSR.length;
-    const tsr = successDen > 0 ? Math.round((successNum / successDen) * 100) : 0;
-
     tb.kpiTotal.textContent = total;
     const denomPop = Number(window.dosmSelectedPopulation ?? NaN);
     let cdrText = '-';
@@ -2332,9 +2468,7 @@ function getStateLatest(stateDisplay) {
     tb.kpiDrtb.textContent = data.filter(isDRTB).length;
     tb.kpiDeath.textContent = data.filter(isDeath).length;
     tb.kpiDeathTb.textContent = data.filter(isDeathTb).length;
-    tb.kpiKnownOutcome.textContent = knownOutcome.length;
-    tb.kpiTsr.textContent = `${tsr}%`;
-  }
+}
 
   function updateTrend(data) {
     const canvas = document.getElementById(tb.trendCanvasId);
@@ -2414,12 +2548,16 @@ async function renderAll() {
   const hasData = Array.isArray(raw) && raw.length && col;
 
   const data = hasData ? filteredData() : [];
+  lastFilteredForFacility = data;
 
   if (hasData) {
     calcKPIs(data);
     updateTrend(data);
     updateAllPies(data);
   }
+
+  // Section: Pusat Rawatan (always refresh table, even when empty)
+  updatePusatRawatanTable(data);
 }
 window.renderAll = renderAll;
 
