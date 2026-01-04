@@ -1033,6 +1033,10 @@
 
       populateStates();
       stateSelect.disabled = false;
+
+               // Auto-select Malaysia on load
+      stateSelect.value = 'Malaysia';
+      handleStateChange();
     } catch (err) {
       console.error('Failed to initialise DOSM dropdowns', err);
       populationEl.textContent = '-';
