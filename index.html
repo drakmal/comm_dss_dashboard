@@ -128,6 +128,24 @@
      margin-right: auto;
     }
 
+    .loader-dot{
+     display:inline-block;
+     width:12px;
+     height:12px;
+     border-radius:50%;
+     background:#999;
+     position:relative;
+     box-shadow: 16px 0 #bbb, -16px 0 #bbb;
+     animation: pulse 1s infinite ease-in-out;
+     margin-right:26px; /* 16px shadow + extra breathing space */
+    }
+
+    @keyframes pulse{
+     0%{ box-shadow:16px 0 #bbb,-16px 0 #bbb; }
+     50%{ box-shadow:16px 0 rgba(187,187,187,0.2),-16px 0 #bbb; }
+     100%{ box-shadow:16px 0 #bbb,-16px 0 rgba(187,187,187,0.2); }
+    }
+
     .dosm-bar{
      display:flex;
      gap:18px;
@@ -139,6 +157,19 @@
     .dosm-left{
      flex:1;
      min-width:520px;
+     display: flex;
+     flex-direction: column;
+    }
+
+    #dosm_status{
+      order: -1;                 /* keep it at the top of the DOSM left side */
+      display: flex;
+      align-items: center;
+      justify-content: center;   /* center horizontally */
+      gap: 6px;
+      width: 100%;
+      padding: 6px 0 10px;       /* nice breathing space */
+      text-align: center;
     }
 
     .dosm-controls{
@@ -347,6 +378,11 @@
 
       <div class="muted dosm-note">
         Population figures are sourced from DOSM and used only as the denominator for per-100,000 rates. They do not filter your Excel data.
+      </div>
+
+      <div class="muted" id="dosm_status">
+        <span class="loader-dot" aria-hidden="true"></span>
+        <span>Loading population data…</span>
       </div>
     </div>
 
@@ -997,6 +1033,7 @@
   const districtSelect = document.getElementById('dosm_district');
   const populationEl = document.getElementById('dosm_population');
   const yearEl = document.getElementById('dosm_year');
+     const statusEl = document.getElementById('dosm_status');
 
   if (!stateSelect || !districtSelect || !populationEl || !yearEl) return;
 
@@ -1025,21 +1062,26 @@
       const districtText = await fetchWithFallback(DISTRICT_URLS);
       const districtRows = parseCsv(districtText);
       buildDistrictCaches(districtRows);
+      setStatus('loading', 'District populations loaded, fetching Malaysia totals…');
 
       try {
         const malaysiaText = await fetchWithFallback(MALAYSIA_URLS);
         const malaysiaRows = parseCsv(malaysiaText);
         malaysiaLatest = pickLatestRow(malaysiaRows);
+        setStatus('loading', 'Malaysia population loaded, fetching state data…');
       } catch (err) {
         console.warn('DOSM Malaysia CSV unavailable, Malaysia population disabled.', err);
+        setStatus('error', 'Malaysia population unavailable from DOSM sources.');
       }
 
       try {
         const stateText = await fetchWithFallback(STATE_URLS);
         const stateRows = parseCsv(stateText);
         buildStateCaches(stateRows);
+        setStatus('loading', 'State populations loaded.');
       } catch (err) {
          console.warn('DOSM State CSV unavailable, state population disabled.', err);
+         setStatus('error', 'State population unavailable from DOSM sources.');
       }
 
 
@@ -1049,10 +1091,13 @@
                // Auto-select Malaysia on load
       stateSelect.value = 'Malaysia';
       handleStateChange();
+
+      setStatus('done', 'Population data loaded.');
     } catch (err) {
       console.error('Failed to initialise DOSM dropdowns', err);
       populationEl.textContent = '-';
       yearEl.textContent = '-';
+      setStatus('error', 'Unable to load population data.');
     }
   })();
 
@@ -1079,6 +1124,23 @@
     return Math.round(people);
   }
   window.toPeople = toPeople;
+  function setStatus(mode, message){
+    if (!statusEl) return;
+    const dot = statusEl.querySelector('.loader-dot');
+    const textNode = statusEl.querySelector('span:last-child');
+    if (textNode) textNode.textContent = message;
+
+    if (mode === 'done'){
+      if (dot) dot.style.display = 'none';
+      statusEl.style.color = '#0f766e';
+    } else if (mode === 'error'){
+      if (dot) dot.style.display = 'none';
+      statusEl.style.color = '#b91c1c';
+    } else {
+      if (dot) dot.style.display = 'inline-block';
+      statusEl.style.color = '#555';
+    }
+  }
 
   function parseCsv(text) {
     const wb = XLSX.read(text, { type: 'string' });
