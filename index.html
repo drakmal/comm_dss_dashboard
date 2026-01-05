@@ -64,6 +64,12 @@
       margin-bottom: 12px;
     }
 
+    .filter-field{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
     label {
       font-size: 0.9rem;
       color: #444;
@@ -789,51 +795,32 @@
   <h2>2. Filters and key numbers</h2>
   <div class="card">
     <div class="filters-row">
-      <label>Month (Notification):</label>
-      <select id="measles_month" disabled>
-        <option value="ALL">All</option>
-      </select>
+      <div class="filter-field">
+        <label>Month (Notification):</label>
+        <select id="measles_month" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
 
-      <label>Epid Week (Tarikh Notifikasi):</label>
-      <select id="measles_week" disabled>
-        <option value="ALL">All</option>
-      </select>
+      <div class="filter-field">
+        <label>Epid Week (Tarikh Notifikasi):</label>
+        <select id="measles_week" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
 
-      <label>Status Kes:</label>
-      <select id="measles_status" disabled>
-        <option value="ALL">All</option>
-      </select>
-
-      <label>Keputusan Measles (IgM):</label>
-      <select id="measles_igm" disabled>
-        <option value="ALL">All</option>
-      </select>
-
-      <label>Ujian makmal dibuat:</label>
-      <select id="measles_lab" disabled>
-        <option value="ALL">All</option>
-      </select>
-
-      <label>Imunisasi campak:</label>
-      <select id="measles_imun" disabled>
-        <option value="ALL">All</option>
-      </select>
-
-      <label>Bilangan dos:</label>
-      <select id="measles_dos" disabled>
-        <option value="ALL">All</option>
-      </select>
-
-      <label>Klasifikasi penularan:</label>
-      <select id="measles_penularan" disabled>
-        <option value="ALL">All</option>
-      </select>
+      <div class="filter-field">
+        <label>Status Kes:</label>
+        <select id="measles_status" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
     </div>
 
     <div class="kpi-grid">
       <div class="kpi-box">
-        <div class="kpi-title">Total notifications</div>
-        <div class="kpi-value" id="measles_kpi_total">0</div>
+        <div class="kpi-title">Total notifications</div>        
+          <div class="kpi-value" id="measles_kpi_total">0</div>
       </div>
 
       <div class="kpi-box">
@@ -855,29 +842,18 @@
         <div class="kpi-title">Discarded</div>
         <div class="kpi-value" id="measles_kpi_discarded">0</div>
       </div>
-
-      <div class="kpi-box">
-        <div class="kpi-title">IgM positive</div>
-        <div class="kpi-value" id="measles_kpi_igmpos">0</div>
-      </div>
-
-      <div class="kpi-box">
-        <div class="kpi-title">Vaccinated (≥1 dose)</div>
-        <div class="kpi-value" id="measles_kpi_vax1">0</div>
-      </div>
-
-      <div class="kpi-box">
-        <div class="kpi-title">Median tempoh siasatan (hari)</div>
-        <div class="kpi-value" id="measles_kpi_medianinv">-</div>
-      </div>
     </div>
 
-    <div style="color:#666; margin-top:10px;">All numbers update based on filters above.</div>
+    <div class="note" style="margin-top:10px;">All numbers update based on filters above.</div>
   </div>
 
-  <h2>3. Weekly trend (Notification basis)</h2>
+  <h2>3. Weekly trend (Notification)</h2>
   <div class="card">
-    <div style="color:#666; margin-bottom:10px;">Counts by Epid Week (1–52). Weeks with zero notifications are shown.</div>
+    <p class="muted" style="margin-bottom:10px;">
+  Notifications by epidemiological week of input date, according to the filters above
+</p>
+<canvas id="measles_trend"></canvas>
+
     <canvas id="measles_trend"></canvas>
   </div>
 
@@ -2073,7 +2049,7 @@ trendCanvasId: 'tb_trendChart'
     const kOutcome = col?.outcomeFH;
 
     if (!kFacility || !kName) {
-      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted">Kolum CP / I tidak dijumpai dalam fail Excel (rujuk kolum CP dan I seperti diminta).</td></tr>';
+      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted"></td></tr>';
       return;
     }
 
@@ -2624,11 +2600,6 @@ window.renderAll = renderAll;
     month: document.getElementById('measles_month'),
     week: document.getElementById('measles_week'),
     status: document.getElementById('measles_status'),
-    igm: document.getElementById('measles_igm'),
-    lab: document.getElementById('measles_lab'),
-    imun: document.getElementById('measles_imun'),
-    dos: document.getElementById('measles_dos'),
-    penularan: document.getElementById('measles_penularan'),
   };
 
   const kpi = {
@@ -2637,9 +2608,6 @@ window.renderAll = renderAll;
     clinical: document.getElementById('measles_kpi_clinical'),
     pending: document.getElementById('measles_kpi_pending'),
     discarded: document.getElementById('measles_kpi_discarded'),
-    igmpos: document.getElementById('measles_kpi_igmpos'),
-    vax1: document.getElementById('measles_kpi_vax1'),
-    medianinv: document.getElementById('measles_kpi_medianinv'),
   };
 
   // ----------- State -----------
@@ -2961,21 +2929,11 @@ window.renderAll = renderAll;
     const month = el.month.value;
     const week = el.week.value;
     const status = el.status.value;
-    const igm = el.igm.value;
-    const lab = el.lab.value;
-    const imun = el.imun.value;
-    const dos = el.dos.value;
-    const pen = el.penularan.value;
 
     if (month !== 'ALL') data = data.filter(r => String(r._month ?? '') === month);
     if (week !== 'ALL') data = data.filter(r => String(r._week ?? '') === week);
 
     if (status !== 'ALL' && col.status) data = data.filter(r => val(r, col.status) === status);
-    if (igm !== 'ALL' && col.igm) data = data.filter(r => val(r, col.igm) === igm);
-    if (lab !== 'ALL' && col.lab) data = data.filter(r => val(r, col.lab) === lab);
-    if (imun !== 'ALL' && col.imun) data = data.filter(r => val(r, col.imun) === imun);
-    if (dos !== 'ALL' && col.dos) data = data.filter(r => val(r, col.dos) === dos);
-    if (pen !== 'ALL' && col.penularan) data = data.filter(r => val(r, col.penularan) === pen);
 
     return data;
   }
@@ -2984,37 +2942,17 @@ window.renderAll = renderAll;
     const total = data.length;
 
     const statusKey = col.status;
-    const igmKey = col.igm;
 
     const nLabConf = statusKey ? data.filter(r => val(r, statusKey) === 'LABORATORY CONFIRMED MEASLES').length : 0;
     const nClinical = statusKey ? data.filter(r => val(r, statusKey) === 'CLINICALLY COMPATIBLE WITH MEASLES').length : 0;
     const nPending = statusKey ? data.filter(r => val(r, statusKey) === 'PENDING').length : 0;
     const nDiscard = statusKey ? data.filter(r => val(r, statusKey) === 'DISCARDED').length : 0;
 
-    const nIgmPos = igmKey ? data.filter(r => val(r, igmKey) === 'Positif').length : 0;
-
-    let nVax1 = 0;
-    if (col.dos) {
-      nVax1 = data.filter(r => {
-        const d = parseFloat(val(r, col.dos));
-        return isFinite(d) && d >= 1;
-      }).length;
-    }
-
-    let med = null;
-    if (col.tempohSiasat) {
-      const nums = data.map(r => parseFloat(val(r, col.tempohSiasat))).filter(x => isFinite(x));
-      med = median(nums);
-    }
-
     kpi.total.textContent = String(total);
     kpi.labconf.textContent = String(nLabConf);
     kpi.clinical.textContent = String(nClinical);
     kpi.pending.textContent = String(nPending);
     kpi.discarded.textContent = String(nDiscard);
-    kpi.igmpos.textContent = String(nIgmPos);
-    kpi.vax1.textContent = String(nVax1);
-    kpi.medianinv.textContent = (med === null) ? '-' : String(Math.round(med));
   }
 
   function updateTrend(data) {
@@ -3131,11 +3069,6 @@ window.renderAll = renderAll;
     }
 
     setSelectOptions(el.status, uniqFromKey(col.status));
-    setSelectOptions(el.igm, uniqFromKey(col.igm));
-    setSelectOptions(el.lab, uniqFromKey(col.lab));
-    setSelectOptions(el.imun, uniqFromKey(col.imun));
-    setSelectOptions(el.dos, uniqFromKey(col.dos));
-    setSelectOptions(el.penularan, uniqFromKey(col.penularan));
   }
 
   // ----------- Events -----------
