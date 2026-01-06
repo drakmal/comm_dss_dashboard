@@ -3821,10 +3821,33 @@ window.renderAll = renderAll;
         const month = extractMonth(r, columns.diagnoseDate);
         if (month !== f.month) return false;
       }
+      if (f.year !== 'ALL' && columns.firstVisitDate) {
+        const year = extractYear(r, columns.firstVisitDate);
+        if (year !== f.year) return false;
+      }
       return true;
     });
     if (filteredCountEl) filteredCountEl.textContent = String(filtered.length);
     return filtered;
+  }
+
+  function onFilterChange() {
+    hivState.filters.site = filters.site?.value || 'ALL';
+    hivState.filters.risk = filters.risk?.value || 'ALL';
+    hivState.filters.month = filters.month?.value || 'ALL';
+    hivState.filters.year = filters.year?.value || 'ALL';
+    renderFiltered();
+  }
+
+  function renderFiltered() {
+    const filtered = applyFilters();
+    const kpiResult = computeHivKpis(filtered);
+    updateKpiDisplays(kpiResult);
+    renderCoinfection(filtered);
+
+    if (typeof window.renderHivDashboard === 'function') {
+      window.renderHivDashboard(filtered);
+    }
   }
 
   Object.values(filters).forEach(sel => {
