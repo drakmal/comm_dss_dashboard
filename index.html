@@ -824,13 +824,13 @@
 <section class="tab-panel" data-tab="measles" id="tab-measles">
 
   <h2>1. Upload eMeasles Excel file</h2>
-  <p>from SM2 > Laporan > Senarai Kes Measles > klik 'Minggu Epid' > pilih 'Tahun' > pilih 'Epid Mula dan 'Epid Akhir' > pilih 'Negeri', 'Bahagian' dan 'Pejabat Kesihatan' > Expot XLS.</p>
+  <p class="subtitle">from SM2 > Laporan > Senarai Kes Measles > klik 'Minggu Epid' > pilih 'Tahun' > pilih 'Epid Mula dan 'Epid Akhir' > pilih 'Negeri', 'Bahagian' dan 'Pejabat Kesihatan' > Expot XLS.</p>
 
   <div class="card">
     <div class="upload-row">
       <label><b>Excel file (.xls / .xlsx):</b></label>
       <input type="file" id="fileInput_measles" accept=".xls,.xlsx">
-      <div id="fileStatus_measles" style="color:#666;">No file loaded yet.</div>
+      <div class="muted" id="fileStatus_measles">No file loaded yet.</div>
     </div>
   </div>
 
@@ -1037,7 +1037,7 @@
     <div class="upload-row">
       <label for="fileInput_hiv"><b>Load HIV Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_hiv" accept=".xls,.xlsx">
-      <div id="hiv_file_status" class="muted">No file loaded.</div>
+      <div id="hiv_file_status" class="muted">No file loaded yet.</div>
     </div>
     <div id="hiv_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
@@ -3543,5 +3543,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
