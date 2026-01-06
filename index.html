@@ -116,6 +116,18 @@
       line-height: 1.1;
     }
 
+    .kpi-list {
+      margin: 4px 0 0;
+      padding-left: 16px;
+      color: #555;
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+
+    .kpi-list li {
+      margin: 2px 0;
+    }
+
     .note {
       margin-top: 8px;
       font-size: 0.8rem;
@@ -1045,14 +1057,8 @@
   <div class="card">
     <div class="filters-row">
       <div class="filter-field">
-        <label for="hiv_filter_site">Site (PKD/State):</label>
+        <label for="hiv_filter_site">Health Facility:</label>
         <select id="hiv_filter_site" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="hiv_filter_gender">Gender:</label>
-        <select id="hiv_filter_gender" disabled>
           <option value="ALL">All</option>
         </select>
       </div>
@@ -1068,17 +1074,19 @@
           <option value="ALL">All</option>
         </select>
       </div>
+      <div class="filter-field">
+        <label for="hiv_filter_year">Year:</label>
+        <select id="hiv_filter_year" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
     </div>
     <div class="kpi-box">
     <div class="kpi-box">
       <div class="kpi-title">Filtered rows</div>
       <div class="kpi-value" id="hiv_filtered_count">0</div>
     </div>
-    <div class="note" id="hiv_as_of_date">As-of date: -</div>
-  </div>
-  <h2>3. Key indicators</h2>
-  <div class="card">
-    <div class="kpi-grid">
+    <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
         <div class="kpi-title">Total patients</div>
         <div class="kpi-value" id="hiv_kpi_total_patients">-</div>
@@ -1103,6 +1111,77 @@
         <div class="kpi-title">Viral suppression rate</div>
         <div class="kpi-value" id="hiv_kpi_vl_suppression_pct">-</div>
         <div class="kpi-sub" id="hiv_kpi_vl_suppression_sub">-</div>
+      </div>
+    </div>
+  </div>
+  <h2>3. Co-infections / Screening</h2>
+  <div class="card">
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">TB</div>
+        <div class="kpi-sub">Status of TB Infection distribution</div>
+        <ul class="kpi-list" id="hiv_tb_status_list">
+          <li>No data</li>
+        </ul>
+        <div class="kpi-sub" style="margin-top:8px;">Summary counts</div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; margin-top:6px;">
+          <div class="kpi-box">
+            <div class="kpi-title">TB preventive treatment started</div>
+            <div class="kpi-value" id="hiv_tb_ppt_started">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">TB treatment started</div>
+            <div class="kpi-value" id="hiv_tb_treatment_started">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Chest X-Ray done</div>
+            <div class="kpi-value" id="hiv_tb_cxr_done">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Sputum Test 1 done</div>
+            <div class="kpi-value" id="hiv_tb_sputum_done">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">HBV</div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:6px;">
+          <div class="kpi-box">
+            <div class="kpi-title">Tested</div>
+            <div class="kpi-value" id="hiv_hbv_tested">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Positive</div>
+            <div class="kpi-value" id="hiv_hbv_positive">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Hep-B Diagnosis</div>
+            <div class="kpi-value" id="hiv_hbv_diagnosis">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Hep B Rx started</div>
+            <div class="kpi-value" id="hiv_hbv_rx_started">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-title">HCV</div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:6px;">
+          <div class="kpi-box">
+            <div class="kpi-title">Tested</div>
+            <div class="kpi-value" id="hiv_hcv_tested">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Positive</div>
+            <div class="kpi-value" id="hiv_hcv_positive">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Hep-C Diagnosis</div>
+            <div class="kpi-value" id="hiv_hcv_diagnosis">-</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -3267,14 +3346,13 @@ window.renderAll = renderAll;
   const fileInput = document.getElementById('fileInput_hiv');
   const statusEl = document.getElementById('hiv_file_status');
   const errorEl = document.getElementById('hiv_error');
+  const filteredCountEl = document.getElementById('hiv_filtered_count');
   const filters = {
     site: document.getElementById('hiv_filter_site'),
-    gender: document.getElementById('hiv_filter_gender'),
     risk: document.getElementById('hiv_filter_risk'),
     month: document.getElementById('hiv_filter_month'),
+    year: document.getElementById('hiv_filter_year'),
   };
-  const filteredCountEl = document.getElementById('hiv_filtered_count');
-  const asOfDateEl = document.getElementById('hiv_as_of_date');
   const kpiEls = {
     total: document.getElementById('hiv_kpi_total_patients'),
     onArtCount: document.getElementById('hiv_kpi_on_art_count'),
@@ -3284,6 +3362,20 @@ window.renderAll = renderAll;
     vlSuppressionPct: document.getElementById('hiv_kpi_vl_suppression_pct'),
     vlSuppressionSub: document.getElementById('hiv_kpi_vl_suppression_sub'),
   };
+  const coinfectionEls = {
+    tbStatusList: document.getElementById('hiv_tb_status_list'),
+    tbPptStarted: document.getElementById('hiv_tb_ppt_started'),
+    tbTreatmentStarted: document.getElementById('hiv_tb_treatment_started'),
+    tbCxrDone: document.getElementById('hiv_tb_cxr_done'),
+    tbSputumDone: document.getElementById('hiv_tb_sputum_done'),
+    hbvTested: document.getElementById('hiv_hbv_tested'),
+    hbvPositive: document.getElementById('hiv_hbv_positive'),
+    hbvDiagnosis: document.getElementById('hiv_hbv_diagnosis'),
+    hbvRxStarted: document.getElementById('hiv_hbv_rx_started'),
+    hcvTested: document.getElementById('hiv_hcv_tested'),
+    hcvPositive: document.getElementById('hiv_hcv_positive'),
+    hcvDiagnosis: document.getElementById('hiv_hcv_diagnosis'),
+  };
 
   const hivState = {
     rows: [],
@@ -3292,13 +3384,26 @@ window.renderAll = renderAll;
       gender: null,
       risk: null,
       diagnoseDate: null,
-      viralLoadDate: null,
-      lastUpdated: null,
-      patientId: null,
-      viralSuppression: null,
-      currentStatus: null,
+    viralLoadDate: null,
+    lastUpdated: null,
+    patientId: null,
+    viralSuppression: null,
+    currentStatus: null,
+    firstVisitDate: null,
+      tbInfectionStatus: null,
+      tbPptStart: null,
+      tbTreatmentStart: null,
+      tbChestXrayDate: null,
+      tbSputum1Date: null,
+      hbvTestDate: null,
+      hbvResult: null,
+      hbvDiagnosis: null,
+      hbvRxStart: null,
+      hcvTestDate: null,
+      hcvResult: null,
+      hcvDiagnosis: null,
     },
-    filters: { site: 'ALL', gender: 'ALL', risk: 'ALL', month: 'ALL' },
+    filters: { site: 'ALL', risk: 'ALL', month: 'ALL', year: 'ALL' },
   };
 
   if (!fileInput || !statusEl) return;
@@ -3392,12 +3497,25 @@ window.renderAll = renderAll;
       site: find(['PKD', 'State', 'PKD/State', 'Negeri', 'Lokasi']),
       gender: find(['Gender', 'Sex', 'Jantina']),
       risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
+      firstVisitDate: find(['First visit date', 'Tarikh lawatan pertama', 'First Visit Date']),
       diagnoseDate: find(['Date diagnose HIV', 'Tarikh diagnosis HIV', 'Diagnosis Date']),
       viralLoadDate: find(['Viral Load Date', 'Tarikh Viral Load', 'VL Date', 'Viral load date']),
       lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
       currentStatus: find(['AD', 'Currrent Status', 'Status Semasa','Status']),
+      tbInfectionStatus: find(['Status of TB Infection', 'TB Infection Status', 'TB Infection']),
+      tbPptStart: find(['Date Start.1', 'Date Start TB Preventive Treatment', 'TPT Start Date']),
+      tbTreatmentStart: find(['Date Start TB Treatment', 'TB Treatment Start Date']),
+      tbChestXrayDate: find(['Date of Chest X-Ray', 'Chest X-Ray Date', 'CXR Date']),
+      tbSputum1Date: find(['Date of Sputum Test 1', 'Sputum Test 1 Date']),
+      hbvTestDate: find(['Date of Hep B Ag Test', 'Hep B Ag Test Date']),
+      hbvResult: find(['Hep B Ag Result']),
+      hbvDiagnosis: find(['Hep-B Diagnosis', 'Hep B Diagnosis']),
+      hbvRxStart: find(['Date Start Hep B Rx', 'Hep B Rx Start']),
+      hcvTestDate: find(['Date of Anti-HCV (RTK) Test', 'Anti-HCV (RTK) Test Date']),
+      hcvResult: find(['Anti-HCV (RTK) Result']),
+      hcvDiagnosis: find(['Hep-C Diagnosis', 'Hep C Diagnosis']),
     };
   }
 
@@ -3428,6 +3546,13 @@ window.renderAll = renderAll;
     return `${y}-${m}`;
   }
 
+  function extractYear(row, key) {
+    if (!key) return null;
+    const parsed = row?._parsedDates?.[key]?.parsed || parseDateAny(row?.[key]);
+    if (!parsed || !(parsed instanceof Date) || isNaN(parsed.getTime())) return null;
+    return String(parsed.getFullYear());
+  }
+
   function buildFilters() {
     const { columns } = hivState;
     const rows = hivState.rows || [];
@@ -3439,7 +3564,6 @@ window.renderAll = renderAll;
         sel.value = 'ALL';
         sel.disabled = true;
       });
-      if (filteredCountEl) filteredCountEl.textContent = '0';
       return;
     }
 
@@ -3453,11 +3577,10 @@ window.renderAll = renderAll;
     }
 
     setSelectOptions(filters.site, uniq(r => r?.[columns.site]));
-    setSelectOptions(filters.gender, uniq(r => r?.[columns.gender]));
     setSelectOptions(filters.risk, uniq(r => r?.[columns.risk]));
     setSelectOptions(filters.month, uniq(r => extractMonth(r, columns.diagnoseDate)));
+    setSelectOptions(filters.year, uniq(r => extractYear(r, columns.firstVisitDate)));
   }
-
   function normalizeLabel(value) {
     return String(value ?? '').trim().toLowerCase();
   }
@@ -3475,6 +3598,21 @@ window.renderAll = renderAll;
   function formatNumber(val) {
     if (!Number.isFinite(val)) return '-';
     return Number(val).toLocaleString('en-US');
+  }
+
+  function isNonEmpty(value) {
+    return value !== null && value !== undefined && String(value).trim() !== '';
+  }
+
+  function isPositiveResult(value) {
+    const label = normalizeLabel(value);
+    return label.includes('positive');
+  }
+
+  function hasDateValue(value) {
+    const parsed = parseDateAny(value);
+    if (parsed instanceof Date && !isNaN(parsed.getTime())) return true;
+    return isNonEmpty(value);
   }
 
   function updateKpiDisplays(result) {
@@ -3566,7 +3704,7 @@ window.renderAll = renderAll;
     result.totalPatients = perPatient.size;
     if (!result.totalPatients) return result;
 
-    perPatient.forEach((info) => {
+     perPatient.forEach((info) => {
       if (hasStatus) {
         if (info.onArt) result.onArtTreatment += 1;
         if (info.transferOut) result.transferOut += 1;
@@ -3581,12 +3719,103 @@ window.renderAll = renderAll;
     return result;
   }
 
+  function computeCoinfectionMetrics(rows) {
+    const { columns } = hivState;
+    const metrics = {
+      tbStatusCounts: new Map(),
+      tbPptStarted: 0,
+      tbTreatmentStarted: 0,
+      tbCxrDone: 0,
+      tbSputumDone: 0,
+      hbvTested: 0,
+      hbvPositive: 0,
+      hbvDiagnosis: 0,
+      hbvRxStarted: 0,
+      hcvTested: 0,
+      hcvPositive: 0,
+      hcvDiagnosis: 0,
+    };
+
+    rows.forEach((row) => {
+      if (columns.tbInfectionStatus && isNonEmpty(row?.[columns.tbInfectionStatus])) {
+        const label = String(row[columns.tbInfectionStatus]).trim();
+        metrics.tbStatusCounts.set(label, (metrics.tbStatusCounts.get(label) || 0) + 1);
+      }
+
+      if (columns.tbPptStart && hasDateValue(row?.[columns.tbPptStart])) metrics.tbPptStarted += 1;
+      if (columns.tbTreatmentStart && hasDateValue(row?.[columns.tbTreatmentStart])) metrics.tbTreatmentStarted += 1;
+      if (columns.tbChestXrayDate && hasDateValue(row?.[columns.tbChestXrayDate])) metrics.tbCxrDone += 1;
+      if (columns.tbSputum1Date && hasDateValue(row?.[columns.tbSputum1Date])) metrics.tbSputumDone += 1;
+
+      if (columns.hbvTestDate && hasDateValue(row?.[columns.hbvTestDate])) metrics.hbvTested += 1;
+      if (columns.hbvResult && isPositiveResult(row?.[columns.hbvResult])) metrics.hbvPositive += 1;
+      if (columns.hbvDiagnosis && isNonEmpty(row?.[columns.hbvDiagnosis])) metrics.hbvDiagnosis += 1;
+      if (columns.hbvRxStart && hasDateValue(row?.[columns.hbvRxStart])) metrics.hbvRxStarted += 1;
+
+      if (columns.hcvTestDate && hasDateValue(row?.[columns.hcvTestDate])) metrics.hcvTested += 1;
+      if (columns.hcvResult && isPositiveResult(row?.[columns.hcvResult])) metrics.hcvPositive += 1;
+      if (columns.hcvDiagnosis && isNonEmpty(row?.[columns.hcvDiagnosis])) metrics.hcvDiagnosis += 1;
+    });
+
+    return metrics;
+  }
+
+  function renderTbStatusList(map, hasColumn) {
+    if (!coinfectionEls.tbStatusList) return;
+    coinfectionEls.tbStatusList.innerHTML = '';
+
+    if (!hasColumn) {
+      const li = document.createElement('li');
+      li.textContent = 'No TB infection status column';
+      coinfectionEls.tbStatusList.appendChild(li);
+      return;
+    }
+
+    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    if (!entries.length) {
+      const li = document.createElement('li');
+      li.textContent = 'No data';
+      coinfectionEls.tbStatusList.appendChild(li);
+      return;
+    }
+
+    entries.forEach(([label, count]) => {
+      const li = document.createElement('li');
+      li.textContent = `${label}: ${formatNumber(count)}`;
+      coinfectionEls.tbStatusList.appendChild(li);
+    });
+  }
+
+  function setCount(el, count, hasColumn) {
+    if (!el) return;
+    el.textContent = hasColumn ? formatNumber(count) : '-';
+  }
+
+  function renderCoinfection(rows) {
+    const { columns } = hivState;
+    const metrics = computeCoinfectionMetrics(rows);
+
+    renderTbStatusList(metrics.tbStatusCounts, Boolean(columns.tbInfectionStatus));
+    setCount(coinfectionEls.tbPptStarted, metrics.tbPptStarted, Boolean(columns.tbPptStart));
+    setCount(coinfectionEls.tbTreatmentStarted, metrics.tbTreatmentStarted, Boolean(columns.tbTreatmentStart));
+    setCount(coinfectionEls.tbCxrDone, metrics.tbCxrDone, Boolean(columns.tbChestXrayDate));
+    setCount(coinfectionEls.tbSputumDone, metrics.tbSputumDone, Boolean(columns.tbSputum1Date));
+
+    setCount(coinfectionEls.hbvTested, metrics.hbvTested, Boolean(columns.hbvTestDate));
+    setCount(coinfectionEls.hbvPositive, metrics.hbvPositive, Boolean(columns.hbvResult));
+    setCount(coinfectionEls.hbvDiagnosis, metrics.hbvDiagnosis, Boolean(columns.hbvDiagnosis));
+    setCount(coinfectionEls.hbvRxStarted, metrics.hbvRxStarted, Boolean(columns.hbvRxStart));
+
+    setCount(coinfectionEls.hcvTested, metrics.hcvTested, Boolean(columns.hcvTestDate));
+    setCount(coinfectionEls.hcvPositive, metrics.hcvPositive, Boolean(columns.hcvResult));
+    setCount(coinfectionEls.hcvDiagnosis, metrics.hcvDiagnosis, Boolean(columns.hcvDiagnosis));
+  }
+
   function applyFilters() {
     const { columns, filters: f } = hivState;
     const rows = hivState.rows || [];
     const filtered = rows.filter(r => {
       if (f.site !== 'ALL' && columns.site && String(r?.[columns.site]) !== f.site) return false;
-      if (f.gender !== 'ALL' && columns.gender && String(r?.[columns.gender]) !== f.gender) return false;
       if (f.risk !== 'ALL' && columns.risk && String(r?.[columns.risk]) !== f.risk) return false;
       if (f.month !== 'ALL' && columns.diagnoseDate) {
         const month = extractMonth(r, columns.diagnoseDate);
@@ -3596,52 +3825,6 @@ window.renderAll = renderAll;
     });
     if (filteredCountEl) filteredCountEl.textContent = String(filtered.length);
     return filtered;
-  }
-
-  function formatDateDisplay(dateObj) {
-    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '-';
-    return dateObj.toISOString().slice(0, 10);
-  }
-
-  function pickLatestDate(rows, columnKey) {
-    if (!columnKey) return null;
-    let latest = null;
-    rows.forEach(r => {
-      const parsed = r?._parsedDates?.[columnKey]?.parsed || parseDateAny(r?.[columnKey]);
-      if (parsed instanceof Date && !isNaN(parsed.getTime())) {
-        if (!latest || parsed > latest) latest = parsed;
-      }
-    });
-    return latest;
-  }
-
-  function updateAsOfDate(filteredRows) {
-    const { columns } = hivState;
-    const bestViral = pickLatestDate(filteredRows, columns.viralLoadDate);
-    const bestUpdated = bestViral || pickLatestDate(filteredRows, columns.lastUpdated);
-    const finalDate = bestUpdated || new Date();
-    if (asOfDateEl) {
-      asOfDateEl.textContent = `As-of date: ${formatDateDisplay(finalDate)}`;
-    }
-    return finalDate;
-  }
-
-  function renderFiltered() {
-    const filtered = applyFilters();
-    const asOfDate = updateAsOfDate(filtered);
-    const kpis = computeHivKpis(filtered, asOfDate);
-    updateKpiDisplays(kpis);
-    if (typeof window.renderHivDashboard === 'function') {
-      window.renderHivDashboard(filtered);
-    }
-  }
-
-  function onFilterChange() {
-    hivState.filters.site = filters.site?.value || 'ALL';
-    hivState.filters.gender = filters.gender?.value || 'ALL';
-    hivState.filters.risk = filters.risk?.value || 'ALL';
-    hivState.filters.month = filters.month?.value || 'ALL';
-    renderFiltered();
   }
 
   Object.values(filters).forEach(sel => {
