@@ -3497,7 +3497,7 @@ window.renderAll = renderAll;
       lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
-      currentStatus: find(['AD', 'Currrent Status', 'Status Semasa','Status']),
+      currentStatus: find(['Outcome']),
       tbInfectionStatus: find(['Status of TB Infection', 'TB Infection Status', 'TB Infection']),
       tbPptStart: find(['Date Start.1', 'Date Start TB Preventive Treatment', 'TPT Start Date']),
       tbTreatmentStart: find(['Date Start TB Treatment', 'TB Treatment Start Date']),
@@ -3622,11 +3622,17 @@ window.renderAll = renderAll;
     setVal(kpiEls.died, Number.isFinite(died) ? formatNumber(died) : '-');
     setVal(kpiEls.ltfu, Number.isFinite(ltfu) ? formatNumber(ltfu) : '-');
 
-    setVal(kpiEls.vlSuppressionPct, formatPercent(vlSuppressed, totalPatients));
-     setVal(
+    const vlDenom = Number.isFinite(onArtTreatment) ? onArtTreatment : null;
+    setVal(
+      kpiEls.vlSuppressionPct,
+      (Number.isFinite(vlSuppressed) && Number.isFinite(vlDenom) && vlDenom > 0)
+        ? formatPercent(vlSuppressed, vlDenom)
+        : '-'
+    );
+    setVal(
       kpiEls.vlSuppressionSub,
-      (Number.isFinite(vlSuppressed) && Number.isFinite(totalPatients) && totalPatients > 0)
-        ? `${formatNumber(vlSuppressed)} of ${formatNumber(totalPatients)}`
+      (Number.isFinite(vlSuppressed) && Number.isFinite(vlDenom) && vlDenom > 0)
+        ? `${formatNumber(vlSuppressed)} of ${formatNumber(vlDenom)}`
         : '-'
     );
 
