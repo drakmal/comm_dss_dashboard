@@ -212,6 +212,11 @@
       font-size: 0.85rem;
     }
 
+    .error-text {
+      color: #b91c1c;
+      font-size: 0.9rem;
+    }
+
     /* Demography layout */
     .demography-grid {
       display: grid;
@@ -1027,7 +1032,48 @@
 </section>
 
 <section class="tab-panel" data-tab="hiv" id="tab-hiv">
-  <h2>HIV Dashboard (WIP)</h2>
+  <h2>1. Upload myHCC Excel file</h2>
+  <div class="card">
+    <div class="upload-row">
+      <label for="fileInput_hiv"><b>Load HIV Excel (.xls/.xlsx)</b></label>
+      <input type="file" id="fileInput_hiv" accept=".xls,.xlsx">
+      <div id="hiv_file_status" class="muted">No file loaded.</div>
+    </div>
+    <div id="hiv_error" class="error-text" role="alert" style="display:none;"></div>
+  </div>
+ <h2>2. Filters and key numbers</h2>
+  <div class="card">
+    <div class="filters-row">
+      <div class="filter-field">
+        <label for="hiv_filter_site">Site (PKD/State):</label>
+        <select id="hiv_filter_site" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="hiv_filter_gender">Gender:</label>
+        <select id="hiv_filter_gender" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="hiv_filter_risk">Risk Group:</label>
+        <select id="hiv_filter_risk" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="hiv_filter_month">Reporting Month:</label>
+        <select id="hiv_filter_month" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-title">Filtered rows</div>
+      <div class="kpi-value" id="hiv_filtered_count">0</div>
+    </div>
+  </div>
   <div class="card">
     <p class="muted">This dashboard is under construction.</p>
   </div>
@@ -3181,11 +3227,274 @@ window.renderAll = renderAll;
 </script>
 
 <script>
+/* =======================
+   HIV DASHBOARD (Tab 4)
+========================= */
+
+(function () {
+  const fileInput = document.getElementById('fileInput_hiv');
+  const statusEl = document.getElementById('hiv_file_status');
+  const errorEl = document.getElementById('hiv_error');
+  const filters = {
+    site: document.getElementById('hiv_filter_site'),
+    gender: document.getElementById('hiv_filter_gender'),
+    risk: document.getElementById('hiv_filter_risk'),
+    month: document.getElementById('hiv_filter_month'),
+  };
+  const filteredCountEl = document.getElementById('hiv_filtered_count');
+
+  const hivState = {
+    rows: [],
+    columns: { site: null, gender: null, risk: null, diagnoseDate: null },
+    filters: { site: 'ALL', gender: 'ALL', risk: 'ALL', month: 'ALL' },
+  };
+
+  if (!fileInput || !statusEl) return;
+
+  function showStatus(msg) {
+    statusEl.textContent = msg;
+  }
+
+  function showError(msg) {
+    if (!errorEl) return;
+    if (msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+    } else {
+      errorEl.textContent = '';
+      errorEl.style.display = 'none';
+    }
+  }
+
+  function parseDateAny(v) {
+    if (v === null || v === undefined || v === '') return null;
+
+    if (v instanceof Date && !isNaN(v.getTime())) return v;
+
+    if (typeof v === 'number' && isFinite(v)) {
+      const ms = Math.round((v - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    const numeric = Number(s);
+    if (!Number.isNaN(numeric) && /^-?\d+(\.\d+)?$/.test(s)) {
+      const dNum = parseDateAny(numeric);
+      if (dNum) return dNum;
+    }
+
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m1) {
+      const dd = parseInt(m1[1], 10);
+      const mm = parseInt(m1[2], 10);
+      const yy = parseInt(m1[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m2) {
+      const yy = parseInt(m2[1], 10);
+      const mm = parseInt(m2[2], 10);
+      const dd = parseInt(m2[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function attachParsedDates(rows) {
+    return rows.map((row) => {
+      const parsedDates = {};
+      Object.keys(row || {}).forEach((key) => {
+        const rawVal = row[key];
+        parsedDates[key] = { raw: rawVal, parsed: parseDateAny(rawVal) };
+      });
+      return { ...row, _parsedDates: parsedDates };
+    });
+  }
+
+  function norm(s) {
+    return String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function inferColumns(keys) {
+    const normed = keys.map(k => ({ key: k, norm: norm(k) }));
+    function find(candidates) {
+      for (const cand of candidates) {
+        const n = norm(cand);
+        const exact = normed.find(k => k.norm === n);
+        if (exact) return exact.key;
+        const contains = normed.find(k => k.norm.includes(n));
+        if (contains) return contains.key;
+      }
+      return null;
+    }
+
+    return {
+      site: find(['PKD', 'State', 'PKD/State', 'Negeri', 'Lokasi']),
+      gender: find(['Gender', 'Sex', 'Jantina']),
+      risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
+      diagnoseDate: find(['Date diagnose HIV', 'Tarikh diagnosis HIV', 'Diagnosis Date']),
+    };
+  }
+
+  function setSelectOptions(selectEl, values) {
+    if (!selectEl) return;
+    const keep = selectEl.value;
+    selectEl.innerHTML = '<option value="ALL">All</option>';
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = String(v);
+      selectEl.appendChild(opt);
+    });
+    if (Array.from(selectEl.options).some(o => o.value === keep)) {
+      selectEl.value = keep;
+    } else {
+      selectEl.value = 'ALL';
+    }
+    selectEl.disabled = false;
+  }
+
+  function extractMonth(row, key) {
+    if (!key) return null;
+    const parsed = row?._parsedDates?.[key]?.parsed || parseDateAny(row?.[key]);
+    if (!parsed || !(parsed instanceof Date) || isNaN(parsed.getTime())) return null;
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
+  function buildFilters() {
+    const { columns } = hivState;
+    const rows = hivState.rows || [];
+
+    if (!rows.length) {
+      Object.values(filters).forEach(sel => {
+        if (!sel) return;
+        sel.innerHTML = '<option value="ALL">All</option>';
+        sel.value = 'ALL';
+        sel.disabled = true;
+      });
+      if (filteredCountEl) filteredCountEl.textContent = '0';
+      return;
+    }
+
+    function uniq(fn) {
+      const s = new Set();
+      rows.forEach(r => {
+        const v = fn(r);
+        if (v) s.add(String(v));
+      });
+      return Array.from(s).sort();
+    }
+
+    setSelectOptions(filters.site, uniq(r => r?.[columns.site]));
+    setSelectOptions(filters.gender, uniq(r => r?.[columns.gender]));
+    setSelectOptions(filters.risk, uniq(r => r?.[columns.risk]));
+    setSelectOptions(filters.month, uniq(r => extractMonth(r, columns.diagnoseDate)));
+  }
+
+  function applyFilters() {
+    const { columns, filters: f } = hivState;
+    const rows = hivState.rows || [];
+    const filtered = rows.filter(r => {
+      if (f.site !== 'ALL' && columns.site && String(r?.[columns.site]) !== f.site) return false;
+      if (f.gender !== 'ALL' && columns.gender && String(r?.[columns.gender]) !== f.gender) return false;
+      if (f.risk !== 'ALL' && columns.risk && String(r?.[columns.risk]) !== f.risk) return false;
+      if (f.month !== 'ALL' && columns.diagnoseDate) {
+        const month = extractMonth(r, columns.diagnoseDate);
+        if (month !== f.month) return false;
+      }
+      return true;
+    });
+    if (filteredCountEl) filteredCountEl.textContent = String(filtered.length);
+    return filtered;
+  }
+
+  function renderFiltered() {
+    const filtered = applyFilters();
+    if (typeof window.renderHivDashboard === 'function') {
+      window.renderHivDashboard(filtered);
+    }
+  }
+
+  function onFilterChange() {
+    hivState.filters.site = filters.site?.value || 'ALL';
+    hivState.filters.gender = filters.gender?.value || 'ALL';
+    hivState.filters.risk = filters.risk?.value || 'ALL';
+    hivState.filters.month = filters.month?.value || 'ALL';
+    renderFiltered();
+  }
+
+  Object.values(filters).forEach(sel => {
+    if (!sel) return;
+    sel.addEventListener('change', onFilterChange);
+  });
+
+  if (typeof window.renderHivDashboard !== 'function') {
+    window.renderHivDashboard = function (rows) {
+      console.info('HIV dataset ready', rows ? rows.length : 0);
+    };
+  }
+
+  fileInput.addEventListener('change', (evt) => {
+    const file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+
+    showError('');
+    showStatus(`Loading ${file.name} ...`);
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      try {
+        const bytes = new Uint8Array(e.target.result);
+        const wb = XLSX.read(bytes, { type: 'array' });
+        const firstSheet = wb.SheetNames[0];
+        if (!firstSheet) throw new Error('No worksheet found in file.');
+
+        const ws = wb.Sheets[firstSheet];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+        const enriched = attachParsedDates(rows);
+
+        window.hivRows = enriched;
+        hivState.rows = enriched;
+        hivState.columns = inferColumns(rows.length ? Object.keys(rows[0]) : []);
+
+        showStatus(`HIV records loaded: ${enriched.length}`);
+
+        buildFilters();
+        renderFiltered();
+      } catch (err) {
+        console.error(err);
+        showStatus('No file loaded.');
+        showError(`Failed to parse HIV Excel file: ${err.message || err}`);
+      }
+    };
+
+    reader.onerror = function () {
+      showStatus('No file loaded.');
+      showError('Failed to read the selected file.');
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+})();
+</script>
+
+<script>
   function syncStickyOffsets(){
   const tabs = document.querySelector('.tabs');
   if(!tabs) return;
   const h = Math.ceil(tabs.getBoundingClientRect().height);
-  document.documentElement.style.setProperty('--tabs-bar-height', h + 'px');
+ document.documentElement.style.setProperty('--tabs-bar-height', h + 'px');
 }
 window.addEventListener('resize', syncStickyOffsets);
 document.addEventListener('DOMContentLoaded', syncStickyOffsets);
