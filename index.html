@@ -1069,22 +1069,11 @@
         </select>
       </div>
       <div class="filter-field">
-        <label for="hiv_filter_month">Reporting Month:</label>
-        <select id="hiv_filter_month" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
         <label for="hiv_filter_year">Year:</label>
         <select id="hiv_filter_year" disabled>
           <option value="ALL">All</option>
         </select>
       </div>
-    </div>
-    <div class="kpi-box">
-    <div class="kpi-box">
-      <div class="kpi-title">Filtered rows</div>
-      <div class="kpi-value" id="hiv_filtered_count">0</div>
     </div>
     <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
@@ -1106,6 +1095,11 @@
       <div class="kpi-box">
         <div class="kpi-title">Loss to follow-up</div>
         <div class="kpi-value" id="hiv_kpi_ltfu">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">% on ART</div>
+        <div class="kpi-value" id="hiv_kpi_on_art_pct">-</div>
+        <div class="kpi-sub" id="hiv_kpi_on_art_pct_sub">-</div>
       </div>
       <div class="kpi-box">
         <div class="kpi-title">Viral suppression rate</div>
@@ -3345,12 +3339,10 @@ window.renderAll = renderAll;
 (function () {
   const fileInput = document.getElementById('fileInput_hiv');
   const statusEl = document.getElementById('hiv_file_status');
-  const errorEl = document.getElementById('hiv_error');
-  const filteredCountEl = document.getElementById('hiv_filtered_count');
+  const errorEl = document.getElementById('hiv_error'); 
   const filters = {
     site: document.getElementById('hiv_filter_site'),
     risk: document.getElementById('hiv_filter_risk'),
-    month: document.getElementById('hiv_filter_month'),
     year: document.getElementById('hiv_filter_year'),
   };
   const kpiEls = {
@@ -3359,6 +3351,8 @@ window.renderAll = renderAll;
     transferOut: document.getElementById('hiv_kpi_transfer_out'),
     died: document.getElementById('hiv_kpi_died'),
     ltfu: document.getElementById('hiv_kpi_ltfu'),
+    onArtPct: document.getElementById('hiv_kpi_on_art_pct'),
+    onArtPctSub: document.getElementById('hiv_kpi_on_art_pct_sub'),
     vlSuppressionPct: document.getElementById('hiv_kpi_vl_suppression_pct'),
     vlSuppressionSub: document.getElementById('hiv_kpi_vl_suppression_sub'),
   };
@@ -3494,7 +3488,7 @@ window.renderAll = renderAll;
     }
 
     return {
-      site: find(['PKD', 'State', 'PKD/State', 'Negeri', 'Lokasi']),
+      site: find(['Site']),
       gender: find(['Gender', 'Sex', 'Jantina']),
       risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
       firstVisitDate: find(['First visit date', 'Tarikh lawatan pertama', 'First Visit Date']),
@@ -3537,15 +3531,6 @@ window.renderAll = renderAll;
     selectEl.disabled = false;
   }
 
-  function extractMonth(row, key) {
-    if (!key) return null;
-    const parsed = row?._parsedDates?.[key]?.parsed || parseDateAny(row?.[key]);
-    if (!parsed || !(parsed instanceof Date) || isNaN(parsed.getTime())) return null;
-    const y = parsed.getFullYear();
-    const m = String(parsed.getMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-  }
-
   function extractYear(row, key) {
     if (!key) return null;
     const parsed = row?._parsedDates?.[key]?.parsed || parseDateAny(row?.[key]);
@@ -3578,7 +3563,6 @@ window.renderAll = renderAll;
 
     setSelectOptions(filters.site, uniq(r => r?.[columns.site]));
     setSelectOptions(filters.risk, uniq(r => r?.[columns.risk]));
-    setSelectOptions(filters.month, uniq(r => extractMonth(r, columns.diagnoseDate)));
     setSelectOptions(filters.year, uniq(r => extractYear(r, columns.firstVisitDate)));
   }
   function normalizeLabel(value) {
@@ -3628,6 +3612,7 @@ window.renderAll = renderAll;
       transferOut,
       died,
       ltfu,
+      onArtEligible,
       vlSuppressed,
     } = result;
 
@@ -3638,10 +3623,24 @@ window.renderAll = renderAll;
     setVal(kpiEls.ltfu, Number.isFinite(ltfu) ? formatNumber(ltfu) : '-');
 
     setVal(kpiEls.vlSuppressionPct, formatPercent(vlSuppressed, totalPatients));
-    setVal(
+     setVal(
       kpiEls.vlSuppressionSub,
       (Number.isFinite(vlSuppressed) && Number.isFinite(totalPatients) && totalPatients > 0)
         ? `${formatNumber(vlSuppressed)} of ${formatNumber(totalPatients)}`
+        : '-'
+    );
+
+    const onArtDenom = (Number.isFinite(onArtEligible) ? onArtEligible : null);
+    setVal(
+      kpiEls.onArtPct,
+      (Number.isFinite(onArtTreatment) && Number.isFinite(onArtDenom) && onArtDenom > 0)
+        ? formatPercent(onArtTreatment, onArtDenom)
+        : '-'
+    );
+    setVal(
+      kpiEls.onArtPctSub,
+      (Number.isFinite(onArtTreatment) && Number.isFinite(onArtDenom) && onArtDenom > 0)
+        ? `${formatNumber(onArtTreatment)} of ${formatNumber(onArtDenom)}`
         : '-'
     );
   }
@@ -3658,6 +3657,7 @@ window.renderAll = renderAll;
       transferOut: hasStatus ? 0 : null,
       died: hasStatus ? 0 : null,
       ltfu: hasStatus ? 0 : null,
+      onArtEligible: hasStatus ? 0 : null,
       vlSuppressed: hasSuppression ? 0 : null,
     };
 
@@ -3710,6 +3710,7 @@ window.renderAll = renderAll;
         if (info.transferOut) result.transferOut += 1;
         if (info.died) result.died += 1;
         if (info.ltfu) result.ltfu += 1;
+        if (!info.died) result.onArtEligible += 1;
       }
       if (hasSuppression && info.suppressed) {
         result.vlSuppressed += 1;
@@ -3817,24 +3818,18 @@ window.renderAll = renderAll;
     const filtered = rows.filter(r => {
       if (f.site !== 'ALL' && columns.site && String(r?.[columns.site]) !== f.site) return false;
       if (f.risk !== 'ALL' && columns.risk && String(r?.[columns.risk]) !== f.risk) return false;
-      if (f.month !== 'ALL' && columns.diagnoseDate) {
-        const month = extractMonth(r, columns.diagnoseDate);
-        if (month !== f.month) return false;
-      }
       if (f.year !== 'ALL' && columns.firstVisitDate) {
         const year = extractYear(r, columns.firstVisitDate);
         if (year !== f.year) return false;
       }
       return true;
     });
-    if (filteredCountEl) filteredCountEl.textContent = String(filtered.length);
     return filtered;
   }
 
   function onFilterChange() {
     hivState.filters.site = filters.site?.value || 'ALL';
     hivState.filters.risk = filters.risk?.value || 'ALL';
-    hivState.filters.month = filters.month?.value || 'ALL';
     hivState.filters.year = filters.year?.value || 'ALL';
     renderFiltered();
   }
