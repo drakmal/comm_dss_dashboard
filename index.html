@@ -830,7 +830,7 @@
     <div class="upload-row">
       <label><b>Excel file (.xls / .xlsx):</b></label>
       <input type="file" id="fileInput_measles" accept=".xls,.xlsx">
-      <div class="muted" id="fileStatus_measles">No file loaded yet.</div>
+      <div id="fileStatus_measles" style="color:#666;">No file loaded yet.</div>
     </div>
   </div>
 
@@ -1037,7 +1037,7 @@
     <div class="upload-row">
       <label for="fileInput_hiv"><b>Load HIV Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_hiv" accept=".xls,.xlsx">
-      <div id="hiv_file_status" class="muted">No file loaded yet.</div>
+      <div id="hiv_file_status" class="muted">No file loaded.</div>
     </div>
     <div id="hiv_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
@@ -1070,8 +1070,40 @@
       </div>
     </div>
     <div class="kpi-box">
+    <div class="kpi-box">
       <div class="kpi-title">Filtered rows</div>
       <div class="kpi-value" id="hiv_filtered_count">0</div>
+    </div>
+    <div class="note" id="hiv_as_of_date">As-of date: -</div>
+  </div>
+  <h2>3. Key indicators</h2>
+  <div class="card">
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Total patients</div>
+        <div class="kpi-value" id="hiv_kpi_total_patients">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">On ART treatment</div>
+        <div class="kpi-value" id="hiv_kpi_on_art_count">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Transfer out</div>
+        <div class="kpi-value" id="hiv_kpi_transfer_out">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Died</div>
+        <div class="kpi-value" id="hiv_kpi_died">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Loss to follow-up</div>
+        <div class="kpi-value" id="hiv_kpi_ltfu">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Viral suppression rate</div>
+        <div class="kpi-value" id="hiv_kpi_vl_suppression_pct">-</div>
+        <div class="kpi-sub" id="hiv_kpi_vl_suppression_sub">-</div>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -3242,10 +3274,30 @@ window.renderAll = renderAll;
     month: document.getElementById('hiv_filter_month'),
   };
   const filteredCountEl = document.getElementById('hiv_filtered_count');
+  const asOfDateEl = document.getElementById('hiv_as_of_date');
+  const kpiEls = {
+    total: document.getElementById('hiv_kpi_total_patients'),
+    onArtCount: document.getElementById('hiv_kpi_on_art_count'),
+    transferOut: document.getElementById('hiv_kpi_transfer_out'),
+    died: document.getElementById('hiv_kpi_died'),
+    ltfu: document.getElementById('hiv_kpi_ltfu'),
+    vlSuppressionPct: document.getElementById('hiv_kpi_vl_suppression_pct'),
+    vlSuppressionSub: document.getElementById('hiv_kpi_vl_suppression_sub'),
+  };
 
   const hivState = {
     rows: [],
-    columns: { site: null, gender: null, risk: null, diagnoseDate: null },
+    columns: {
+      site: null,
+      gender: null,
+      risk: null,
+      diagnoseDate: null,
+      viralLoadDate: null,
+      lastUpdated: null,
+      patientId: null,
+      viralSuppression: null,
+      currentStatus: null,
+    },
     filters: { site: 'ALL', gender: 'ALL', risk: 'ALL', month: 'ALL' },
   };
 
@@ -3341,6 +3393,11 @@ window.renderAll = renderAll;
       gender: find(['Gender', 'Sex', 'Jantina']),
       risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
       diagnoseDate: find(['Date diagnose HIV', 'Tarikh diagnosis HIV', 'Diagnosis Date']),
+      viralLoadDate: find(['Viral Load Date', 'Tarikh Viral Load', 'VL Date', 'Viral load date']),
+      lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
+      patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
+      viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
+      currentStatus: find(['AD', 'Currrent Status', 'Status Semasa','Status']),
     };
   }
 
@@ -3401,6 +3458,129 @@ window.renderAll = renderAll;
     setSelectOptions(filters.month, uniq(r => extractMonth(r, columns.diagnoseDate)));
   }
 
+  function normalizeLabel(value) {
+    return String(value ?? '').trim().toLowerCase();
+  }
+
+  function isExactLabel(value, target) {
+    if (target == null) return false;
+    return normalizeLabel(value) === normalizeLabel(target);
+  }
+
+  function formatPercent(numerator, denominator) {
+    if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return '-';
+    return `${((numerator / denominator) * 100).toFixed(1)}%`;
+  }
+
+  function formatNumber(val) {
+    if (!Number.isFinite(val)) return '-';
+    return Number(val).toLocaleString('en-US');
+  }
+
+  function updateKpiDisplays(result) {
+    if (!kpiEls.total) return;
+
+    const setVal = (el, text) => {
+      if (el) el.textContent = text;
+    };
+
+    const {
+      totalPatients,
+      onArtTreatment,
+      transferOut,
+      died,
+      ltfu,
+      vlSuppressed,
+    } = result;
+
+    setVal(kpiEls.total, formatNumber(totalPatients));
+    setVal(kpiEls.onArtCount, Number.isFinite(onArtTreatment) ? formatNumber(onArtTreatment) : '-');
+    setVal(kpiEls.transferOut, Number.isFinite(transferOut) ? formatNumber(transferOut) : '-');
+    setVal(kpiEls.died, Number.isFinite(died) ? formatNumber(died) : '-');
+    setVal(kpiEls.ltfu, Number.isFinite(ltfu) ? formatNumber(ltfu) : '-');
+
+    setVal(kpiEls.vlSuppressionPct, formatPercent(vlSuppressed, totalPatients));
+    setVal(
+      kpiEls.vlSuppressionSub,
+      (Number.isFinite(vlSuppressed) && Number.isFinite(totalPatients) && totalPatients > 0)
+        ? `${formatNumber(vlSuppressed)} of ${formatNumber(totalPatients)}`
+        : '-'
+    );
+  }
+
+  function computeHivKpis(rows) {
+    const { columns } = hivState;
+    const patientKey = columns.patientId;
+    const hasStatus = Boolean(columns.currentStatus);
+    const hasSuppression = Boolean(columns.viralSuppression);
+
+    const result = {
+      totalPatients: 0,
+      onArtTreatment: hasStatus ? 0 : null,
+      transferOut: hasStatus ? 0 : null,
+      died: hasStatus ? 0 : null,
+      ltfu: hasStatus ? 0 : null,
+      vlSuppressed: hasSuppression ? 0 : null,
+    };
+
+    if (!rows.length || !patientKey) return result;
+
+    const perPatient = new Map();
+
+    rows.forEach((row) => {
+      const rawId = row?.[patientKey];
+      const pid = String(rawId ?? '').trim();
+      if (!pid) return;
+
+      const existing = perPatient.get(pid);
+      const statusVal = hasStatus ? row?.[columns.currentStatus] : null;
+      const suppressionVal = hasSuppression ? row?.[columns.viralSuppression] : null;
+
+      const record = existing || {
+        onArt: false,
+        transferOut: false,
+        died: false,
+        ltfu: false,
+        suppressed: false,
+      };
+
+      if (hasStatus) {
+        const normStatus = normalizeLabel(statusVal);
+        if (normStatus === 'on art treatment') record.onArt = true;
+        if (normStatus === 'transfer out') record.transferOut = true;
+        if (normStatus === 'died') record.died = true;
+        if (normStatus === 'loss to follow-up') record.ltfu = true;
+      }
+
+      if (hasSuppression && isExactLabel(suppressionVal, 'Yes (<1000 copies/mL)')) {
+        record.suppressed = true;
+      }
+
+      if (!existing) {
+        perPatient.set(pid, record);
+      } else {
+        perPatient.set(pid, record);
+      }
+    });
+
+    result.totalPatients = perPatient.size;
+    if (!result.totalPatients) return result;
+
+    perPatient.forEach((info) => {
+      if (hasStatus) {
+        if (info.onArt) result.onArtTreatment += 1;
+        if (info.transferOut) result.transferOut += 1;
+        if (info.died) result.died += 1;
+        if (info.ltfu) result.ltfu += 1;
+      }
+      if (hasSuppression && info.suppressed) {
+        result.vlSuppressed += 1;
+      }
+    });
+
+    return result;
+  }
+
   function applyFilters() {
     const { columns, filters: f } = hivState;
     const rows = hivState.rows || [];
@@ -3418,8 +3598,39 @@ window.renderAll = renderAll;
     return filtered;
   }
 
+  function formatDateDisplay(dateObj) {
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '-';
+    return dateObj.toISOString().slice(0, 10);
+  }
+
+  function pickLatestDate(rows, columnKey) {
+    if (!columnKey) return null;
+    let latest = null;
+    rows.forEach(r => {
+      const parsed = r?._parsedDates?.[columnKey]?.parsed || parseDateAny(r?.[columnKey]);
+      if (parsed instanceof Date && !isNaN(parsed.getTime())) {
+        if (!latest || parsed > latest) latest = parsed;
+      }
+    });
+    return latest;
+  }
+
+  function updateAsOfDate(filteredRows) {
+    const { columns } = hivState;
+    const bestViral = pickLatestDate(filteredRows, columns.viralLoadDate);
+    const bestUpdated = bestViral || pickLatestDate(filteredRows, columns.lastUpdated);
+    const finalDate = bestUpdated || new Date();
+    if (asOfDateEl) {
+      asOfDateEl.textContent = `As-of date: ${formatDateDisplay(finalDate)}`;
+    }
+    return finalDate;
+  }
+
   function renderFiltered() {
     const filtered = applyFilters();
+    const asOfDate = updateAsOfDate(filtered);
+    const kpis = computeHivKpis(filtered, asOfDate);
+    updateKpiDisplays(kpis);
     if (typeof window.renderHivDashboard === 'function') {
       window.renderHivDashboard(filtered);
     }
@@ -3543,6 +3754,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
 
