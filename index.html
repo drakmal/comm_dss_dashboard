@@ -1114,20 +1114,7 @@
     <div class="kpi-grid">
       <div class="kpi-box">
         <div class="kpi-title">TB</div>
-        <div class="kpi-sub">Status of TB Infection distribution</div>
-        <ul class="kpi-list" id="hiv_tb_status_list">
-          <li>No data</li>
-        </ul>
-        <div class="kpi-sub" style="margin-top:8px;">Summary counts</div>
         <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; margin-top:6px;">
-          <div class="kpi-box">
-            <div class="kpi-title">TB preventive treatment started</div>
-            <div class="kpi-value" id="hiv_tb_ppt_started">-</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">TB treatment started</div>
-            <div class="kpi-value" id="hiv_tb_treatment_started">-</div>
-          </div>
           <div class="kpi-box">
             <div class="kpi-title">Chest X-Ray done</div>
             <div class="kpi-value" id="hiv_tb_cxr_done">-</div>
@@ -1135,6 +1122,14 @@
           <div class="kpi-box">
             <div class="kpi-title">Sputum Test 1 done</div>
             <div class="kpi-value" id="hiv_tb_sputum_done">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Positive</div>
+            <div class="kpi-value" id="hiv_tb_positive">-</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">IPT Prophylaxis</div>
+            <div class="kpi-value" id="hiv_tb_ppt_started">-</div>
           </div>
         </div>
       </div>
@@ -3358,15 +3353,13 @@ window.renderAll = renderAll;
     vlSuppressionSub: document.getElementById('hiv_kpi_vl_suppression_sub'),
   };
   const coinfectionEls = {
-    tbStatusList: document.getElementById('hiv_tb_status_list'),
     tbPptStarted: document.getElementById('hiv_tb_ppt_started'),
-    tbTreatmentStarted: document.getElementById('hiv_tb_treatment_started'),
     tbCxrDone: document.getElementById('hiv_tb_cxr_done'),
     tbSputumDone: document.getElementById('hiv_tb_sputum_done'),
+    tbPositive: document.getElementById('hiv_tb_positive'),
     hbvTested: document.getElementById('hiv_hbv_tested'),
     hbvPositive: document.getElementById('hiv_hbv_positive'),
-    hbvDiagnosis: document.getElementById('hiv_hbv_diagnosis'),
-    hbvRxStarted: document.getElementById('hiv_hbv_rx_started'),
+    hbvDiagnosis: document.getElementById('hiv_hbv_diagnosis'),    hbvRxStarted: document.getElementById('hiv_hbv_rx_started'),
     hcvTested: document.getElementById('hiv_hcv_tested'),
     hcvPositive: document.getElementById('hiv_hcv_positive'),
     hcvDiagnosis: document.getElementById('hiv_hcv_diagnosis'),
@@ -3500,8 +3493,7 @@ window.renderAll = renderAll;
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
       currentStatus: find(['Outcome']),
       tbInfectionStatus: find(['Status of TB Infection', 'TB Infection Status', 'TB Infection']),
-      tbPptStart: find(['Date Start.1', 'Date Start TB Preventive Treatment', 'TPT Start Date']),
-      tbTreatmentStart: find(['Date Start TB Treatment', 'TB Treatment Start Date']),
+      tbPreventiveTreatment: find(['TB Preventive Treatment', 'TB preventive treatment']),
       tbChestXrayDate: find(['Date of Chest X-Ray', 'Chest X-Ray Date', 'CXR Date']),
       tbSputum1Date: find(['Date of Sputum Test 1', 'Sputum Test 1 Date']),
       hbvTestDate: find(['Date of Hep B Ag Test', 'Hep B Ag Test Date']),
@@ -3730,31 +3722,24 @@ window.renderAll = renderAll;
   function computeCoinfectionMetrics(rows) {
     const { columns } = hivState;
     const metrics = {
-      tbStatusCounts: new Map(),
       tbPptStarted: 0,
-      tbTreatmentStarted: 0,
       tbCxrDone: 0,
       tbSputumDone: 0,
+      tbPositive: 0,
       hbvTested: 0,
       hbvPositive: 0,
       hbvDiagnosis: 0,
-      hbvRxStarted: 0,
+      hbvRxStarted: 0,      
       hcvTested: 0,
       hcvPositive: 0,
       hcvDiagnosis: 0,
     };
 
     rows.forEach((row) => {
-      if (columns.tbInfectionStatus && isNonEmpty(row?.[columns.tbInfectionStatus])) {
-        const label = String(row[columns.tbInfectionStatus]).trim();
-        metrics.tbStatusCounts.set(label, (metrics.tbStatusCounts.get(label) || 0) + 1);
-      }
-
       if (columns.tbPptStart && hasDateValue(row?.[columns.tbPptStart])) metrics.tbPptStarted += 1;
-      if (columns.tbTreatmentStart && hasDateValue(row?.[columns.tbTreatmentStart])) metrics.tbTreatmentStarted += 1;
       if (columns.tbChestXrayDate && hasDateValue(row?.[columns.tbChestXrayDate])) metrics.tbCxrDone += 1;
       if (columns.tbSputum1Date && hasDateValue(row?.[columns.tbSputum1Date])) metrics.tbSputumDone += 1;
-
+      if (columns.tbInfectionStatus && isPositiveResult(row?.[columns.tbInfectionStatus])) metrics.tbPositive += 1;
       if (columns.hbvTestDate && hasDateValue(row?.[columns.hbvTestDate])) metrics.hbvTested += 1;
       if (columns.hbvResult && isPositiveResult(row?.[columns.hbvResult])) metrics.hbvPositive += 1;
       if (columns.hbvDiagnosis && isNonEmpty(row?.[columns.hbvDiagnosis])) metrics.hbvDiagnosis += 1;
@@ -3768,32 +3753,6 @@ window.renderAll = renderAll;
     return metrics;
   }
 
-  function renderTbStatusList(map, hasColumn) {
-    if (!coinfectionEls.tbStatusList) return;
-    coinfectionEls.tbStatusList.innerHTML = '';
-
-    if (!hasColumn) {
-      const li = document.createElement('li');
-      li.textContent = 'No TB infection status column';
-      coinfectionEls.tbStatusList.appendChild(li);
-      return;
-    }
-
-    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    if (!entries.length) {
-      const li = document.createElement('li');
-      li.textContent = 'No data';
-      coinfectionEls.tbStatusList.appendChild(li);
-      return;
-    }
-
-    entries.forEach(([label, count]) => {
-      const li = document.createElement('li');
-      li.textContent = `${label}: ${formatNumber(count)}`;
-      coinfectionEls.tbStatusList.appendChild(li);
-    });
-  }
-
   function setCount(el, count, hasColumn) {
     if (!el) return;
     el.textContent = hasColumn ? formatNumber(count) : '-';
@@ -3803,11 +3762,10 @@ window.renderAll = renderAll;
     const { columns } = hivState;
     const metrics = computeCoinfectionMetrics(rows);
 
-    renderTbStatusList(metrics.tbStatusCounts, Boolean(columns.tbInfectionStatus));
-    setCount(coinfectionEls.tbPptStarted, metrics.tbPptStarted, Boolean(columns.tbPptStart));
-    setCount(coinfectionEls.tbTreatmentStarted, metrics.tbTreatmentStarted, Boolean(columns.tbTreatmentStart));
+        setCount(coinfectionEls.tbPptStarted, metrics.tbPptStarted, Boolean(columns.tbPptStart));
     setCount(coinfectionEls.tbCxrDone, metrics.tbCxrDone, Boolean(columns.tbChestXrayDate));
     setCount(coinfectionEls.tbSputumDone, metrics.tbSputumDone, Boolean(columns.tbSputum1Date));
+    setCount(coinfectionEls.tbPositive, metrics.tbPositive, Boolean(columns.tbInfectionStatus));
 
     setCount(coinfectionEls.hbvTested, metrics.hbvTested, Boolean(columns.hbvTestDate));
     setCount(coinfectionEls.hbvPositive, metrics.hbvPositive, Boolean(columns.hbvResult));
@@ -3962,6 +3920,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
 
