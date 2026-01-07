@@ -1172,8 +1172,39 @@
       </div>
     </div>
   </div>
+  <h2>4. 5 years data</h2>
   <div class="card">
-    <p class="muted">This dashboard is under construction.</p>
+    <p class="muted">Patient count for the most recent five years available in the dataset.</p>
+    <canvas id="hiv_year_bar"></canvas>
+  </div>
+  <div class="card">
+    <p class="muted">Demographic breakdown for the selected filters.</p>
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Age</div>
+        <canvas id="hiv_pie_age"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Gender</div>
+        <canvas id="hiv_pie_gender"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Race</div>
+        <canvas id="hiv_pie_race"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Nationality</div>
+        <canvas id="hiv_pie_nationality"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Risk group</div>
+        <canvas id="hiv_pie_risk_group"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Mode of transmission</div>
+        <canvas id="hiv_pie_mode_transmission"></canvas>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -3429,11 +3460,20 @@ window.renderAll = renderAll;
     hcvPositive: document.getElementById('hiv_hcv_positive'),
   };
 
+   const hivCharts = {
+    yearBar: null,
+    pies: {},
+  };
+
   const hivState = {
     rows: [],
     columns: {
       site: null,
       gender: null,
+      age: null,
+      race: null,
+      nationality: null,
+      modeTransmission: null,
       risk: null,
       diagnoseDate: null,
     viralLoadDate: null,
@@ -3542,10 +3582,13 @@ window.renderAll = renderAll;
       }
       return null;
     }
-
     return {
       site: find(['Site']),
       gender: find(['Gender', 'Sex', 'Jantina']),
+      age: find(['Age', 'Age (Years)', 'Umur', 'Umur (Tahun)', 'Age Years']),
+      race: find(['Race', 'Ethnicity', 'Bangsa', 'Keturunan']),
+      nationality: find(['Nationality', 'Warganegara', 'Citizenship', 'Status Kewarganegaraan']),
+      modeTransmission: find(['Mode of Transmission', 'Transmission Mode', 'Cara Penularan', 'Mode transmission']),
       risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
       firstVisitDate: find(['First visit date', 'Tarikh lawatan pertama', 'First Visit Date']),
       diagnoseDate: find(['Date diagnose HIV', 'Tarikh diagnosis HIV', 'Diagnosis Date']),
@@ -3654,6 +3697,165 @@ window.renderAll = renderAll;
     const parsed = parseDateAny(value);
     if (parsed instanceof Date && !isNaN(parsed.getTime())) return true;
     return isNonEmpty(value);
+  }
+
+  function stringValue(row, key) {
+    if (!row || !key) return '';
+    const raw = row[key];
+    if (raw === null || raw === undefined) return '';
+    return String(raw).trim();
+  }
+
+  function createOrUpdateHivPie(canvasId, labels, values) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (hivCharts.pies[canvasId] && hivCharts.pies[canvasId].destroy) {
+      hivCharts.pies[canvasId].destroy();
+    }
+
+    const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+    const isNoData = labels.length === 1 && labels[0] === 'No data';
+    const colors = isNoData ? ['#9ca3af'] : labels.map((_, i) => palette[i % palette.length]);
+
+    hivCharts.pies[canvasId] = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: (tt) => `${tt.label}: ${tt.raw}` } },
+        },
+      },
+    });
+  }
+
+  function pieFromColumn(rows, canvasId, key) {
+    if (!key) {
+      createOrUpdateHivPie(canvasId, ['No data'], [1]);
+      return;
+    }
+    const counts = new Map();
+    rows.forEach((row) => {
+      const label = stringValue(row, key);
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    if (!counts.size) {
+      createOrUpdateHivPie(canvasId, ['No data'], [1]);
+      return;
+    }
+    const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    createOrUpdateHivPie(
+      canvasId,
+      entries.map(([label]) => label),
+      entries.map(([, count]) => count)
+    );
+  }
+
+  function extractYearFromRow(row, dateKey) {
+    if (!dateKey) return null;
+    const parsed = row?._parsedDates?.[dateKey]?.parsed || parseDateAny(row?.[dateKey]);
+    if (!parsed || !(parsed instanceof Date) || isNaN(parsed.getTime())) return null;
+    return parsed.getFullYear();
+  }
+
+  function buildYearCounts(rows) {
+    const { columns } = hivState;
+    const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
+    if (!dateKey) return null;
+
+    const hasPatient = Boolean(columns.patientId);
+    const counts = new Map();
+
+    rows.forEach((row) => {
+      const year = extractYearFromRow(row, dateKey);
+      if (!year) return;
+      const yearKey = String(year);
+      if (hasPatient) {
+        const pid = String(row?.[columns.patientId] ?? '').trim();
+        if (!pid) return;
+        if (!counts.has(yearKey)) counts.set(yearKey, new Set());
+        counts.get(yearKey).add(pid);
+      } else {
+        counts.set(yearKey, (counts.get(yearKey) || 0) + 1);
+      }
+    });
+
+    if (hasPatient) {
+      const mapped = new Map();
+      counts.forEach((set, year) => {
+        mapped.set(year, set.size);
+      });
+      return mapped;
+    }
+
+    return counts;
+  }
+
+  function renderYearBar(rows) {
+    const canvas = document.getElementById('hiv_year_bar');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const counts = buildYearCounts(rows);
+    let labels = [];
+    let values = [];
+
+    if (!counts || counts.size === 0) {
+      labels = ['No data'];
+      values = [0];
+    } else {
+      const years = Array.from(counts.keys())
+        .map((year) => Number(year))
+        .filter((year) => Number.isFinite(year));
+      const latest = Math.max(...years);
+      for (let year = latest - 4; year <= latest; year += 1) {
+        const yearKey = String(year);
+        labels.push(yearKey);
+        values.push(counts.get(yearKey) || 0);
+      }
+    }
+
+    if (hivCharts.yearBar && hivCharts.yearBar.destroy) {
+      hivCharts.yearBar.destroy();
+    }
+
+    hivCharts.yearBar = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Patients',
+          data: values,
+          backgroundColor: '#6366f1',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Year' } },
+          y: { title: { display: true, text: 'Patient count' }, beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+
+  function renderHivCharts(rows) {
+    const { columns } = hivState;
+    renderYearBar(rows);
+    pieFromColumn(rows, 'hiv_pie_age', columns.age);
+    pieFromColumn(rows, 'hiv_pie_gender', columns.gender);
+    pieFromColumn(rows, 'hiv_pie_race', columns.race);
+    pieFromColumn(rows, 'hiv_pie_nationality', columns.nationality);
+    pieFromColumn(rows, 'hiv_pie_risk_group', columns.risk);
+    pieFromColumn(rows, 'hiv_pie_mode_transmission', columns.modeTransmission);
   }
 
   function updateKpiDisplays(result) {
@@ -3868,6 +4070,8 @@ window.renderAll = renderAll;
 
     if (typeof window.renderHivDashboard === 'function') {
       window.renderHivDashboard(filtered);
+    } else {
+      renderHivCharts(filtered);
     }
   }
 
@@ -3877,9 +4081,7 @@ window.renderAll = renderAll;
   });
 
   if (typeof window.renderHivDashboard !== 'function') {
-    window.renderHivDashboard = function (rows) {
-      console.info('HIV dataset ready', rows ? rows.length : 0);
-    };
+    window.renderHivDashboard = renderHivCharts;
   }
 
   fileInput.addEventListener('change', (evt) => {
