@@ -1219,8 +1219,11 @@
       try {
         console.info('[DOSM] Loading compact population dataset…', COMPACT_URLS);
         const compactText = await fetchWithFallback(COMPACT_URLS);
-        const compactData = JSON.parse(compactText);
-        buildCachesFromCompact(compactData);
+        const compactPayload = compactText.trimStart();
+        if (!compactPayload.startsWith('{') && !compactPayload.startsWith('[')) {
+          throw new Error('Compact dataset response is not valid JSON.');
+        }
+        const compactData = JSON.parse(compactPayload);        buildCachesFromCompact(compactData);
         loadedCompact = true;
         setStatus('loading', 'Population data loaded from compact dataset.');
         console.info('[DOSM] Compact dataset loaded; CSV fallbacks skipped.');
