@@ -1103,11 +1103,12 @@
         <div class="kpi-sub" id="hiv_kpi_on_art_pct_sub">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Viral suppression rate</div>
+        <div class="kpi-title">% Viral suppressio</div>
         <div class="kpi-value" id="hiv_kpi_vl_suppression_pct">-</div>
         <div class="kpi-sub" id="hiv_kpi_vl_suppression_sub">-</div>
       </div>
     </div>
+     <div class="note">All numbers update based on filters above.</div>
   </div>
   <h2>3. Prophylaxis and co-infections</h2>
   <div class="card">
@@ -1171,8 +1172,9 @@
         </div>
       </div>
     </div>
+    <div class="note">All numbers update based on filters above.</div>
   </div>
-  <h2>4. 5 years data</h2>
+  <h2>4. Yearly trend</h2>
   <div class="card">
     <p class="muted">Patient count for the most recent five years available in the dataset.</p>
     <canvas id="hiv_year_bar"></canvas>
@@ -3797,6 +3799,40 @@ window.renderAll = renderAll;
 
     return counts;
   }
+  function updateYearlyTrendOptions(rows) {
+    if (!yearlyTrendSelect) return;
+    const counts = buildYearCounts(rows);
+
+    if (!counts || counts.size === 0) {
+      yearlyTrendSelect.innerHTML = '<option value="">Year</option>';
+      yearlyTrendSelect.value = '';
+      yearlyTrendSelect.disabled = true;
+      return;
+    }
+
+    const years = Array.from(counts.keys())
+      .map((year) => Number(year))
+      .filter((year) => Number.isFinite(year))
+      .sort((a, b) => a - b);
+
+    const current = yearlyTrendSelect.value;
+    yearlyTrendSelect.innerHTML = '';
+    years.forEach((year) => {
+      const option = document.createElement('option');
+      option.value = String(year);
+      option.textContent = String(year);
+      yearlyTrendSelect.appendChild(option);
+    });
+
+    const latest = years[years.length - 1];
+    if (current && years.includes(Number(current))) {
+      yearlyTrendSelect.value = current;
+    } else {
+      yearlyTrendSelect.value = String(latest);
+    }
+    yearlyTrendSelect.disabled = false;
+  }
+
 
   function renderYearBar(rows) {
     const canvas = document.getElementById('hiv_year_bar');
@@ -4067,6 +4103,7 @@ window.renderAll = renderAll;
     const kpiResult = computeHivKpis(filtered);
     updateKpiDisplays(kpiResult);
     renderCoinfection(filtered);
+    updateYearlyTrendOptions(filtered);
 
     if (typeof window.renderHivDashboard === 'function') {
       window.renderHivDashboard(filtered);
@@ -4079,6 +4116,9 @@ window.renderAll = renderAll;
     if (!sel) return;
     sel.addEventListener('change', onFilterChange);
   });
+  if (yearlyTrendSelect) {
+    yearlyTrendSelect.addEventListener('change', renderFiltered);
+  }
 
   if (typeof window.renderHivDashboard !== 'function') {
     window.renderHivDashboard = renderHivCharts;
