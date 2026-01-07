@@ -1109,12 +1109,21 @@
       </div>
     </div>
   </div>
-  <h2>3. Co-infections / Screening</h2>
+  <h2>3. Prophylaxis and co-infections</h2>
   <div class="card">
     <div class="kpi-grid">
       <div class="kpi-box">
+        <div class="kpi-title">PCP prophylaxis</div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-top:6px;">
+          <div class="kpi-box">
+            <div class="kpi-title">Yes</div>
+            <div class="kpi-value" id="hiv_pcp_prophylaxis">-</div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-box">
         <div class="kpi-title">TB</div>
-        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; margin-top:6px;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-top:6px;">
           <div class="kpi-box">
             <div class="kpi-title">Chest X-Ray done</div>
             <div class="kpi-value" id="hiv_tb_cxr_done">-</div>
@@ -1136,7 +1145,7 @@
 
       <div class="kpi-box">
         <div class="kpi-title">HBV</div>
-        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:6px;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-top:6px;">
           <div class="kpi-box">
             <div class="kpi-title">Tested</div>
             <div class="kpi-value" id="hiv_hbv_tested">-</div>
@@ -1145,20 +1154,12 @@
             <div class="kpi-title">Positive</div>
             <div class="kpi-value" id="hiv_hbv_positive">-</div>
           </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Hep-B Diagnosis</div>
-            <div class="kpi-value" id="hiv_hbv_diagnosis">-</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Hep B Rx started</div>
-            <div class="kpi-value" id="hiv_hbv_rx_started">-</div>
-          </div>
         </div>
       </div>
 
       <div class="kpi-box">
         <div class="kpi-title">HCV</div>
-        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:6px;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-top:6px;">
           <div class="kpi-box">
             <div class="kpi-title">Tested</div>
             <div class="kpi-value" id="hiv_hcv_tested">-</div>
@@ -1166,10 +1167,6 @@
           <div class="kpi-box">
             <div class="kpi-title">Positive</div>
             <div class="kpi-value" id="hiv_hcv_positive">-</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Hep-C Diagnosis</div>
-            <div class="kpi-value" id="hiv_hcv_diagnosis">-</div>
           </div>
         </div>
       </div>
@@ -3353,16 +3350,15 @@ window.renderAll = renderAll;
     vlSuppressionSub: document.getElementById('hiv_kpi_vl_suppression_sub'),
   };
   const coinfectionEls = {
+    pcpProphylaxis: document.getElementById('hiv_pcp_prophylaxis'),
     tbPptStarted: document.getElementById('hiv_tb_ppt_started'),
     tbCxrDone: document.getElementById('hiv_tb_cxr_done'),
     tbSputumDone: document.getElementById('hiv_tb_sputum_done'),
     tbPositive: document.getElementById('hiv_tb_positive'),
     hbvTested: document.getElementById('hiv_hbv_tested'),
     hbvPositive: document.getElementById('hiv_hbv_positive'),
-    hbvDiagnosis: document.getElementById('hiv_hbv_diagnosis'),    hbvRxStarted: document.getElementById('hiv_hbv_rx_started'),
     hcvTested: document.getElementById('hiv_hcv_tested'),
     hcvPositive: document.getElementById('hiv_hcv_positive'),
-    hcvDiagnosis: document.getElementById('hiv_hcv_diagnosis'),
   };
 
   const hivState = {
@@ -3378,18 +3374,16 @@ window.renderAll = renderAll;
     viralSuppression: null,
     currentStatus: null,
     firstVisitDate: null,
+      pcpProphylaxis:null,
       tbInfectionStatus: null,
-      tbPptStart: null,
+      tbPreventiveTreatment: null,
       tbTreatmentStart: null,
       tbChestXrayDate: null,
       tbSputum1Date: null,
       hbvTestDate: null,
       hbvResult: null,
-      hbvDiagnosis: null,
-      hbvRxStart: null,
       hcvTestDate: null,
       hcvResult: null,
-      hcvDiagnosis: null,
     },
     filters: { site: 'ALL', risk: 'ALL', month: 'ALL', year: 'ALL' },
   };
@@ -3492,17 +3486,15 @@ window.renderAll = renderAll;
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
       currentStatus: find(['Outcome']),
+      pcpProphylaxis: find(['PCP prophylaxis', 'PCP Prophylaxis']),
       tbInfectionStatus: find(['Status of TB Infection', 'TB Infection Status', 'TB Infection']),
       tbPreventiveTreatment: find(['TB Preventive Treatment', 'TB preventive treatment']),
       tbChestXrayDate: find(['Date of Chest X-Ray', 'Chest X-Ray Date', 'CXR Date']),
       tbSputum1Date: find(['Date of Sputum Test 1', 'Sputum Test 1 Date']),
       hbvTestDate: find(['Date of Hep B Ag Test', 'Hep B Ag Test Date']),
       hbvResult: find(['Hep B Ag Result']),
-      hbvDiagnosis: find(['Hep-B Diagnosis', 'Hep B Diagnosis']),
-      hbvRxStart: find(['Date Start Hep B Rx', 'Hep B Rx Start']),
       hcvTestDate: find(['Date of Anti-HCV (RTK) Test', 'Anti-HCV (RTK) Test Date']),
       hcvResult: find(['Anti-HCV (RTK) Result']),
-      hcvDiagnosis: find(['Hep-C Diagnosis', 'Hep C Diagnosis']),
     };
   }
 
@@ -3565,6 +3557,10 @@ window.renderAll = renderAll;
   function isExactLabel(value, target) {
     if (target == null) return false;
     return normalizeLabel(value) === normalizeLabel(target);
+  }
+
+  function isYesValue(value) {
+    return normalizeLabel(value) === 'yes';
   }
 
   function formatPercent(numerator, denominator) {
@@ -3722,32 +3718,31 @@ window.renderAll = renderAll;
   function computeCoinfectionMetrics(rows) {
     const { columns } = hivState;
     const metrics = {
+      pcpProphylaxis: 0,
       tbPptStarted: 0,
       tbCxrDone: 0,
       tbSputumDone: 0,
       tbPositive: 0,
       hbvTested: 0,
       hbvPositive: 0,
-      hbvDiagnosis: 0,
-      hbvRxStarted: 0,      
       hcvTested: 0,
       hcvPositive: 0,
-      hcvDiagnosis: 0,
     };
 
     rows.forEach((row) => {
-      if (columns.tbPptStart && hasDateValue(row?.[columns.tbPptStart])) metrics.tbPptStarted += 1;
+      if (columns.pcpProphylaxis && isYesValue(row?.[columns.pcpProphylaxis])) metrics.pcpProphylaxis += 1;
+      if (columns.tbPreventiveTreatment) {
+        const treatment = normalizeLabel(row?.[columns.tbPreventiveTreatment]);
+        if (treatment.includes('isoniazid')) metrics.tbPptStarted += 1;
+      }
       if (columns.tbChestXrayDate && hasDateValue(row?.[columns.tbChestXrayDate])) metrics.tbCxrDone += 1;
       if (columns.tbSputum1Date && hasDateValue(row?.[columns.tbSputum1Date])) metrics.tbSputumDone += 1;
       if (columns.tbInfectionStatus && isPositiveResult(row?.[columns.tbInfectionStatus])) metrics.tbPositive += 1;
       if (columns.hbvTestDate && hasDateValue(row?.[columns.hbvTestDate])) metrics.hbvTested += 1;
       if (columns.hbvResult && isPositiveResult(row?.[columns.hbvResult])) metrics.hbvPositive += 1;
-      if (columns.hbvDiagnosis && isNonEmpty(row?.[columns.hbvDiagnosis])) metrics.hbvDiagnosis += 1;
-      if (columns.hbvRxStart && hasDateValue(row?.[columns.hbvRxStart])) metrics.hbvRxStarted += 1;
 
       if (columns.hcvTestDate && hasDateValue(row?.[columns.hcvTestDate])) metrics.hcvTested += 1;
       if (columns.hcvResult && isPositiveResult(row?.[columns.hcvResult])) metrics.hcvPositive += 1;
-      if (columns.hcvDiagnosis && isNonEmpty(row?.[columns.hcvDiagnosis])) metrics.hcvDiagnosis += 1;
     });
 
     return metrics;
@@ -3762,19 +3757,17 @@ window.renderAll = renderAll;
     const { columns } = hivState;
     const metrics = computeCoinfectionMetrics(rows);
 
-        setCount(coinfectionEls.tbPptStarted, metrics.tbPptStarted, Boolean(columns.tbPptStart));
+    setCount(coinfectionEls.pcpProphylaxis, metrics.pcpProphylaxis, Boolean(columns.pcpProphylaxis));
+    setCount(coinfectionEls.tbPptStarted, metrics.tbPptStarted, Boolean(columns.tbPreventiveTreatment));
     setCount(coinfectionEls.tbCxrDone, metrics.tbCxrDone, Boolean(columns.tbChestXrayDate));
     setCount(coinfectionEls.tbSputumDone, metrics.tbSputumDone, Boolean(columns.tbSputum1Date));
     setCount(coinfectionEls.tbPositive, metrics.tbPositive, Boolean(columns.tbInfectionStatus));
 
     setCount(coinfectionEls.hbvTested, metrics.hbvTested, Boolean(columns.hbvTestDate));
     setCount(coinfectionEls.hbvPositive, metrics.hbvPositive, Boolean(columns.hbvResult));
-    setCount(coinfectionEls.hbvDiagnosis, metrics.hbvDiagnosis, Boolean(columns.hbvDiagnosis));
-    setCount(coinfectionEls.hbvRxStarted, metrics.hbvRxStarted, Boolean(columns.hbvRxStart));
 
     setCount(coinfectionEls.hcvTested, metrics.hcvTested, Boolean(columns.hcvTestDate));
     setCount(coinfectionEls.hcvPositive, metrics.hcvPositive, Boolean(columns.hcvResult));
-    setCount(coinfectionEls.hcvDiagnosis, metrics.hcvDiagnosis, Boolean(columns.hcvDiagnosis));
   }
 
   function applyFilters() {
