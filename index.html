@@ -3718,7 +3718,7 @@ window.renderAll = renderAll;
         if (info.ltfu) result.ltfu += 1;
         if (!info.died) result.onArtEligible += 1;
       }
-      if (hasSuppression && info.suppressed) {
+      if (hasSuppression && info.suppressed && info.onArt) {
         result.vlSuppressed += 1;
       }
     });
@@ -3961,4 +3961,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
