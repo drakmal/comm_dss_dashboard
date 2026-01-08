@@ -5,6 +5,17 @@
   <title>District Health Office Communicable Disease Dashboards</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -445,6 +456,26 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 420px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .slider-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      min-width: 220px;
     }
   </style>
 </head>
@@ -1576,15 +1607,36 @@
 
   <h2>3. Weekly trend (Notification) / Trend Mingguan (Notifikasi)</h2>
   <div class="card">
+    <div class="filters-row" style="margin-bottom: 8px;">
+      <div class="filter-field">
+        <label for="dengue_trend_date_mode"><strong>Tarikh Trend / Trend Date</strong></label>
+        <select id="dengue_trend_date_mode">
+          <option value="onset">Tarikh Onset</option>
+          <option value="notif">Tkh Notifikasi</option>
+          <option value="reg">Tarikh Daftar</option>
+          <option value="diagnosis">Tarikh Diagnosis</option>
+          <option value="input">Tkh Input Notifikasi</option>
+        </select>
+      </div>
+    </div>
     <canvas id="dengue_weekly_trend"></canvas>
     <div class="note">All numbers update based on the loaded dataset.</div>
   </div>
-  <h2>4. Surveillance & lab profile / Profil Survelan & Makmal</h2>
+  <h2>4. Case distribution map</h2>
+  <div class="card">
+    <div id="dengue_case_map" class="map-container"></div>
+    <div class="slider-row">
+      <span class="muted">Tarikh / Date</span>
+      <input type="range" id="dengue_map_slider" min="0" max="0" step="1" value="0" disabled>
+      <span id="dengue_map_date_label" class="muted">-</span>
+    </div>
+    <div class="note">Default: all cases shown. Drag timeline to view cases on an exact date.</div>
+  </div>
+  <h2>5. Surveillance & lab profile / Profil Survelan & Makmal</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
-        <div class="demo-block-title">Rapid positives (NS1 / IgM / IgG)</div>
-        <canvas id="dengue_chart_rapid"></canvas>
+        <div class="demo-block-title">Rapid positives (NS1 / IgM / IgG)</div>        <canvas id="dengue_chart_rapid"></canvas>
       </div>
       <div class="demo-card">
         <div class="demo-block-title">Ujian ELISA</div>
@@ -6079,8 +6131,20 @@ window.renderAll = renderAll;
   const fileInput = document.getElementById('fileInput_dengue');
   const fileStatus = document.getElementById('dengue_file_status');
   const fileError = document.getElementById('dengue_error');
+  const trendDateSelect = document.getElementById('dengue_trend_date_mode');
+  const mapContainer = document.getElementById('dengue_case_map');
+  const mapSlider = document.getElementById('dengue_map_slider');
+  const mapDateLabel = document.getElementById('dengue_map_date_label');
 
-  const trendDateMode = 'onset';
+  let trendDateMode = 'onset';
+  const mapState = {
+    map: null,
+    markers: null,
+    timelineActive: false,
+    minDate: null,
+    maxDate: null,
+    selectedDate: null,
+  };
 
   const outbreakEls = {
     grid: document.getElementById('dengue_cluster_grid'),
@@ -6181,6 +6245,25 @@ window.renderAll = renderAll;
     }
     const d = new Date(s);
     return isNaN(d.getTime()) ? null : d;
+  }
+
+  function startOfDay(date) {
+    if (!(date instanceof Date)) return null;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function formatDateKey(date) {
+    if (!(date instanceof Date)) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function daysBetween(a, b) {
+    if (!(a instanceof Date) || !(b instanceof Date)) return null;
+    const ms = b.getTime() - a.getTime();
+    return Math.round(ms / 86400000);
   }
 
   function isoWeek(d) {
@@ -6345,6 +6428,8 @@ window.renderAll = renderAll;
         _ageGroup: ageGroupFromYears(ageRaw),
         _outbreakFlag: outbreakFlag,
         _coords: Number.isFinite(lat) && Number.isFinite(lng),
+        _lat: Number.isFinite(lat) ? lat : null,
+        _lng: Number.isFinite(lng) ? lng : null,
         _firstActionDate: firstAction,
       };
     });
@@ -6371,6 +6456,115 @@ window.renderAll = renderAll;
 
     const d = getTrendDate(row, mode);
     return d ? isoWeek(d) : null;
+  }
+
+  function getTrendDateKey(row, mode) {
+    const date = getTrendDate(row, mode);
+    const normalized = startOfDay(date);
+    return normalized ? formatDateKey(normalized) : null;
+  }
+
+  function ensureDengueMap() {
+    if (mapState.map || !mapContainer || typeof L === 'undefined') return;
+    mapState.map = L.map(mapContainer).setView([4.2105, 101.9758], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(mapState.map);
+    mapState.markers = L.layerGroup().addTo(mapState.map);
+  }
+
+  function setMapDateLabel(date) {
+    if (!mapDateLabel) return;
+    mapDateLabel.textContent = date ? formatDateKey(date) : '-';
+  }
+
+  function updateMapSliderRange(rows) {
+    if (!mapSlider) return;
+    const dateRows = rows.filter(r => r._coords && getTrendDate(r, trendDateMode));
+    const dates = dateRows
+      .map(r => startOfDay(getTrendDate(r, trendDateMode)))
+      .filter(Boolean);
+    if (!dates.length) {
+      mapState.minDate = null;
+      mapState.maxDate = null;
+      mapState.selectedDate = null;
+      mapState.timelineActive = false;
+      mapSlider.min = 0;
+      mapSlider.max = 0;
+      mapSlider.value = 0;
+      mapSlider.disabled = true;
+      setMapDateLabel(null);
+      return;
+    }
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    const daySpan = daysBetween(minDate, maxDate) || 0;
+    mapSlider.min = 0;
+    mapSlider.max = daySpan;
+    mapSlider.step = 1;
+    mapSlider.disabled = false;
+    mapState.minDate = minDate;
+    mapState.maxDate = maxDate;
+    if (!mapState.timelineActive || !mapState.selectedDate) {
+      mapState.selectedDate = minDate;
+      mapSlider.value = 0;
+    } else {
+      const offset = daysBetween(minDate, mapState.selectedDate);
+      const boundedOffset = Math.min(Math.max(offset ?? 0, 0), daySpan);
+      mapSlider.value = boundedOffset;
+      mapState.selectedDate = new Date(minDate.getTime() + boundedOffset * 86400000);
+    }
+    setMapDateLabel(mapState.selectedDate);
+  }
+
+  function updateMapMarkers(rows) {
+    ensureDengueMap();
+    if (!mapState.map || !mapState.markers) return;
+    mapState.markers.clearLayers();
+    const allRows = rows.filter(r => r._coords);
+    let displayRows = allRows;
+    if (mapState.timelineActive && mapState.selectedDate) {
+      const targetKey = formatDateKey(mapState.selectedDate);
+      displayRows = allRows.filter(r => getTrendDateKey(r, trendDateMode) === targetKey);
+    }
+    displayRows.forEach(r => {
+      const marker = L.circleMarker([r._lat, r._lng], {
+        radius: 4,
+        color: '#dc2626',
+        fillColor: '#dc2626',
+        fillOpacity: 0.8,
+        weight: 1
+      });
+      const lokaliti = val(r, dengueState.columns.lokaliti);
+      const mukim = val(r, dengueState.columns.mukim);
+      const jenisKes = val(r, dengueState.columns.jenisKes);
+      const dateValue = getTrendDate(r, trendDateMode);
+      const dateLabel = dateValue ? formatDateKey(startOfDay(dateValue)) : '-';
+      const popupLines = [
+        lokaliti ? `Lokaliti: ${lokaliti}` : null,
+        mukim ? `Mukim/Zon: ${mukim}` : null,
+        jenisKes ? `Jenis Kes: ${jenisKes}` : null,
+        dateValue ? `Tarikh: ${dateLabel}` : null,
+      ].filter(Boolean);
+      if (popupLines.length) {
+        marker.bindPopup(popupLines.join('<br>'));
+      }
+      marker.addTo(mapState.markers);
+    });
+    if (displayRows.length) {
+      const bounds = mapState.markers.getBounds();
+      if (bounds.isValid()) {
+        mapState.map.fitBounds(bounds, { padding: [20, 20] });
+      }
+    } else {
+      mapState.map.setView([4.2105, 101.9758], 6);
+    }
+  }
+
+  function updateCaseMap(rows) {
+    updateMapSliderRange(rows);
+    updateMapMarkers(rows);
   }
 
   function applyFilters() {
@@ -6729,12 +6923,45 @@ window.renderAll = renderAll;
     const filtered = applyFilters();
     renderKpis(filtered);
     updateWeeklyTrend(filtered);
+    updateCaseMap(filtered);
     updateLabCharts(filtered);
     updateDemographyCharts(filtered);
     updateTopTables(filtered);
     updateClusters(filtered);
     updateTimeliness(filtered);
   }
+
+  if (trendDateSelect) {
+    trendDateSelect.value = trendDateMode;
+    trendDateSelect.addEventListener('change', () => {
+      trendDateMode = trendDateSelect.value;
+      mapState.timelineActive = false;
+      mapState.selectedDate = null;
+      renderAll();
+    });
+  }
+
+  if (mapSlider) {
+    mapSlider.addEventListener('input', () => {
+      if (!mapState.minDate) return;
+      const offset = parseInt(mapSlider.value, 10) || 0;
+      mapState.timelineActive = true;
+      mapState.selectedDate = new Date(mapState.minDate.getTime() + offset * 86400000);
+      setMapDateLabel(mapState.selectedDate);
+      updateMapMarkers(applyFilters());
+    });
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'dengue') {
+        ensureDengueMap();
+        if (mapState.map) {
+          setTimeout(() => mapState.map.invalidateSize(), 120);
+        }
+      }
+    });
+  });
 
   fileInput.addEventListener('change', (evt) => {
     const file = evt.target.files && evt.target.files[0];
@@ -6759,6 +6986,8 @@ window.renderAll = renderAll;
 
         dengueState.rows = enriched;
         window.dengueData = enriched;
+        mapState.timelineActive = false;
+        mapState.selectedDate = null;
 
         setStatus(`Dengue records loaded: ${enriched.length}`);
         renderAll();
