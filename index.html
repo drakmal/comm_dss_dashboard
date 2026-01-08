@@ -1176,11 +1176,17 @@
   </div>
   <h2>4. Yearly trend</h2>
   <div class="card">
-    <p class="muted">Patient count for the selected year.</p>
+    <p class="muted">Patient count for the selected year or year range.</p>
     <div class="filters-row" style="margin-top:8px;">
       <div class="filter-field">
-        <label for="hiv_yearly_trend_year">Year</label>
+        <label for="hiv_yearly_trend_year">From</label>
         <select id="hiv_yearly_trend_year" disabled>
+          <option value="">Year</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="hiv_yearly_trend_year_to">to</label>
+        <select id="hiv_yearly_trend_year_to" disabled>
           <option value="">Year</option>
         </select>
       </div>
@@ -3442,13 +3448,13 @@ window.renderAll = renderAll;
   const fileInput = document.getElementById('fileInput_hiv');
   const statusEl = document.getElementById('hiv_file_status');
   const errorEl = document.getElementById('hiv_error'); 
-  const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_select');
   const filters = {
     site: document.getElementById('hiv_filter_site'),
     risk: document.getElementById('hiv_filter_risk'),
     year: document.getElementById('hiv_filter_year'),
   };
   const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_year');
+  const yearlyTrendToSelect = document.getElementById('hiv_yearly_trend_year_to');
   const kpiEls = {
     total: document.getElementById('hiv_kpi_total_patients'),
     onArtCount: document.getElementById('hiv_kpi_on_art_count'),
@@ -3809,14 +3815,46 @@ window.renderAll = renderAll;
 
     return counts;
   }
+  function setYearOptions(selectEl, placeholder, years) {
+    if (!selectEl) return;
+    const current = selectEl.value;
+    selectEl.innerHTML = '';
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    selectEl.appendChild(placeholderOption);
+
+    years.forEach((year) => {
+      const option = document.createElement('option');
+      option.value = String(year);
+      option.textContent = String(year);
+      selectEl.appendChild(option);
+    });
+
+    if (current && years.includes(Number(current))) {
+      selectEl.value = current;
+    } else {
+      selectEl.value = '';
+    }
+    selectEl.disabled = false;
+  }
+
   function updateYearlyTrendOptions(rows) {
-    if (!yearlyTrendSelect) return;
+    if (!yearlyTrendSelect && !yearlyTrendToSelect) return;
     const counts = buildYearCounts(rows);
 
     if (!counts || counts.size === 0) {
-      yearlyTrendSelect.innerHTML = '<option value="">Year</option>';
-      yearlyTrendSelect.value = '';
-      yearlyTrendSelect.disabled = true;
+      if (yearlyTrendSelect) {
+        yearlyTrendSelect.innerHTML = '<option value="">Year (from)</option>';
+        yearlyTrendSelect.value = '';
+        yearlyTrendSelect.disabled = true;
+      }
+      if (yearlyTrendToSelect) {
+        yearlyTrendToSelect.innerHTML = '<option value="">Year (to)</option>';
+        yearlyTrendToSelect.value = '';
+        yearlyTrendToSelect.disabled = true;
+      }
       return;
     }
 
@@ -3825,24 +3863,22 @@ window.renderAll = renderAll;
       .filter((year) => Number.isFinite(year))
       .sort((a, b) => a - b);
 
-    const current = yearlyTrendSelect.value;
-    yearlyTrendSelect.innerHTML = '';
-    years.forEach((year) => {
-      const option = document.createElement('option');
-      option.value = String(year);
-      option.textContent = String(year);
-      yearlyTrendSelect.appendChild(option);
-    });
+    setYearOptions(yearlyTrendSelect, 'Year (from)', years);
+    setYearOptions(yearlyTrendToSelect, 'Year (to)', years);
 
     const latest = years[years.length - 1];
-    if (current && years.includes(Number(current))) {
-      yearlyTrendSelect.value = current;
-    } else {
+    if (yearlyTrendSelect && !yearlyTrendSelect.value) {
       yearlyTrendSelect.value = String(latest);
     }
-    yearlyTrendSelect.disabled = false;
+    if (yearlyTrendToSelect) {
+      const currentTo = yearlyTrendToSelect.value;
+      if (currentTo && years.includes(Number(currentTo))) {
+        yearlyTrendToSelect.value = currentTo;
+      } else {
+        yearlyTrendToSelect.value = String(latest);
+      }
+    }
   }
-
 
   function renderYearBar(rows) {
     const canvas = document.getElementById('hiv_year_bar');
@@ -3856,19 +3892,33 @@ window.renderAll = renderAll;
       labels = ['No data'];
       values = [0];
     } else {
-      const selectedYear = yearlyTrendSelect?.value;
+      const fromValue = yearlyTrendSelect?.value || '';
+      const toValue = yearlyTrendToSelect?.value || '';
       const years = Array.from(counts.keys())
         .map((year) => Number(year))
-        .filter((year) => Number.isFinite(year));
-      const latest = years.length ? Math.max(...years) : null;
-      const yearKey = selectedYear ? String(selectedYear) : (latest !== null ? String(latest) : null);
+        .filter((year) => Number.isFinite(year))
+        .sort((a, b) => a - b);
+      const latest = years.length ? years[years.length - 1] : null;
 
-      if (yearKey) {
-        labels = [yearKey];
-        values = [counts.get(yearKey) || 0];
+      if (fromValue && toValue) {
+        const start = Math.min(Number(fromValue), Number(toValue));
+        const end = Math.max(Number(fromValue), Number(toValue));
+        labels = [];
+        values = [];
+        for (let year = start; year <= end; year += 1) {
+          const yearKey = String(year);
+          labels.push(yearKey);
+          values.push(counts.get(yearKey) || 0);
+        }
       } else {
-        labels = ['No data'];
-        values = [0];
+        const yearKey = fromValue || toValue || (latest !== null ? String(latest) : '');
+        if (yearKey) {
+          labels = [yearKey];
+          values = [counts.get(yearKey) || 0];
+        } else {
+          labels = ['No data'];
+          values = [0];
+        }
       }
     }
 
@@ -4131,8 +4181,11 @@ window.renderAll = renderAll;
     if (!sel) return;
     sel.addEventListener('change', onFilterChange);
   });
-  if (yearlyTrendSelect) {
+   if (yearlyTrendSelect) {
     yearlyTrendSelect.addEventListener('change', renderFiltered);
+  }
+  if (yearlyTrendToSelect) {
+    yearlyTrendToSelect.addEventListener('change', renderFiltered);
   }
 
   if (typeof window.renderHivDashboard !== 'function') {
