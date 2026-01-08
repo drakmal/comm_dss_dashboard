@@ -1195,8 +1195,8 @@
   </div>
   <div class="card">
     <p class="muted">Demographic breakdown for the selected filters.</p>
-    <div class="demography-grid">
-      <div class="demo-card">
+    <p class="muted" id="hiv_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
+    <div class="demography-grid">      <div class="demo-card">
         <div class="demo-block-title">Age</div>
         <canvas id="hiv_pie_age"></canvas>
       </div>
@@ -3453,6 +3453,7 @@ window.renderAll = renderAll;
     risk: document.getElementById('hiv_filter_risk'),
     year: document.getElementById('hiv_filter_year'),
   };
+  const demoFiltersEl = document.getElementById('hiv_demo_filters');
   const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_year');
   const yearlyTrendToSelect = document.getElementById('hiv_yearly_trend_year_to');
   const kpiEls = {
@@ -3948,15 +3949,40 @@ window.renderAll = renderAll;
     });
   }
 
+  function filterRowsByYearSelection(rows) {
+    const { columns } = hivState;
+    const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
+    if (!dateKey || !Array.isArray(rows) || rows.length === 0) return rows;
+
+    const fromValue = yearlyTrendSelect?.value || '';
+    const toValue = yearlyTrendToSelect?.value || '';
+
+    if (!fromValue && !toValue) return rows;
+
+    const fromYear = Number(fromValue || toValue);
+    const toYear = Number(toValue || fromValue);
+    if (!Number.isFinite(fromYear) || !Number.isFinite(toYear)) return rows;
+
+    const start = Math.min(fromYear, toYear);
+    const end = Math.max(fromYear, toYear);
+
+    return rows.filter((row) => {
+      const year = extractYearFromRow(row, dateKey);
+      if (!Number.isFinite(year)) return false;
+      return year >= start && year <= end;
+    });
+  }
+
   function renderHivCharts(rows) {
     const { columns } = hivState;
     renderYearBar(rows);
-    pieFromColumn(rows, 'hiv_pie_age', columns.age);
-    pieFromColumn(rows, 'hiv_pie_gender', columns.gender);
-    pieFromColumn(rows, 'hiv_pie_race', columns.race);
-    pieFromColumn(rows, 'hiv_pie_nationality', columns.nationality);
-    pieFromColumn(rows, 'hiv_pie_risk_group', columns.risk);
-    pieFromColumn(rows, 'hiv_pie_mode_transmission', columns.modeTransmission);
+    const filteredRows = filterRowsByYearSelection(rows);
+    pieFromColumn(filteredRows, 'hiv_pie_age', columns.age);
+    pieFromColumn(filteredRows, 'hiv_pie_gender', columns.gender);
+    pieFromColumn(filteredRows, 'hiv_pie_race', columns.race);
+    pieFromColumn(filteredRows, 'hiv_pie_nationality', columns.nationality);
+    pieFromColumn(filteredRows, 'hiv_pie_risk_group', columns.risk);
+    pieFromColumn(filteredRows, 'hiv_pie_mode_transmission', columns.modeTransmission);
   }
 
   function updateKpiDisplays(result) {
@@ -4141,6 +4167,38 @@ window.renderAll = renderAll;
     setCount(coinfectionEls.hcvPositive, metrics.hcvPositive, Boolean(columns.hcvResult));
   }
 
+  function updateDemographicFilterSummary() {
+    if (!demoFiltersEl) return;
+
+    const pickLabel = (selectEl, currentValue) => {
+      if (!selectEl) return 'All';
+      if (!currentValue || currentValue === 'ALL') return 'All';
+      const option = Array.from(selectEl.options || []).find((opt) => opt.value === currentValue);
+      return option ? option.textContent : currentValue;
+    };
+
+    const siteLabel = pickLabel(filters.site, hivState.filters.site);
+    const riskLabel = pickLabel(filters.risk, hivState.filters.risk);
+    const yearLabel = pickLabel(filters.year, hivState.filters.year);
+
+    const fromValue = yearlyTrendSelect?.value || '';
+    const toValue = yearlyTrendToSelect?.value || '';
+    let trendLabel = 'All years';
+    if (fromValue || toValue) {
+      if (fromValue && toValue) {
+        const start = Math.min(Number(fromValue), Number(toValue));
+        const end = Math.max(Number(fromValue), Number(toValue));
+        trendLabel = Number.isFinite(start) && Number.isFinite(end)
+          ? (start === end ? String(start) : `${start}–${end}`)
+          : `${fromValue}–${toValue}`;
+      } else {
+        trendLabel = String(fromValue || toValue);
+      }
+    }
+
+    demoFiltersEl.textContent = `Filters on: Site: ${siteLabel} • Risk group: ${riskLabel} • Year: ${yearLabel} • Yearly trend: ${trendLabel}`;
+  }
+
   function applyFilters() {
     const { columns, filters: f } = hivState;
     const rows = hivState.rows || [];
@@ -4169,6 +4227,7 @@ window.renderAll = renderAll;
     updateKpiDisplays(kpiResult);
     renderCoinfection(filtered);
     updateYearlyTrendOptions(filtered);
+    updateDemographicFilterSummary();
 
     if (typeof window.renderHivDashboard === 'function') {
       window.renderHivDashboard(filtered);
