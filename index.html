@@ -371,6 +371,81 @@
     .dash-section .card:last-child{
       margin-bottom: 10px;
     }
+
+    .btn {
+      border: 1px solid #d0d0d0;
+      background: #ffffff;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .filter-group-title {
+      flex-basis: 100%;
+      font-weight: 600;
+      color: #555;
+      margin-top: 6px;
+    }
+
+    .filter-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: #444;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      font-size: 0.8rem;
+      color: #4338ca;
+    }
+
+    .pill button {
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      color: #4338ca;
+      cursor: pointer;
+    }
+
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .cluster-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+
+    .cluster-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .cluster-meta {
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
   </style>
 </head>
 <body>
@@ -384,6 +459,7 @@
     <button class="tab-btn" data-tab="measles">Measles Dashboard</button>
     <button class="tab-btn" data-tab="hiv">HIV Dashboard</button>
     <button class="tab-btn" data-tab="hepc">Hep C Dashboard</button>
+    <button class="tab-btn" data-tab="dengue">Dengue Dashboard</button>
 </div>
 
 <div class="card dosm-card">
@@ -1435,6 +1511,324 @@
       <div class="demo-card">
         <div class="demo-block-title">Mode of transmission</div>
         <canvas id="hepc_pie_mode_transmission"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" data-tab="dengue" id="tab-dengue">
+  <h2>1. Upload Dengue Excel file</h2>
+  <div class="card">
+    <div class="upload-row">
+      <label for="fileInput_dengue"><b>Choose File / Pilih fail</b></label>
+      <input type="file" id="fileInput_dengue" accept=".xls,.xlsx">
+      <div id="dengue_file_status" class="muted">No file loaded yet.</div>
+    </div>
+    <div id="dengue_error" class="error-text" role="alert" style="display:none;"></div>
+  </div>
+
+  <h2>2. Penapis & KPI</h2>
+  <div class="card">
+    <div class="filters-row">
+      <div class="filter-group-title">Timeline controls</div>
+      <div class="filter-field">
+        <label for="dengue_filter_trend_date">Tarikh Trend / Trend Date:</label>
+        <select id="dengue_filter_trend_date">
+          <option value="onset" selected>Tarikh Onset</option>
+          <option value="notif">Tkh Notifikasi</option>
+          <option value="reg">Tarikh Daftar</option>
+          <option value="diagnosis">Tarikh Diagnosis</option>
+          <option value="input">Tkh Input Notifikasi</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_year">Year:</label>
+        <select id="dengue_filter_year" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_week">Epi Week:</label>
+        <select id="dengue_filter_week" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-group-title">Geography</div>
+      <div class="filter-field">
+        <label for="dengue_filter_mukim">Mukim/Zon (Alamat Semasa):</label>
+        <select id="dengue_filter_mukim" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_lokaliti">Lokaliti (Alamat Semasa):</label>
+        <select id="dengue_filter_lokaliti" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-group-title">Case type</div>
+      <div class="filter-field">
+        <label for="dengue_filter_jenis">Jenis Kes:</label>
+        <select id="dengue_filter_jenis" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="filter-checkbox">
+          <input type="checkbox" id="dengue_filter_outbreak_only">
+          Wabak sahaja / Outbreak only
+        </label>
+      </div>
+      <div class="filter-group-title">Demographics</div>
+      <div class="filter-field">
+        <label for="dengue_filter_agegroup">Kategori Umur / Age group:</label>
+        <select id="dengue_filter_agegroup" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_jantina">Jantina:</label>
+        <select id="dengue_filter_jantina" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_keturunan">Keturunan:</label>
+        <select id="dengue_filter_keturunan" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_warga">Status Kewarganegaraan:</label>
+        <select id="dengue_filter_warga" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_negara">Negara Asal:</label>
+        <select id="dengue_filter_negara" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-group-title">Occupation</div>
+      <div class="filter-field">
+        <label for="dengue_filter_kategori_pekerjaan">Kategori Pekerjaan:</label>
+        <select id="dengue_filter_kategori_pekerjaan" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_pekerjaan">Pekerjaan:</label>
+        <select id="dengue_filter_pekerjaan" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-group-title">Lab</div>
+      <div class="filter-field">
+        <label for="dengue_filter_rapid">Ujian Rapid:</label>
+        <select id="dengue_filter_rapid" disabled>
+          <option value="ALL">All</option>
+          <option value="ANY_POS">Any positive</option>
+          <option value="NS1">NS1</option>
+          <option value="IGM">IgM</option>
+          <option value="IGG">IgG</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_elisa">Ujian ELISA:</label>
+        <select id="dengue_filter_elisa" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_pcr">Ujian PCR:</label>
+        <select id="dengue_filter_pcr" disabled>
+          <option value="ALL">All</option>
+        </select>
+      </div>
+      <div class="filter-group-title">Symptoms</div>
+      <div id="dengue_symptom_filters" class="filters-row"></div>
+      <div class="filter-field align-right">
+        <button type="button" class="btn" id="dengue_reset_filters">Reset penapis / Reset filters</button>
+      </div>
+    </div>
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+      <span id="dengue_outbreak_pill" class="pill" style="display:none;">
+        <span id="dengue_outbreak_pill_label"></span>
+        <button type="button" id="dengue_outbreak_clear">Clear</button>
+      </span>
+    </div>
+    <div class="kpi-grid" style="margin-top:12px;">
+      <div class="kpi-box">
+        <div class="kpi-title">Jumlah Kes / Total cases</div>
+        <div class="kpi-value" id="dengue_kpi_total">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Kes Wabak / Outbreak cases</div>
+        <div class="kpi-value" id="dengue_kpi_outbreak_cases">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Bil. Wabak / # Outbreak clusters</div>
+        <div class="kpi-value" id="dengue_kpi_outbreak_clusters">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Top Mukim/Zon</div>
+        <div class="kpi-value" id="dengue_kpi_top_mukim">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Top Lokaliti</div>
+        <div class="kpi-value" id="dengue_kpi_top_lokaliti">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Median Onset→Notifikasi (hari)</div>
+        <div class="kpi-value" id="dengue_kpi_onset_notif">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Median Notifikasi→Siasatan (hari)</div>
+        <div class="kpi-value" id="dengue_kpi_notif_siasat">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Median Siasatan→Aktiviti Pertama (hari)</div>
+        <div class="kpi-value" id="dengue_kpi_siasat_aksi">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">% ada koordinat / % with lat+lng</div>
+        <div class="kpi-value" id="dengue_kpi_coords">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Lokaliti Keutamaan (1–4)</div>
+        <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>
+      </div>
+    </div>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>3. Weekly trend (Notification) / Trend Mingguan (Notifikasi)</h2>
+  <div class="card">
+    <canvas id="dengue_weekly_trend"></canvas>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>4. Surveillance & lab profile / Profil Survelan & Makmal</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Rapid positives (NS1 / IgM / IgG)</div>
+        <canvas id="dengue_chart_rapid"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Ujian ELISA</div>
+        <canvas id="dengue_chart_elisa"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Ujian PCR</div>
+        <canvas id="dengue_chart_pcr"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Symptom prevalence</div>
+        <canvas id="dengue_chart_symptoms"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>5. Demography / Demografi</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Jantina</div>
+        <canvas id="dengue_demo_jantina"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Kategori Umur</div>
+        <canvas id="dengue_demo_agegroup"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Warganegara</div>
+        <canvas id="dengue_demo_warga"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Keturunan</div>
+        <canvas id="dengue_demo_keturunan"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Daerah (Alamat Semasa)</div>
+        <canvas id="dengue_demo_daerah"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Negara Asal</div>
+        <canvas id="dengue_demo_negara"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>6. Hotspot (Lokaliti + Map)</h2>
+  <div class="card">
+    <div class="table-grid">
+      <div>
+        <div class="demo-block-title">Top 10 Lokaliti</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Lokaliti</th>
+              <th>Kes</th>
+            </tr>
+          </thead>
+          <tbody id="dengue_top_lokaliti_table"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="demo-block-title">Top 10 Mukim/Zon</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Mukim/Zon</th>
+              <th>Kes</th>
+            </tr>
+          </thead>
+          <tbody id="dengue_top_mukim_table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="note" style="margin-top:10px;">Map placeholder (coordinate plotting can be added later).</div>
+  </div>
+
+  <h2>7. Kluster Wabak / Outbreak clusters</h2>
+  <div class="card">
+    <div id="dengue_cluster_grid" class="cluster-grid"></div>
+  </div>
+
+  <h2>8. Timeliness / Ketepatan Masa</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Onset → Notifikasi</div>
+        <canvas id="dengue_timeline_onset_notif"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Notifikasi → Siasatan</div>
+        <canvas id="dengue_timeline_notif_siasat"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Siasatan → Aktiviti Pertama</div>
+        <canvas id="dengue_timeline_siasat_aksi"></canvas>
+      </div>
+    </div>
+    <div class="kpi-grid" style="margin-top:12px;">
+      <div class="kpi-box">
+        <div class="kpi-title">Missing Tarikh Onset</div>
+        <div class="kpi-value" id="dengue_missing_onset">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Missing Tkh Notifikasi</div>
+        <div class="kpi-value" id="dengue_missing_notif">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Missing Tarikh Siasatan Kes</div>
+        <div class="kpi-value" id="dengue_missing_siasat">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Missing Aktiviti Pertama</div>
+        <div class="kpi-value" id="dengue_missing_first_action">-</div>
       </div>
     </div>
   </div>
@@ -5808,9 +6202,998 @@ window.renderAll = renderAll;
 </script>
 
 <script>
+/* =======================
+   DENGUE DASHBOARD (Tab 6)
+========================= */
+(function () {
+  const fileInput = document.getElementById('fileInput_dengue');
+  const fileStatus = document.getElementById('dengue_file_status');
+  const fileError = document.getElementById('dengue_error');
+
+  const filters = {
+    trendDate: document.getElementById('dengue_filter_trend_date'),
+    year: document.getElementById('dengue_filter_year'),
+    week: document.getElementById('dengue_filter_week'),
+    mukim: document.getElementById('dengue_filter_mukim'),
+    lokaliti: document.getElementById('dengue_filter_lokaliti'),
+    jenis: document.getElementById('dengue_filter_jenis'),
+    outbreakOnly: document.getElementById('dengue_filter_outbreak_only'),
+    ageGroup: document.getElementById('dengue_filter_agegroup'),
+    jantina: document.getElementById('dengue_filter_jantina'),
+    keturunan: document.getElementById('dengue_filter_keturunan'),
+    warga: document.getElementById('dengue_filter_warga'),
+    negara: document.getElementById('dengue_filter_negara'),
+    kategoriPekerjaan: document.getElementById('dengue_filter_kategori_pekerjaan'),
+    pekerjaan: document.getElementById('dengue_filter_pekerjaan'),
+    rapid: document.getElementById('dengue_filter_rapid'),
+    elisa: document.getElementById('dengue_filter_elisa'),
+    pcr: document.getElementById('dengue_filter_pcr'),
+    reset: document.getElementById('dengue_reset_filters'),
+  };
+
+  const outbreakEls = {
+    pill: document.getElementById('dengue_outbreak_pill'),
+    label: document.getElementById('dengue_outbreak_pill_label'),
+    clear: document.getElementById('dengue_outbreak_clear'),
+    grid: document.getElementById('dengue_cluster_grid'),
+  };
+
+  const kpi = {
+    total: document.getElementById('dengue_kpi_total'),
+    outbreakCases: document.getElementById('dengue_kpi_outbreak_cases'),
+    outbreakClusters: document.getElementById('dengue_kpi_outbreak_clusters'),
+    topMukim: document.getElementById('dengue_kpi_top_mukim'),
+    topLokaliti: document.getElementById('dengue_kpi_top_lokaliti'),
+    onsetNotif: document.getElementById('dengue_kpi_onset_notif'),
+    notifSiasat: document.getElementById('dengue_kpi_notif_siasat'),
+    siasatAksi: document.getElementById('dengue_kpi_siasat_aksi'),
+    coords: document.getElementById('dengue_kpi_coords'),
+    lokalitiPriority: document.getElementById('dengue_kpi_lokaliti_priority'),
+  };
+
+  const missingEls = {
+    onset: document.getElementById('dengue_missing_onset'),
+    notif: document.getElementById('dengue_missing_notif'),
+    siasat: document.getElementById('dengue_missing_siasat'),
+    firstAction: document.getElementById('dengue_missing_first_action'),
+  };
+
+  const tables = {
+    topLokaliti: document.getElementById('dengue_top_lokaliti_table'),
+    topMukim: document.getElementById('dengue_top_mukim_table'),
+  };
+
+  const charts = {
+    weekly: null,
+    rapid: null,
+    elisa: null,
+    pcr: null,
+    symptoms: null,
+    demo: {
+      jantina: null,
+      age: null,
+      warga: null,
+      keturunan: null,
+      daerah: null,
+      negara: null,
+    },
+    timeline: {
+      onsetNotif: null,
+      notifSiasat: null,
+      siasatAksi: null,
+    }
+  };
+
+  const symptomContainer = document.getElementById('dengue_symptom_filters');
+
+  const dengueState = {
+    rows: [],
+    columns: {},
+    symptomDefs: [],
+    symptomFilters: new Map(),
+    outbreakFilter: null,
+  };
+
+  function norm(value) {
+    return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function val(row, key) {
+    if (!row || !key) return '';
+    const v = row[key];
+    if (v === null || v === undefined) return '';
+    return String(v).trim();
+  }
+
+  function formatNumber(num) {
+    if (!Number.isFinite(num)) return '-';
+    return num.toLocaleString('en-US');
+  }
+
+  function parseDateAny(v) {
+    if (!v && v !== 0) return null;
+    if (v instanceof Date && !isNaN(v.getTime())) return v;
+    if (typeof v === 'number' && isFinite(v)) {
+      const ms = Math.round((v - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const s = String(v).trim();
+    if (!s) return null;
+    const dm = s.match(/^(\d{1,2})[\\/.-](\d{1,2})[\\/.-](\d{4})$/);
+    if (dm) {
+      const dd = parseInt(dm[1], 10);
+      const mm = parseInt(dm[2], 10);
+      const yy = parseInt(dm[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const ym = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (ym) {
+      const yy = parseInt(ym[1], 10);
+      const mm = parseInt(ym[2], 10);
+      const dd = parseInt(ym[3], 10);
+      const d = new Date(yy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isoWeek(d) {
+    if (!(d instanceof Date)) return null;
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return week;
+  }
+
+  function median(nums) {
+    const arr = nums.filter(n => Number.isFinite(n)).sort((a, b) => a - b);
+    if (!arr.length) return null;
+    const mid = Math.floor(arr.length / 2);
+    return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+  }
+
+  function diffDays(a, b) {
+    if (!(a instanceof Date) || !(b instanceof Date)) return null;
+    const ms = b.getTime() - a.getTime();
+    if (!Number.isFinite(ms)) return null;
+    return Math.round(ms / 86400000);
+  }
+
+  function findColumnKey(keys, candidates) {
+    const normKeys = keys.map(k => ({ key: k, n: norm(k) }));
+    for (const cand of candidates) {
+      const nc = norm(cand);
+      const exact = normKeys.find(x => x.n === nc);
+      if (exact) return exact.key;
+      const contains = normKeys.find(x => x.n.includes(nc));
+      if (contains) return contains.key;
+    }
+    return null;
+  }
+
+  function parseYesNo(value) {
+    const n = norm(value);
+    if (!n) return null;
+    if (['ya', 'yes', 'y', '1', 'true', 'positif', 'positive'].includes(n)) return 'Ya';
+    if (['tidak', 'no', 'n', '0', 'false', 'negative', 'negatif'].includes(n)) return 'Tidak';
+    return null;
+  }
+
+  function parseRapid(raw) {
+    const text = norm(raw);
+    if (!text) return { any: false, ns1: false, igm: false, igg: false };
+    const positive = /pos|positive|\+|reactive|detected/.test(text);
+    const negative = /neg|negative|non reactive|not detected/.test(text);
+    const ns1 = text.includes('ns1') && positive && !negative;
+    const igm = text.includes('igm') && positive && !negative;
+    const igg = text.includes('igg') && positive && !negative;
+    const any = (ns1 || igm || igg || (positive && !negative));
+    return { any, ns1, igm, igg };
+  }
+
+  function ageGroupFromYears(age) {
+    if (!Number.isFinite(age)) return null;
+    if (age <= 6) return '0-6';
+    if (age <= 12) return '7-12';
+    if (age <= 17) return '13-17';
+    if (age <= 25) return '18-25';
+    if (age <= 44) return '26-44';
+    if (age <= 60) return '45-60';
+    return '>60';
+  }
+
+  function setSelectOptions(selectEl, values) {
+    if (!selectEl) return;
+    const keep = selectEl.value;
+    selectEl.innerHTML = '<option value="ALL">All</option>';
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = String(v);
+      selectEl.appendChild(opt);
+    });
+    if (Array.from(selectEl.options).some(o => o.value === keep)) selectEl.value = keep;
+    else selectEl.value = 'ALL';
+    selectEl.disabled = false;
+  }
+
+  function setStatus(message, isError = false) {
+    if (fileStatus) fileStatus.textContent = message;
+    if (fileError) {
+      fileError.style.display = isError ? 'block' : 'none';
+      fileError.textContent = isError ? message : '';
+    }
+  }
+
+  function inferColumns(keys) {
+    return {
+      onsetDate: findColumnKey(keys, ['Tarikh Onset', 'Tkh Onset', 'Tarikh Onset Kes']),
+      notifDate: findColumnKey(keys, ['Tkh Notifikasi', 'Tarikh Notifikasi']),
+      regDate: findColumnKey(keys, ['Tarikh Daftar', 'Tkh Daftar']),
+      diagnosisDate: findColumnKey(keys, ['Tarikh Diagnosis', 'Tkh Diagnosis']),
+      inputDate: findColumnKey(keys, ['Tkh Input Notifikasi', 'Tarikh Input Notifikasi']),
+      onsetWeek: findColumnKey(keys, ['Epid Minggu (Tarikh Onset)', 'Epid Minggu (Tkh Onset)']),
+      notifWeek: findColumnKey(keys, ['Epid Minggu (Tkh Notifikasi)', 'Epid Minggu (Tarikh Notifikasi)']),
+      regWeek: findColumnKey(keys, ['Epid Minggu (Tarikh Daftar)', 'Epid Minggu (Tkh Daftar)']),
+      diagnosisWeek: findColumnKey(keys, ['Epid Minggu (Tarikh Diagnosis)', 'Epid Minggu (Tkh Diagnosis)']),
+      inputWeek: findColumnKey(keys, ['Epid Minggu (Tkh Input Notifikasi)', 'Epid Minggu (Tarikh Input Notifikasi)']),
+      mukim: findColumnKey(keys, ['Mukim/Zon (Alamat Semasa)', 'Mukim/Zon', 'Mukim']),
+      lokaliti: findColumnKey(keys, ['Lokaliti (Alamat Semasa)', 'Lokaliti']),
+      jenisKes: findColumnKey(keys, ['Jenis Kes', 'JenisKes']),
+      umur: findColumnKey(keys, ['Umur (Tahun)', 'Umur Tahun', 'Umur']),
+      jantina: findColumnKey(keys, ['Jantina', 'Sex']),
+      keturunan: findColumnKey(keys, ['Keturunan', 'Bangsa']),
+      warga: findColumnKey(keys, ['Status Kewarganegaraan', 'Kewarganegaraan']),
+      negara: findColumnKey(keys, ['Negara Asal', 'Negara']),
+      kategoriPekerjaan: findColumnKey(keys, ['Kategori Pekerjaan', 'KategoriPekerjaan']),
+      pekerjaan: findColumnKey(keys, ['Pekerjaan']),
+      rapid: findColumnKey(keys, ['Ujian Rapid', 'Rapid Test']),
+      elisa: findColumnKey(keys, ['Ujian ELISA', 'ELISA']),
+      pcr: findColumnKey(keys, ['Ujian PCR', 'PCR']),
+      wabakNo: findColumnKey(keys, ['Wabak No', 'No Wabak', 'No. Wabak']),
+      wabakStatus: findColumnKey(keys, ['Wabak Status', 'Status Wabak']),
+      siasatDate: findColumnKey(keys, ['Tarikh Siasatan Kes', 'Tkh Siasatan Kes']),
+      ptpDate: findColumnKey(keys, ['Tkh PTP Aktiviti Pertama', 'Tarikh PTP Aktiviti Pertama']),
+      srtDate: findColumnKey(keys, ['Tkh SRT Aktiviti Pertama', 'Tarikh SRT Aktiviti Pertama']),
+      ulvDate: findColumnKey(keys, ['Tkh ULV Aktiviti Pertama', 'Tarikh ULV Aktiviti Pertama']),
+      lat: findColumnKey(keys, ['Latitud (ISO)', 'Latitude', 'Latitud']),
+      lng: findColumnKey(keys, ['Lngitud (ISO)', 'Longitude', 'Lngitud']),
+      lokalitiPriority: findColumnKey(keys, ['Lokaliti Keutamaan', 'Keutamaan Lokaliti']),
+      daerah: findColumnKey(keys, ['Daerah (Alamat Semasa)', 'Daerah']),
+    };
+  }
+
+  function buildSymptomDefs(keys) {
+    const base = [
+      { label: 'Demam', candidates: ['Demam', 'Fever'] },
+      { label: 'Sakit kepala', candidates: ['Sakit Kepala', 'Headache'] },
+      { label: 'Sakit sendi', candidates: ['Sakit Sendi', 'Arthralgia'] },
+      { label: 'Sakit otot', candidates: ['Sakit Otot', 'Myalgia'] },
+      { label: 'Ruam', candidates: ['Ruam', 'Rash'] },
+      { label: 'Loya/Mual', candidates: ['Loya', 'Mual', 'Nausea'] },
+      { label: 'Muntah', candidates: ['Muntah', 'Vomiting'] },
+      { label: 'Cirit-birit', candidates: ['Cirit', 'Cirit-birit', 'Diarrhea', 'Diarrhoea'] },
+      { label: 'Sakit perut', candidates: ['Sakit Perut', 'Abdominal pain'] },
+      { label: 'Pendarahan', candidates: ['Pendarahan', 'Bleeding'] },
+    ];
+
+    const defs = [];
+    base.forEach(item => {
+      const key = findColumnKey(keys, item.candidates);
+      if (key) defs.push({ label: item.label, key });
+    });
+    return defs;
+  }
+
+  function renderSymptomFilters() {
+    symptomContainer.innerHTML = '';
+    dengueState.symptomFilters.clear();
+
+    dengueState.symptomDefs.forEach(def => {
+      const wrap = document.createElement('div');
+      wrap.className = 'filter-field';
+      const label = document.createElement('label');
+      label.textContent = `${def.label}:`;
+      const select = document.createElement('select');
+      select.innerHTML = `
+        <option value="ALL">All</option>
+        <option value="Ya">Ya</option>
+        <option value="Tidak">Tidak</option>
+      `;
+      select.disabled = false;
+      wrap.appendChild(label);
+      wrap.appendChild(select);
+      symptomContainer.appendChild(wrap);
+      dengueState.symptomFilters.set(def.key, select);
+      select.addEventListener('change', renderAll);
+    });
+  }
+
+  function preprocessRows(rows) {
+    const cols = dengueState.columns;
+    return rows.map(row => {
+      const onset = parseDateAny(row[cols.onsetDate]);
+      const notif = parseDateAny(row[cols.notifDate]);
+      const reg = parseDateAny(row[cols.regDate]);
+      const diagnosis = parseDateAny(row[cols.diagnosisDate]);
+      const input = parseDateAny(row[cols.inputDate]);
+
+      const rapidFlags = parseRapid(row[cols.rapid]);
+      const ageRaw = parseFloat(val(row, cols.umur));
+      const outbreakFlag = norm(val(row, cols.jenisKes)) === 'wabak';
+      const lat = parseFloat(val(row, cols.lat));
+      const lng = parseFloat(val(row, cols.lng));
+
+      const ptp = parseDateAny(row[cols.ptpDate]);
+      const srt = parseDateAny(row[cols.srtDate]);
+      const ulv = parseDateAny(row[cols.ulvDate]);
+      const firstAction = [ptp, srt, ulv].filter(Boolean).sort((a, b) => a - b)[0] || null;
+
+      return {
+        ...row,
+        _dates: { onset, notif, reg, diagnosis, input },
+        _rapid: rapidFlags,
+        _ageGroup: ageGroupFromYears(ageRaw),
+        _outbreakFlag: outbreakFlag,
+        _coords: Number.isFinite(lat) && Number.isFinite(lng),
+        _firstActionDate: firstAction,
+      };
+    });
+  }
+
+  function getTrendDate(row, mode) {
+    return row._dates?.[mode] || null;
+  }
+
+  function getTrendWeek(row, mode) {
+    const cols = dengueState.columns;
+    const weekKey = {
+      onset: cols.onsetWeek,
+      notif: cols.notifWeek,
+      reg: cols.regWeek,
+      diagnosis: cols.diagnosisWeek,
+      input: cols.inputWeek,
+    }[mode];
+
+    if (weekKey) {
+      const raw = parseInt(val(row, weekKey), 10);
+      if (Number.isFinite(raw) && raw > 0) return raw;
+    }
+
+    const d = getTrendDate(row, mode);
+    return d ? isoWeek(d) : null;
+  }
+
+  function rebuildTrendOptions() {
+    const mode = filters.trendDate.value;
+    const rows = dengueState.rows;
+    const years = new Set();
+    rows.forEach(r => {
+      const d = getTrendDate(r, mode);
+      if (d) years.add(d.getFullYear());
+    });
+    setSelectOptions(filters.year, Array.from(years).sort((a, b) => a - b));
+
+    rebuildWeekOptions();
+  }
+
+  function rebuildWeekOptions() {
+    const mode = filters.trendDate.value;
+    const year = filters.year.value;
+    const weeks = new Set();
+
+    dengueState.rows.forEach(r => {
+      const d = getTrendDate(r, mode);
+      if (!d) return;
+      if (year !== 'ALL' && String(d.getFullYear()) !== year) return;
+      const wk = getTrendWeek(r, mode);
+      if (wk) weeks.add(wk);
+    });
+
+    const sorted = Array.from(weeks).sort((a, b) => a - b);
+    setSelectOptions(filters.week, sorted);
+  }
+
+  function rebuildGeoOptions() {
+    const mukimSet = new Set();
+    const lokalitiSet = new Set();
+    const selectedMukim = filters.mukim.value;
+
+    dengueState.rows.forEach(r => {
+      const mukim = val(r, dengueState.columns.mukim);
+      const lokaliti = val(r, dengueState.columns.lokaliti);
+      if (mukim) mukimSet.add(mukim);
+      if (lokaliti && (selectedMukim === 'ALL' || mukim === selectedMukim)) {
+        lokalitiSet.add(lokaliti);
+      }
+    });
+
+    setSelectOptions(filters.mukim, Array.from(mukimSet).sort((a, b) => a.localeCompare(b)));
+    setSelectOptions(filters.lokaliti, Array.from(lokalitiSet).sort((a, b) => a.localeCompare(b)));
+  }
+
+  function rebuildFilterOptions() {
+    const rows = dengueState.rows;
+    const cols = dengueState.columns;
+
+    const setFromColumn = (key) => {
+      const s = new Set();
+      rows.forEach(r => {
+        const v = val(r, key);
+        if (v) s.add(v);
+      });
+      return Array.from(s).sort((a, b) => a.localeCompare(b));
+    };
+
+    rebuildTrendOptions();
+    rebuildGeoOptions();
+    setSelectOptions(filters.jenis, setFromColumn(cols.jenisKes));
+    setSelectOptions(filters.jantina, setFromColumn(cols.jantina));
+    setSelectOptions(filters.keturunan, setFromColumn(cols.keturunan));
+    setSelectOptions(filters.warga, setFromColumn(cols.warga));
+    setSelectOptions(filters.negara, setFromColumn(cols.negara));
+    setSelectOptions(filters.kategoriPekerjaan, setFromColumn(cols.kategoriPekerjaan));
+    setSelectOptions(filters.pekerjaan, setFromColumn(cols.pekerjaan));
+    setSelectOptions(filters.elisa, setFromColumn(cols.elisa));
+    setSelectOptions(filters.pcr, setFromColumn(cols.pcr));
+
+    const ageGroups = ['0-6', '7-12', '13-17', '18-25', '26-44', '45-60', '>60'];
+    setSelectOptions(filters.ageGroup, ageGroups);
+
+    filters.rapid.disabled = false;
+    renderSymptomFilters();
+  }
+
+  function applyFilters() {
+    const mode = filters.trendDate.value;
+    const year = filters.year.value;
+    const week = filters.week.value;
+    const mukim = filters.mukim.value;
+    const lokaliti = filters.lokaliti.value;
+    const jenis = filters.jenis.value;
+    const ageGroup = filters.ageGroup.value;
+    const jantina = filters.jantina.value;
+    const keturunan = filters.keturunan.value;
+    const warga = filters.warga.value;
+    const negara = filters.negara.value;
+    const kategoriPekerjaan = filters.kategoriPekerjaan.value;
+    const pekerjaan = filters.pekerjaan.value;
+    const rapid = filters.rapid.value;
+    const elisa = filters.elisa.value;
+    const pcr = filters.pcr.value;
+    const outbreakOnly = filters.outbreakOnly.checked;
+
+    return dengueState.rows.filter(r => {
+      const trendDate = getTrendDate(r, mode);
+      if (year !== 'ALL') {
+        if (!trendDate || String(trendDate.getFullYear()) !== year) return false;
+      }
+      if (week !== 'ALL') {
+        const wk = getTrendWeek(r, mode);
+        if (!wk || String(wk) !== week) return false;
+      }
+      if (mukim !== 'ALL' && val(r, dengueState.columns.mukim) !== mukim) return false;
+      if (lokaliti !== 'ALL' && val(r, dengueState.columns.lokaliti) !== lokaliti) return false;
+      if (jenis !== 'ALL' && val(r, dengueState.columns.jenisKes) !== jenis) return false;
+      if (ageGroup !== 'ALL' && r._ageGroup !== ageGroup) return false;
+      if (jantina !== 'ALL' && val(r, dengueState.columns.jantina) !== jantina) return false;
+      if (keturunan !== 'ALL' && val(r, dengueState.columns.keturunan) !== keturunan) return false;
+      if (warga !== 'ALL' && val(r, dengueState.columns.warga) !== warga) return false;
+      if (negara !== 'ALL' && val(r, dengueState.columns.negara) !== negara) return false;
+      if (kategoriPekerjaan !== 'ALL' && val(r, dengueState.columns.kategoriPekerjaan) !== kategoriPekerjaan) return false;
+      if (pekerjaan !== 'ALL' && val(r, dengueState.columns.pekerjaan) !== pekerjaan) return false;
+      if (rapid !== 'ALL') {
+        if (rapid === 'ANY_POS' && !r._rapid.any) return false;
+        if (rapid === 'NS1' && !r._rapid.ns1) return false;
+        if (rapid === 'IGM' && !r._rapid.igm) return false;
+        if (rapid === 'IGG' && !r._rapid.igg) return false;
+      }
+      if (elisa !== 'ALL' && val(r, dengueState.columns.elisa) !== elisa) return false;
+      if (pcr !== 'ALL' && val(r, dengueState.columns.pcr) !== pcr) return false;
+      if (outbreakOnly && !r._outbreakFlag) return false;
+      if (dengueState.outbreakFilter && val(r, dengueState.columns.wabakNo) !== dengueState.outbreakFilter) return false;
+
+      for (const [key, select] of dengueState.symptomFilters.entries()) {
+        const choice = select.value;
+        if (choice === 'ALL') continue;
+        const parsed = parseYesNo(val(r, key));
+        if (parsed !== choice) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function updateOutbreakPill() {
+    if (dengueState.outbreakFilter) {
+      outbreakEls.label.textContent = `Wabak No: ${dengueState.outbreakFilter}`;
+      outbreakEls.pill.style.display = 'inline-flex';
+    } else {
+      outbreakEls.pill.style.display = 'none';
+    }
+  }
+
+  function renderKpis(rows) {
+    const total = rows.length;
+    const outbreakRows = rows.filter(r => r._outbreakFlag);
+    const outbreakSet = new Set();
+    outbreakRows.forEach(r => {
+      const wabak = val(r, dengueState.columns.wabakNo);
+      if (wabak) outbreakSet.add(wabak);
+    });
+
+    const countBy = (key) => {
+      const m = new Map();
+      rows.forEach(r => {
+        const v = val(r, key);
+        if (!v) return;
+        m.set(v, (m.get(v) || 0) + 1);
+      });
+      return m;
+    };
+
+    const topFromMap = (map) => {
+      if (!map.size) return '-';
+      const top = Array.from(map.entries()).sort((a, b) => b[1] - a[1])[0];
+      return `${top[0]} (${top[1]})`;
+    };
+
+    const onsetNotif = median(rows.map(r => diffDays(r._dates?.onset, r._dates?.notif)));
+    const notifSiasat = median(rows.map(r => diffDays(r._dates?.notif, parseDateAny(r[dengueState.columns.siasatDate]))));
+    const siasatAksi = median(rows.map(r => diffDays(parseDateAny(r[dengueState.columns.siasatDate]), r._firstActionDate)));
+
+    const coordCount = rows.filter(r => r._coords).length;
+    const coordPct = total ? ((coordCount / total) * 100).toFixed(1) : '-';
+
+    const priorityCounts = { '1': 0, '2': 0, '3': 0, '4': 0 };
+    rows.forEach(r => {
+      const raw = val(r, dengueState.columns.lokalitiPriority);
+      if (priorityCounts.hasOwnProperty(raw)) priorityCounts[raw] += 1;
+    });
+
+    kpi.total.textContent = formatNumber(total);
+    kpi.outbreakCases.textContent = formatNumber(outbreakRows.length);
+    kpi.outbreakClusters.textContent = formatNumber(outbreakSet.size);
+    kpi.topMukim.textContent = topFromMap(countBy(dengueState.columns.mukim));
+    kpi.topLokaliti.textContent = topFromMap(countBy(dengueState.columns.lokaliti));
+    kpi.onsetNotif.textContent = onsetNotif == null ? '-' : onsetNotif.toFixed(1);
+    kpi.notifSiasat.textContent = notifSiasat == null ? '-' : notifSiasat.toFixed(1);
+    kpi.siasatAksi.textContent = siasatAksi == null ? '-' : siasatAksi.toFixed(1);
+    kpi.coords.textContent = coordPct === '-' ? '-' : `${coordPct}%`;
+
+    if (kpi.lokalitiPriority) {
+      kpi.lokalitiPriority.innerHTML = '';
+      Object.entries(priorityCounts).forEach(([key, count]) => {
+        const li = document.createElement('li');
+        li.textContent = `${key}: ${formatNumber(count)}`;
+        kpi.lokalitiPriority.appendChild(li);
+      });
+    }
+  }
+
+  function updateWeeklyTrend(rows) {
+    const canvas = document.getElementById('dengue_weekly_trend');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (charts.weekly) charts.weekly.destroy();
+
+    const counts = Array.from({ length: 52 }, () => 0);
+    rows.forEach(r => {
+      const wk = getTrendWeek(r, filters.trendDate.value);
+      if (!wk || wk < 1 || wk > 52) return;
+      counts[wk - 1] += 1;
+    });
+
+    charts.weekly = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: 52 }, (_, i) => i + 1),
+        datasets: [{
+          label: 'Dengue cases per week',
+          data: counts,
+          tension: 0.25,
+          pointRadius: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Epid Week' } },
+          y: { title: { display: true, text: 'Count' }, beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  function createPie(canvasId, labels, values) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    const ctx = canvas.getContext('2d');
+    if (!labels.length) {
+      labels = ['No data'];
+      values = [1];
+    }
+    const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+    return new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: labels.map((_, i) => palette[i % palette.length]), borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function createBar(canvasId, labels, values, label) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    const ctx = canvas.getContext('2d');
+    if (!labels.length) {
+      labels = ['No data'];
+      values = [0];
+    }
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label,
+          data: values,
+          backgroundColor: '#60a5fa'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { ticks: { autoSkip: false } },
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  function updateLabCharts(rows) {
+    if (charts.rapid) charts.rapid.destroy();
+    if (charts.elisa) charts.elisa.destroy();
+    if (charts.pcr) charts.pcr.destroy();
+    if (charts.symptoms) charts.symptoms.destroy();
+
+    const rapidCounts = {
+      NS1: rows.filter(r => r._rapid.ns1).length,
+      IgM: rows.filter(r => r._rapid.igm).length,
+      IgG: rows.filter(r => r._rapid.igg).length,
+    };
+    charts.rapid = createBar('dengue_chart_rapid', Object.keys(rapidCounts), Object.values(rapidCounts), 'Positive');
+
+    const buildCounts = (key) => {
+      const m = new Map();
+      rows.forEach(r => {
+        const v = val(r, key);
+        if (!v) return;
+        m.set(v, (m.get(v) || 0) + 1);
+      });
+      return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    };
+
+    const elisaEntries = buildCounts(dengueState.columns.elisa);
+    charts.elisa = createPie('dengue_chart_elisa', elisaEntries.map(e => e[0]), elisaEntries.map(e => e[1]));
+
+    const pcrEntries = buildCounts(dengueState.columns.pcr);
+    charts.pcr = createPie('dengue_chart_pcr', pcrEntries.map(e => e[0]), pcrEntries.map(e => e[1]));
+
+    const symptomLabels = [];
+    const symptomCounts = [];
+    dengueState.symptomDefs.forEach(def => {
+      const yesCount = rows.filter(r => parseYesNo(val(r, def.key)) === 'Ya').length;
+      symptomLabels.push(def.label);
+      symptomCounts.push(yesCount);
+    });
+    charts.symptoms = createBar('dengue_chart_symptoms', symptomLabels, symptomCounts, 'Ya');
+  }
+
+  function updateDemographyCharts(rows) {
+    const countBy = (key) => {
+      const m = new Map();
+      rows.forEach(r => {
+        const v = val(r, key);
+        if (!v) return;
+        m.set(v, (m.get(v) || 0) + 1);
+      });
+      return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    };
+
+    const ageCounts = new Map();
+    rows.forEach(r => {
+      const label = r._ageGroup;
+      if (!label) return;
+      ageCounts.set(label, (ageCounts.get(label) || 0) + 1);
+    });
+
+    if (charts.demo.jantina) charts.demo.jantina.destroy();
+    if (charts.demo.age) charts.demo.age.destroy();
+    if (charts.demo.warga) charts.demo.warga.destroy();
+    if (charts.demo.keturunan) charts.demo.keturunan.destroy();
+    if (charts.demo.daerah) charts.demo.daerah.destroy();
+    if (charts.demo.negara) charts.demo.negara.destroy();
+
+    const jantina = countBy(dengueState.columns.jantina);
+    charts.demo.jantina = createPie('dengue_demo_jantina', jantina.map(e => e[0]), jantina.map(e => e[1]));
+
+    const ageEntries = Array.from(ageCounts.entries());
+    charts.demo.age = createPie('dengue_demo_agegroup', ageEntries.map(e => e[0]), ageEntries.map(e => e[1]));
+
+    const warga = countBy(dengueState.columns.warga);
+    charts.demo.warga = createPie('dengue_demo_warga', warga.map(e => e[0]), warga.map(e => e[1]));
+
+    const keturunan = countBy(dengueState.columns.keturunan);
+    charts.demo.keturunan = createPie('dengue_demo_keturunan', keturunan.map(e => e[0]), keturunan.map(e => e[1]));
+
+    const daerah = countBy(dengueState.columns.daerah);
+    charts.demo.daerah = createPie('dengue_demo_daerah', daerah.map(e => e[0]), daerah.map(e => e[1]));
+
+    const negara = countBy(dengueState.columns.negara);
+    charts.demo.negara = createPie('dengue_demo_negara', negara.map(e => e[0]), negara.map(e => e[1]));
+  }
+
+  function updateTopTables(rows) {
+    const buildCounts = (key) => {
+      const m = new Map();
+      rows.forEach(r => {
+        const v = val(r, key);
+        if (!v) return;
+        m.set(v, (m.get(v) || 0) + 1);
+      });
+      return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    };
+
+    const lokalitiRows = buildCounts(dengueState.columns.lokaliti);
+    const mukimRows = buildCounts(dengueState.columns.mukim);
+
+    tables.topLokaliti.innerHTML = '';
+    lokalitiRows.forEach(([name, count]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${formatNumber(count)}</td>`;
+      tables.topLokaliti.appendChild(tr);
+    });
+
+    tables.topMukim.innerHTML = '';
+    mukimRows.forEach(([name, count]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${formatNumber(count)}</td>`;
+      tables.topMukim.appendChild(tr);
+    });
+  }
+
+  function updateClusters(rows) {
+    const outbreakRows = rows.filter(r => r._outbreakFlag);
+    const clusters = new Map();
+
+    outbreakRows.forEach(r => {
+      const wabak = val(r, dengueState.columns.wabakNo);
+      if (!wabak) return;
+      if (!clusters.has(wabak)) clusters.set(wabak, []);
+      clusters.get(wabak).push(r);
+    });
+
+    outbreakEls.grid.innerHTML = '';
+
+    Array.from(clusters.entries()).forEach(([wabak, cases]) => {
+      const onsetDates = cases.map(r => r._dates?.onset).filter(Boolean).sort((a, b) => a - b);
+      const fallbackDates = cases.map(r => getTrendDate(r, filters.trendDate.value)).filter(Boolean).sort((a, b) => a - b);
+      const first = onsetDates[0] || fallbackDates[0];
+      const last = onsetDates[onsetDates.length - 1] || fallbackDates[fallbackDates.length - 1];
+
+      const countBy = (key) => {
+        const m = new Map();
+        cases.forEach(r => {
+          const v = val(r, key);
+          if (!v) return;
+          m.set(v, (m.get(v) || 0) + 1);
+        });
+        return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+      };
+
+      const topMukim = countBy(dengueState.columns.mukim)[0];
+      const topLokaliti = countBy(dengueState.columns.lokaliti)[0];
+      const wabakStatus = val(cases[0], dengueState.columns.wabakStatus);
+
+      const card = document.createElement('div');
+      card.className = 'cluster-card';
+      card.innerHTML = `
+        <div class="cluster-title">Wabak ${wabak}</div>
+        <div class="cluster-meta">Status: ${wabakStatus || '-'}</div>
+        <div class="cluster-meta">Total cases: ${formatNumber(cases.length)}</div>
+        <div class="cluster-meta">First onset: ${first ? first.toLocaleDateString('en-GB') : '-'}</div>
+        <div class="cluster-meta">Last onset: ${last ? last.toLocaleDateString('en-GB') : '-'}</div>
+        <div class="cluster-meta">Top Mukim/Zon: ${topMukim ? `${topMukim[0]} (${topMukim[1]})` : '-'}</div>
+        <div class="cluster-meta">Top Lokaliti: ${topLokaliti ? `${topLokaliti[0]} (${topLokaliti[1]})` : '-'}</div>
+      `;
+      card.addEventListener('click', () => {
+        dengueState.outbreakFilter = wabak;
+        filters.outbreakOnly.checked = true;
+        updateOutbreakPill();
+        renderAll();
+      });
+      outbreakEls.grid.appendChild(card);
+    });
+  }
+
+  function createHistogramData(values) {
+    const bins = [
+      { label: '0-3', min: 0, max: 3 },
+      { label: '4-7', min: 4, max: 7 },
+      { label: '8-14', min: 8, max: 14 },
+      { label: '15-21', min: 15, max: 21 },
+      { label: '22-28', min: 22, max: 28 },
+      { label: '>28', min: 29, max: Infinity },
+    ];
+    const counts = bins.map(() => 0);
+    values.forEach(v => {
+      if (!Number.isFinite(v)) return;
+      const idx = bins.findIndex(b => v >= b.min && v <= b.max);
+      if (idx >= 0) counts[idx] += 1;
+    });
+    return { labels: bins.map(b => b.label), counts };
+  }
+
+  function updateTimeliness(rows) {
+    const onsetNotif = rows.map(r => diffDays(r._dates?.onset, r._dates?.notif));
+    const notifSiasat = rows.map(r => diffDays(r._dates?.notif, parseDateAny(r[dengueState.columns.siasatDate])));
+    const siasatAksi = rows.map(r => diffDays(parseDateAny(r[dengueState.columns.siasatDate]), r._firstActionDate));
+
+    const onsetMissing = rows.filter(r => !r._dates?.onset).length;
+    const notifMissing = rows.filter(r => !r._dates?.notif).length;
+    const siasatMissing = rows.filter(r => !parseDateAny(r[dengueState.columns.siasatDate])).length;
+    const actionMissing = rows.filter(r => !r._firstActionDate).length;
+
+    missingEls.onset.textContent = formatNumber(onsetMissing);
+    missingEls.notif.textContent = formatNumber(notifMissing);
+    missingEls.siasat.textContent = formatNumber(siasatMissing);
+    missingEls.firstAction.textContent = formatNumber(actionMissing);
+
+    if (charts.timeline.onsetNotif) charts.timeline.onsetNotif.destroy();
+    if (charts.timeline.notifSiasat) charts.timeline.notifSiasat.destroy();
+    if (charts.timeline.siasatAksi) charts.timeline.siasatAksi.destroy();
+
+    const onsetData = createHistogramData(onsetNotif);
+    charts.timeline.onsetNotif = createBar('dengue_timeline_onset_notif', onsetData.labels, onsetData.counts, 'Cases');
+
+    const notifData = createHistogramData(notifSiasat);
+    charts.timeline.notifSiasat = createBar('dengue_timeline_notif_siasat', notifData.labels, notifData.counts, 'Cases');
+
+    const siasatData = createHistogramData(siasatAksi);
+    charts.timeline.siasatAksi = createBar('dengue_timeline_siasat_aksi', siasatData.labels, siasatData.counts, 'Cases');
+  }
+
+  function renderAll() {
+    if (!dengueState.rows.length) return;
+    const filtered = applyFilters();
+    renderKpis(filtered);
+    updateWeeklyTrend(filtered);
+    updateLabCharts(filtered);
+    updateDemographyCharts(filtered);
+    updateTopTables(filtered);
+    updateClusters(filtered);
+    updateTimeliness(filtered);
+  }
+
+  function resetFilters() {
+    filters.trendDate.value = 'onset';
+    filters.year.value = 'ALL';
+    filters.week.value = 'ALL';
+    filters.mukim.value = 'ALL';
+    filters.lokaliti.value = 'ALL';
+    filters.jenis.value = 'ALL';
+    filters.outbreakOnly.checked = false;
+    filters.ageGroup.value = 'ALL';
+    filters.jantina.value = 'ALL';
+    filters.keturunan.value = 'ALL';
+    filters.warga.value = 'ALL';
+    filters.negara.value = 'ALL';
+    filters.kategoriPekerjaan.value = 'ALL';
+    filters.pekerjaan.value = 'ALL';
+    filters.rapid.value = 'ALL';
+    filters.elisa.value = 'ALL';
+    filters.pcr.value = 'ALL';
+    dengueState.outbreakFilter = null;
+    updateOutbreakPill();
+    dengueState.symptomFilters.forEach(select => {
+      select.value = 'ALL';
+    });
+    rebuildTrendOptions();
+    rebuildWeekOptions();
+    rebuildGeoOptions();
+    renderAll();
+  }
+
+  filters.trendDate.addEventListener('change', () => {
+    rebuildTrendOptions();
+    renderAll();
+  });
+  filters.year.addEventListener('change', () => {
+    rebuildWeekOptions();
+    renderAll();
+  });
+  filters.week.addEventListener('change', renderAll);
+  filters.mukim.addEventListener('change', () => {
+    rebuildGeoOptions();
+    renderAll();
+  });
+  filters.lokaliti.addEventListener('change', renderAll);
+  filters.jenis.addEventListener('change', renderAll);
+  filters.outbreakOnly.addEventListener('change', renderAll);
+  filters.ageGroup.addEventListener('change', renderAll);
+  filters.jantina.addEventListener('change', renderAll);
+  filters.keturunan.addEventListener('change', renderAll);
+  filters.warga.addEventListener('change', renderAll);
+  filters.negara.addEventListener('change', renderAll);
+  filters.kategoriPekerjaan.addEventListener('change', renderAll);
+  filters.pekerjaan.addEventListener('change', renderAll);
+  filters.rapid.addEventListener('change', renderAll);
+  filters.elisa.addEventListener('change', renderAll);
+  filters.pcr.addEventListener('change', renderAll);
+  filters.reset.addEventListener('click', resetFilters);
+
+  outbreakEls.clear.addEventListener('click', () => {
+    dengueState.outbreakFilter = null;
+    updateOutbreakPill();
+    renderAll();
+  });
+
+  fileInput.addEventListener('change', (evt) => {
+    const file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+
+    setStatus(`Loading ${file.name} ...`);
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const bytes = new Uint8Array(e.target.result);
+        const wb = XLSX.read(bytes, { type: 'array' });
+        const ws = wb.Sheets['Users'];
+        if (!ws) throw new Error('Worksheet "Users" not found.');
+
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+        const keys = rows.length ? Object.keys(rows[0]) : [];
+
+        dengueState.columns = inferColumns(keys);
+        dengueState.symptomDefs = buildSymptomDefs(keys);
+        const enriched = preprocessRows(rows);
+
+        dengueState.rows = enriched;
+        window.dengueData = enriched;
+
+        setStatus(`Dengue records loaded: ${enriched.length}`);
+        rebuildFilterOptions();
+        updateOutbreakPill();
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        setStatus('No file loaded yet.');
+        if (fileError) fileError.textContent = `Failed to parse dengue Excel file: ${err.message || err}`;
+        if (fileError) fileError.style.display = 'block';
+      }
+    };
+    reader.onerror = function () {
+      setStatus('No file loaded yet.');
+      if (fileError) fileError.textContent = 'Failed to read the selected file.';
+      if (fileError) fileError.style.display = 'block';
+    };
+    reader.readAsArrayBuffer(file);
+  });
+})();
+</script>
+
+<script>
   function syncStickyOffsets(){
-  const tabs = document.querySelector('.tabs');
-  if(!tabs) return;
+  const tabs = document.querySelector('.tabs');  if(!tabs) return;
   const h = Math.ceil(tabs.getBoundingClientRect().height);
  document.documentElement.style.setProperty('--tabs-bar-height', h + 'px');
 }
