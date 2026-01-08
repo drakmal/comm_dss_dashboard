@@ -247,6 +247,12 @@
       text-align: center;
     }
 
+    .demo-card canvas {
+      width: 100%;
+      height: 360px;
+      max-height: none;
+    }
+
     /* Diagnosis table */
     table {
       width: 100%;
@@ -1193,8 +1199,9 @@
     </div>
     <canvas id="hiv_year_bar"></canvas>
   </div>
+  <h2>5. Demographics and risk profiles</h2>
   <div class="card">
-    <p class="muted">Demographic breakdown for the selected filters.</p>
+    <p class="muted">Demographic and risk profile breakdown for the selected filters.</p>
     <p class="muted" id="hiv_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
         <div class="demo-block-title">Age</div>
@@ -3746,6 +3753,7 @@ window.renderAll = renderAll;
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { position: 'bottom' },
           tooltip: { callbacks: { label: (tt) => `${tt.label}: ${tt.raw}` } },
@@ -3775,6 +3783,60 @@ window.renderAll = renderAll;
       entries.map(([label]) => label),
       entries.map(([, count]) => count)
     );
+  }
+
+  function pieFromFn(rows, canvasId, fn) {
+    const counts = new Map();
+    rows.forEach((row) => {
+      const label = fn(row);
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    if (!counts.size) {
+      createOrUpdateHivPie(canvasId, ['No data'], [1]);
+      return;
+    }
+    const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    createOrUpdateHivPie(
+      canvasId,
+      entries.map(([label]) => label),
+      entries.map(([, count]) => count)
+    );
+  }
+
+  function pieFromOrderedFn(rows, canvasId, fn, order) {
+    const counts = new Map();
+    rows.forEach((row) => {
+      const label = fn(row);
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    if (!counts.size) {
+      createOrUpdateHivPie(canvasId, ['No data'], [1]);
+      return;
+    }
+    const orderedLabels = order.filter((label) => counts.has(label));
+    const extraLabels = Array.from(counts.keys())
+      .filter((label) => !order.includes(label))
+      .sort((a, b) => counts.get(b) - counts.get(a));
+    const labels = orderedLabels.concat(extraLabels);
+    createOrUpdateHivPie(
+      canvasId,
+      labels,
+      labels.map((label) => counts.get(label))
+    );
+  }
+
+  function hivAgeGroup(value) {
+    const age = Number.parseFloat(String(value ?? '').replace(',', '.'));
+    if (!Number.isFinite(age)) return '';
+    if (age <= 6) return '0 - 6';
+    if (age <= 12) return '7 - 12';
+    if (age <= 17) return '13 - 17';
+    if (age <= 25) return '18 - 25';
+    if (age <= 44) return '26 - 44';
+    if (age <= 60) return '45 - 60';
+    return '>60';
   }
 
   function extractYearFromRow(row, dateKey) {
@@ -3977,7 +4039,12 @@ window.renderAll = renderAll;
     const { columns } = hivState;
     renderYearBar(rows);
     const filteredRows = filterRowsByYearSelection(rows);
-    pieFromColumn(filteredRows, 'hiv_pie_age', columns.age);
+    pieFromOrderedFn(
+      filteredRows,
+      'hiv_pie_age',
+      (row) => hivAgeGroup(row?.[columns.age]),
+      ['0 - 6', '7 - 12', '13 - 17', '18 - 25', '26 - 44', '45 - 60', '>60']
+    );
     pieFromColumn(filteredRows, 'hiv_pie_gender', columns.gender);
     pieFromColumn(filteredRows, 'hiv_pie_race', columns.race);
     pieFromColumn(filteredRows, 'hiv_pie_nationality', columns.nationality);
