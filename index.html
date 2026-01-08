@@ -1527,137 +1527,8 @@
     <div id="dengue_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
 
-  <h2>2. Penapis & KPI</h2>
+  <h2>2. KPI</h2>
   <div class="card">
-    <div class="filters-row">
-      <div class="filter-group-title">Timeline controls</div>
-      <div class="filter-field">
-        <label for="dengue_filter_trend_date">Tarikh Trend / Trend Date:</label>
-        <select id="dengue_filter_trend_date">
-          <option value="onset" selected>Tarikh Onset</option>
-          <option value="notif">Tkh Notifikasi</option>
-          <option value="reg">Tarikh Daftar</option>
-          <option value="diagnosis">Tarikh Diagnosis</option>
-          <option value="input">Tkh Input Notifikasi</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_year">Year:</label>
-        <select id="dengue_filter_year" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_week">Epi Week:</label>
-        <select id="dengue_filter_week" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-group-title">Geography</div>
-      <div class="filter-field">
-        <label for="dengue_filter_mukim">Mukim/Zon (Alamat Semasa):</label>
-        <select id="dengue_filter_mukim" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_lokaliti">Lokaliti (Alamat Semasa):</label>
-        <select id="dengue_filter_lokaliti" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-group-title">Case type</div>
-      <div class="filter-field">
-        <label for="dengue_filter_jenis">Jenis Kes:</label>
-        <select id="dengue_filter_jenis" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label class="filter-checkbox">
-          <input type="checkbox" id="dengue_filter_outbreak_only">
-          Wabak sahaja / Outbreak only
-        </label>
-      </div>
-      <div class="filter-group-title">Demographics</div>
-      <div class="filter-field">
-        <label for="dengue_filter_agegroup">Kategori Umur / Age group:</label>
-        <select id="dengue_filter_agegroup" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_jantina">Jantina:</label>
-        <select id="dengue_filter_jantina" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_keturunan">Keturunan:</label>
-        <select id="dengue_filter_keturunan" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_warga">Status Kewarganegaraan:</label>
-        <select id="dengue_filter_warga" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_negara">Negara Asal:</label>
-        <select id="dengue_filter_negara" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-group-title">Occupation</div>
-      <div class="filter-field">
-        <label for="dengue_filter_kategori_pekerjaan">Kategori Pekerjaan:</label>
-        <select id="dengue_filter_kategori_pekerjaan" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_pekerjaan">Pekerjaan:</label>
-        <select id="dengue_filter_pekerjaan" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-group-title">Lab</div>
-      <div class="filter-field">
-        <label for="dengue_filter_rapid">Ujian Rapid:</label>
-        <select id="dengue_filter_rapid" disabled>
-          <option value="ALL">All</option>
-          <option value="ANY_POS">Any positive</option>
-          <option value="NS1">NS1</option>
-          <option value="IGM">IgM</option>
-          <option value="IGG">IgG</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_elisa">Ujian ELISA:</label>
-        <select id="dengue_filter_elisa" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="dengue_filter_pcr">Ujian PCR:</label>
-        <select id="dengue_filter_pcr" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-group-title">Symptoms</div>
-      <div id="dengue_symptom_filters" class="filters-row"></div>
-      <div class="filter-field align-right">
-        <button type="button" class="btn" id="dengue_reset_filters">Reset penapis / Reset filters</button>
-      </div>
-    </div>
-    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-      <span id="dengue_outbreak_pill" class="pill" style="display:none;">
-        <span id="dengue_outbreak_pill_label"></span>
-        <button type="button" id="dengue_outbreak_clear">Clear</button>
-      </span>
-    </div>
     <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
         <div class="kpi-title">Jumlah Kes / Total cases</div>
@@ -1697,18 +1568,17 @@
       </div>
       <div class="kpi-box">
         <div class="kpi-title">Lokaliti Keutamaan (1–4)</div>
-        <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>
+        <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>␊
       </div>
     </div>
-    <div class="note">All numbers update based on filters above.</div>
+    <div class="note">All numbers update based on the loaded dataset.</div>
   </div>
 
   <h2>3. Weekly trend (Notification) / Trend Mingguan (Notifikasi)</h2>
   <div class="card">
     <canvas id="dengue_weekly_trend"></canvas>
-    <div class="note">All numbers update based on filters above.</div>
+    <div class="note">All numbers update based on the loaded dataset.</div>
   </div>
-
   <h2>4. Surveillance & lab profile / Profil Survelan & Makmal</h2>
   <div class="card">
     <div class="demography-grid">
@@ -6210,34 +6080,11 @@ window.renderAll = renderAll;
   const fileStatus = document.getElementById('dengue_file_status');
   const fileError = document.getElementById('dengue_error');
 
-  const filters = {
-    trendDate: document.getElementById('dengue_filter_trend_date'),
-    year: document.getElementById('dengue_filter_year'),
-    week: document.getElementById('dengue_filter_week'),
-    mukim: document.getElementById('dengue_filter_mukim'),
-    lokaliti: document.getElementById('dengue_filter_lokaliti'),
-    jenis: document.getElementById('dengue_filter_jenis'),
-    outbreakOnly: document.getElementById('dengue_filter_outbreak_only'),
-    ageGroup: document.getElementById('dengue_filter_agegroup'),
-    jantina: document.getElementById('dengue_filter_jantina'),
-    keturunan: document.getElementById('dengue_filter_keturunan'),
-    warga: document.getElementById('dengue_filter_warga'),
-    negara: document.getElementById('dengue_filter_negara'),
-    kategoriPekerjaan: document.getElementById('dengue_filter_kategori_pekerjaan'),
-    pekerjaan: document.getElementById('dengue_filter_pekerjaan'),
-    rapid: document.getElementById('dengue_filter_rapid'),
-    elisa: document.getElementById('dengue_filter_elisa'),
-    pcr: document.getElementById('dengue_filter_pcr'),
-    reset: document.getElementById('dengue_reset_filters'),
-  };
+  const trendDateMode = 'onset';
 
   const outbreakEls = {
-    pill: document.getElementById('dengue_outbreak_pill'),
-    label: document.getElementById('dengue_outbreak_pill_label'),
-    clear: document.getElementById('dengue_outbreak_clear'),
     grid: document.getElementById('dengue_cluster_grid'),
   };
-
   const kpi = {
     total: document.getElementById('dengue_kpi_total'),
     outbreakCases: document.getElementById('dengue_kpi_outbreak_cases'),
@@ -6284,14 +6131,10 @@ window.renderAll = renderAll;
     }
   };
 
-  const symptomContainer = document.getElementById('dengue_symptom_filters');
-
   const dengueState = {
     rows: [],
     columns: {},
     symptomDefs: [],
-    symptomFilters: new Map(),
-    outbreakFilter: null,
   };
 
   function norm(value) {
@@ -6407,21 +6250,6 @@ window.renderAll = renderAll;
     return '>60';
   }
 
-  function setSelectOptions(selectEl, values) {
-    if (!selectEl) return;
-    const keep = selectEl.value;
-    selectEl.innerHTML = '<option value="ALL">All</option>';
-    values.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = String(v);
-      opt.textContent = String(v);
-      selectEl.appendChild(opt);
-    });
-    if (Array.from(selectEl.options).some(o => o.value === keep)) selectEl.value = keep;
-    else selectEl.value = 'ALL';
-    selectEl.disabled = false;
-  }
-
   function setStatus(message, isError = false) {
     if (fileStatus) fileStatus.textContent = message;
     if (fileError) {
@@ -6490,30 +6318,6 @@ window.renderAll = renderAll;
     return defs;
   }
 
-  function renderSymptomFilters() {
-    symptomContainer.innerHTML = '';
-    dengueState.symptomFilters.clear();
-
-    dengueState.symptomDefs.forEach(def => {
-      const wrap = document.createElement('div');
-      wrap.className = 'filter-field';
-      const label = document.createElement('label');
-      label.textContent = `${def.label}:`;
-      const select = document.createElement('select');
-      select.innerHTML = `
-        <option value="ALL">All</option>
-        <option value="Ya">Ya</option>
-        <option value="Tidak">Tidak</option>
-      `;
-      select.disabled = false;
-      wrap.appendChild(label);
-      wrap.appendChild(select);
-      symptomContainer.appendChild(wrap);
-      dengueState.symptomFilters.set(def.key, select);
-      select.addEventListener('change', renderAll);
-    });
-  }
-
   function preprocessRows(rows) {
     const cols = dengueState.columns;
     return rows.map(row => {
@@ -6569,153 +6373,8 @@ window.renderAll = renderAll;
     return d ? isoWeek(d) : null;
   }
 
-  function rebuildTrendOptions() {
-    const mode = filters.trendDate.value;
-    const rows = dengueState.rows;
-    const years = new Set();
-    rows.forEach(r => {
-      const d = getTrendDate(r, mode);
-      if (d) years.add(d.getFullYear());
-    });
-    setSelectOptions(filters.year, Array.from(years).sort((a, b) => a - b));
-
-    rebuildWeekOptions();
-  }
-
-  function rebuildWeekOptions() {
-    const mode = filters.trendDate.value;
-    const year = filters.year.value;
-    const weeks = new Set();
-
-    dengueState.rows.forEach(r => {
-      const d = getTrendDate(r, mode);
-      if (!d) return;
-      if (year !== 'ALL' && String(d.getFullYear()) !== year) return;
-      const wk = getTrendWeek(r, mode);
-      if (wk) weeks.add(wk);
-    });
-
-    const sorted = Array.from(weeks).sort((a, b) => a - b);
-    setSelectOptions(filters.week, sorted);
-  }
-
-  function rebuildGeoOptions() {
-    const mukimSet = new Set();
-    const lokalitiSet = new Set();
-    const selectedMukim = filters.mukim.value;
-
-    dengueState.rows.forEach(r => {
-      const mukim = val(r, dengueState.columns.mukim);
-      const lokaliti = val(r, dengueState.columns.lokaliti);
-      if (mukim) mukimSet.add(mukim);
-      if (lokaliti && (selectedMukim === 'ALL' || mukim === selectedMukim)) {
-        lokalitiSet.add(lokaliti);
-      }
-    });
-
-    setSelectOptions(filters.mukim, Array.from(mukimSet).sort((a, b) => a.localeCompare(b)));
-    setSelectOptions(filters.lokaliti, Array.from(lokalitiSet).sort((a, b) => a.localeCompare(b)));
-  }
-
-  function rebuildFilterOptions() {
-    const rows = dengueState.rows;
-    const cols = dengueState.columns;
-
-    const setFromColumn = (key) => {
-      const s = new Set();
-      rows.forEach(r => {
-        const v = val(r, key);
-        if (v) s.add(v);
-      });
-      return Array.from(s).sort((a, b) => a.localeCompare(b));
-    };
-
-    rebuildTrendOptions();
-    rebuildGeoOptions();
-    setSelectOptions(filters.jenis, setFromColumn(cols.jenisKes));
-    setSelectOptions(filters.jantina, setFromColumn(cols.jantina));
-    setSelectOptions(filters.keturunan, setFromColumn(cols.keturunan));
-    setSelectOptions(filters.warga, setFromColumn(cols.warga));
-    setSelectOptions(filters.negara, setFromColumn(cols.negara));
-    setSelectOptions(filters.kategoriPekerjaan, setFromColumn(cols.kategoriPekerjaan));
-    setSelectOptions(filters.pekerjaan, setFromColumn(cols.pekerjaan));
-    setSelectOptions(filters.elisa, setFromColumn(cols.elisa));
-    setSelectOptions(filters.pcr, setFromColumn(cols.pcr));
-
-    const ageGroups = ['0-6', '7-12', '13-17', '18-25', '26-44', '45-60', '>60'];
-    setSelectOptions(filters.ageGroup, ageGroups);
-
-    filters.rapid.disabled = false;
-    renderSymptomFilters();
-  }
-
   function applyFilters() {
-    const mode = filters.trendDate.value;
-    const year = filters.year.value;
-    const week = filters.week.value;
-    const mukim = filters.mukim.value;
-    const lokaliti = filters.lokaliti.value;
-    const jenis = filters.jenis.value;
-    const ageGroup = filters.ageGroup.value;
-    const jantina = filters.jantina.value;
-    const keturunan = filters.keturunan.value;
-    const warga = filters.warga.value;
-    const negara = filters.negara.value;
-    const kategoriPekerjaan = filters.kategoriPekerjaan.value;
-    const pekerjaan = filters.pekerjaan.value;
-    const rapid = filters.rapid.value;
-    const elisa = filters.elisa.value;
-    const pcr = filters.pcr.value;
-    const outbreakOnly = filters.outbreakOnly.checked;
-
-    return dengueState.rows.filter(r => {
-      const trendDate = getTrendDate(r, mode);
-      if (year !== 'ALL') {
-        if (!trendDate || String(trendDate.getFullYear()) !== year) return false;
-      }
-      if (week !== 'ALL') {
-        const wk = getTrendWeek(r, mode);
-        if (!wk || String(wk) !== week) return false;
-      }
-      if (mukim !== 'ALL' && val(r, dengueState.columns.mukim) !== mukim) return false;
-      if (lokaliti !== 'ALL' && val(r, dengueState.columns.lokaliti) !== lokaliti) return false;
-      if (jenis !== 'ALL' && val(r, dengueState.columns.jenisKes) !== jenis) return false;
-      if (ageGroup !== 'ALL' && r._ageGroup !== ageGroup) return false;
-      if (jantina !== 'ALL' && val(r, dengueState.columns.jantina) !== jantina) return false;
-      if (keturunan !== 'ALL' && val(r, dengueState.columns.keturunan) !== keturunan) return false;
-      if (warga !== 'ALL' && val(r, dengueState.columns.warga) !== warga) return false;
-      if (negara !== 'ALL' && val(r, dengueState.columns.negara) !== negara) return false;
-      if (kategoriPekerjaan !== 'ALL' && val(r, dengueState.columns.kategoriPekerjaan) !== kategoriPekerjaan) return false;
-      if (pekerjaan !== 'ALL' && val(r, dengueState.columns.pekerjaan) !== pekerjaan) return false;
-      if (rapid !== 'ALL') {
-        if (rapid === 'ANY_POS' && !r._rapid.any) return false;
-        if (rapid === 'NS1' && !r._rapid.ns1) return false;
-        if (rapid === 'IGM' && !r._rapid.igm) return false;
-        if (rapid === 'IGG' && !r._rapid.igg) return false;
-      }
-      if (elisa !== 'ALL' && val(r, dengueState.columns.elisa) !== elisa) return false;
-      if (pcr !== 'ALL' && val(r, dengueState.columns.pcr) !== pcr) return false;
-      if (outbreakOnly && !r._outbreakFlag) return false;
-      if (dengueState.outbreakFilter && val(r, dengueState.columns.wabakNo) !== dengueState.outbreakFilter) return false;
-
-      for (const [key, select] of dengueState.symptomFilters.entries()) {
-        const choice = select.value;
-        if (choice === 'ALL') continue;
-        const parsed = parseYesNo(val(r, key));
-        if (parsed !== choice) return false;
-      }
-
-      return true;
-    });
-  }
-
-  function updateOutbreakPill() {
-    if (dengueState.outbreakFilter) {
-      outbreakEls.label.textContent = `Wabak No: ${dengueState.outbreakFilter}`;
-      outbreakEls.pill.style.display = 'inline-flex';
-    } else {
-      outbreakEls.pill.style.display = 'none';
-    }
+    return dengueState.rows;
   }
 
   function renderKpis(rows) {
@@ -6784,7 +6443,7 @@ window.renderAll = renderAll;
 
     const counts = Array.from({ length: 52 }, () => 0);
     rows.forEach(r => {
-      const wk = getTrendWeek(r, filters.trendDate.value);
+      const wk = getTrendWeek(r, trendDateMode);
       if (!wk || wk < 1 || wk > 52) return;
       counts[wk - 1] += 1;
     });
@@ -6985,7 +6644,7 @@ window.renderAll = renderAll;
 
     Array.from(clusters.entries()).forEach(([wabak, cases]) => {
       const onsetDates = cases.map(r => r._dates?.onset).filter(Boolean).sort((a, b) => a - b);
-      const fallbackDates = cases.map(r => getTrendDate(r, filters.trendDate.value)).filter(Boolean).sort((a, b) => a - b);
+      const fallbackDates = cases.map(r => getTrendDate(r, trendDateMode)).filter(Boolean).sort((a, b) => a - b);
       const first = onsetDates[0] || fallbackDates[0];
       const last = onsetDates[onsetDates.length - 1] || fallbackDates[fallbackDates.length - 1];
 
@@ -7014,12 +6673,6 @@ window.renderAll = renderAll;
         <div class="cluster-meta">Top Mukim/Zon: ${topMukim ? `${topMukim[0]} (${topMukim[1]})` : '-'}</div>
         <div class="cluster-meta">Top Lokaliti: ${topLokaliti ? `${topLokaliti[0]} (${topLokaliti[1]})` : '-'}</div>
       `;
-      card.addEventListener('click', () => {
-        dengueState.outbreakFilter = wabak;
-        filters.outbreakOnly.checked = true;
-        updateOutbreakPill();
-        renderAll();
-      });
       outbreakEls.grid.appendChild(card);
     });
   }
@@ -7083,69 +6736,6 @@ window.renderAll = renderAll;
     updateTimeliness(filtered);
   }
 
-  function resetFilters() {
-    filters.trendDate.value = 'onset';
-    filters.year.value = 'ALL';
-    filters.week.value = 'ALL';
-    filters.mukim.value = 'ALL';
-    filters.lokaliti.value = 'ALL';
-    filters.jenis.value = 'ALL';
-    filters.outbreakOnly.checked = false;
-    filters.ageGroup.value = 'ALL';
-    filters.jantina.value = 'ALL';
-    filters.keturunan.value = 'ALL';
-    filters.warga.value = 'ALL';
-    filters.negara.value = 'ALL';
-    filters.kategoriPekerjaan.value = 'ALL';
-    filters.pekerjaan.value = 'ALL';
-    filters.rapid.value = 'ALL';
-    filters.elisa.value = 'ALL';
-    filters.pcr.value = 'ALL';
-    dengueState.outbreakFilter = null;
-    updateOutbreakPill();
-    dengueState.symptomFilters.forEach(select => {
-      select.value = 'ALL';
-    });
-    rebuildTrendOptions();
-    rebuildWeekOptions();
-    rebuildGeoOptions();
-    renderAll();
-  }
-
-  filters.trendDate.addEventListener('change', () => {
-    rebuildTrendOptions();
-    renderAll();
-  });
-  filters.year.addEventListener('change', () => {
-    rebuildWeekOptions();
-    renderAll();
-  });
-  filters.week.addEventListener('change', renderAll);
-  filters.mukim.addEventListener('change', () => {
-    rebuildGeoOptions();
-    renderAll();
-  });
-  filters.lokaliti.addEventListener('change', renderAll);
-  filters.jenis.addEventListener('change', renderAll);
-  filters.outbreakOnly.addEventListener('change', renderAll);
-  filters.ageGroup.addEventListener('change', renderAll);
-  filters.jantina.addEventListener('change', renderAll);
-  filters.keturunan.addEventListener('change', renderAll);
-  filters.warga.addEventListener('change', renderAll);
-  filters.negara.addEventListener('change', renderAll);
-  filters.kategoriPekerjaan.addEventListener('change', renderAll);
-  filters.pekerjaan.addEventListener('change', renderAll);
-  filters.rapid.addEventListener('change', renderAll);
-  filters.elisa.addEventListener('change', renderAll);
-  filters.pcr.addEventListener('change', renderAll);
-  filters.reset.addEventListener('click', resetFilters);
-
-  outbreakEls.clear.addEventListener('click', () => {
-    dengueState.outbreakFilter = null;
-    updateOutbreakPill();
-    renderAll();
-  });
-
   fileInput.addEventListener('change', (evt) => {
     const file = evt.target.files && evt.target.files[0];
     if (!file) return;
@@ -7171,8 +6761,6 @@ window.renderAll = renderAll;
         window.dengueData = enriched;
 
         setStatus(`Dengue records loaded: ${enriched.length}`);
-        rebuildFilterOptions();
-        updateOutbreakPill();
         renderAll();
       } catch (err) {
         console.error(err);
