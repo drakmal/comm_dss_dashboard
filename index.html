@@ -1176,7 +1176,15 @@
   </div>
   <h2>4. Yearly trend</h2>
   <div class="card">
-    <p class="muted">Patient count for the most recent five years available in the dataset.</p>
+    <p class="muted">Patient count for the selected year.</p>
+    <div class="filters-row" style="margin-top:8px;">
+      <div class="filter-field">
+        <label for="hiv_yearly_trend_year">Year</label>
+        <select id="hiv_yearly_trend_year" disabled>
+          <option value="">Year</option>
+        </select>
+      </div>
+    </div>
     <canvas id="hiv_year_bar"></canvas>
   </div>
   <div class="card">
@@ -3434,11 +3442,13 @@ window.renderAll = renderAll;
   const fileInput = document.getElementById('fileInput_hiv');
   const statusEl = document.getElementById('hiv_file_status');
   const errorEl = document.getElementById('hiv_error'); 
+  const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_select');
   const filters = {
     site: document.getElementById('hiv_filter_site'),
     risk: document.getElementById('hiv_filter_risk'),
     year: document.getElementById('hiv_filter_year'),
   };
+  const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_year');
   const kpiEls = {
     total: document.getElementById('hiv_kpi_total_patients'),
     onArtCount: document.getElementById('hiv_kpi_on_art_count'),
@@ -3846,14 +3856,19 @@ window.renderAll = renderAll;
       labels = ['No data'];
       values = [0];
     } else {
+      const selectedYear = yearlyTrendSelect?.value;
       const years = Array.from(counts.keys())
         .map((year) => Number(year))
         .filter((year) => Number.isFinite(year));
-      const latest = Math.max(...years);
-      for (let year = latest - 4; year <= latest; year += 1) {
-        const yearKey = String(year);
-        labels.push(yearKey);
-        values.push(counts.get(yearKey) || 0);
+      const latest = years.length ? Math.max(...years) : null;
+      const yearKey = selectedYear ? String(selectedYear) : (latest !== null ? String(latest) : null);
+
+      if (yearKey) {
+        labels = [yearKey];
+        values = [counts.get(yearKey) || 0];
+      } else {
+        labels = ['No data'];
+        values = [0];
       }
     }
 
