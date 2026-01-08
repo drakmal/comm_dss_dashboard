@@ -6471,7 +6471,7 @@ window.renderAll = renderAll;
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(mapState.map);
-    mapState.markers = L.layerGroup().addTo(mapState.map);
+    mapState.markers = L.featureGroup().addTo(mapState.map);
   }
 
   function setMapDateLabel(date) {
@@ -6552,11 +6552,24 @@ window.renderAll = renderAll;
       }
       marker.addTo(mapState.markers);
     });
-    if (displayRows.length) {
-      const bounds = mapState.markers.getBounds();
-      if (bounds.isValid()) {
-        mapState.map.fitBounds(bounds, { padding: [20, 20] });
-      }
+    const boundsRows = (() => {
+      const districtKey = dengueState.columns.daerah;
+      if (!districtKey) return allRows;
+      const counts = new Map();
+      allRows.forEach(r => {
+        const district = val(r, districtKey);
+        if (!district) return;
+        counts.set(district, (counts.get(district) || 0) + 1);
+      });
+      if (!counts.size) return allRows;
+      const topDistrict = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
+      return allRows.filter(r => val(r, districtKey) === topDistrict);
+    })();
+    const bounds = boundsRows.length
+      ? L.latLngBounds(boundsRows.map(r => [r._lat, r._lng]))
+      : null;
+    if (bounds && bounds.isValid()) {
+      mapState.map.fitBounds(bounds, { padding: [20, 20] });
     } else {
       mapState.map.setView([4.2105, 101.9758], 6);
     }
