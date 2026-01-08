@@ -70,6 +70,10 @@
       gap:8px;
     }
 
+    .filter-field.align-right{
+      margin-left: auto;
+    }
+
     label {
       font-size: 0.9rem;
       color: #444;
@@ -1194,6 +1198,18 @@
         <label for="hiv_yearly_trend_year_to">to</label>
         <select id="hiv_yearly_trend_year_to" disabled>
           <option value="">Year</option>
+        </select>
+      </div>
+      <div class="filter-field align-right">
+        <label for="hiv_yearly_trend_breakdown">Breakdown by</label>
+        <select id="hiv_yearly_trend_breakdown">
+          <option value="overall" selected>Overall</option>
+          <option value="age">Age</option>
+          <option value="gender">Gender</option>
+          <option value="race">Race</option>
+          <option value="nationality">Nationality</option>
+          <option value="risk">Risk group</option>
+          <option value="modeTransmission">Mode of transmission</option>
         </select>
       </div>
     </div>
@@ -3462,6 +3478,7 @@ window.renderAll = renderAll;
   const demoFiltersEl = document.getElementById('hiv_demo_filters');
   const yearlyTrendSelect = document.getElementById('hiv_yearly_trend_year');
   const yearlyTrendToSelect = document.getElementById('hiv_yearly_trend_year_to');
+  const yearlyTrendBreakdownSelect = document.getElementById('hiv_yearly_trend_breakdown');
   const kpiEls = {
     total: document.getElementById('hiv_kpi_total_patients'),
     onArtCount: document.getElementById('hiv_kpi_on_art_count'),
@@ -3489,6 +3506,7 @@ window.renderAll = renderAll;
     yearBar: null,
     pies: {},
     pieColors: {},
+    yearBarColors: {},
   };
 
   const hivState = {
@@ -3880,6 +3898,20 @@ window.renderAll = renderAll;
     return '>60';
   }
 
+  const AGE_GROUP_ORDER = ['0 - 6', '7 - 12', '13 - 17', '18 - 25', '26 - 44', '45 - 60', '>60'];
+
+  function hivAgeGroupWithUnknown(value) {
+    const age = Number.parseFloat(String(value ?? '').replace(',', '.'));
+    if (!Number.isFinite(age)) return 'Unknown';
+    if (age <= 6) return '0 - 6';
+    if (age <= 12) return '7 - 12';
+    if (age <= 17) return '13 - 17';
+    if (age <= 25) return '18 - 25';
+    if (age <= 44) return '26 - 44';
+    if (age <= 60) return '45 - 60';
+    return '>60';
+  }
+
   function extractYearFromRow(row, dateKey) {
     if (!dateKey) return null;
     const parsed = row?._parsedDates?.[dateKey]?.parsed || parseDateAny(row?.[dateKey]);
@@ -3918,6 +3950,47 @@ window.renderAll = renderAll;
     }
 
     return counts;
+  }
+
+  function getSelectedYearRange(counts) {
+    if (!counts || counts.size === 0) return [];
+    const fromValue = yearlyTrendSelect?.value || '';
+    const toValue = yearlyTrendToSelect?.value || '';
+    const years = Array.from(counts.keys())
+      .map((year) => Number(year))
+      .filter((year) => Number.isFinite(year))
+      .sort((a, b) => a - b);
+    if (!years.length) return [];
+    const latest = years[years.length - 1];
+    if (fromValue && toValue) {
+      const start = Math.min(Number(fromValue), Number(toValue));
+      const end = Math.max(Number(fromValue), Number(toValue));
+      const selected = [];
+      for (let year = start; year <= end; year += 1) {
+        selected.push(String(year));
+      }
+      return selected;
+    }
+    const single = fromValue || toValue || String(latest);
+    return single ? [String(single)] : [];
+  }
+
+  function getYearBarColorMap(breakdown) {
+    if (!hivCharts.yearBarColors[breakdown]) {
+      hivCharts.yearBarColors[breakdown] = new Map();
+    }
+    return hivCharts.yearBarColors[breakdown];
+  }
+
+  function getYearBarColors(breakdown, labels) {
+    const colorMap = getYearBarColorMap(breakdown);
+    return labels.map((label) => {
+      if (!colorMap.has(label)) {
+        const nextColor = HIV_PIE_PALETTE[colorMap.size % HIV_PIE_PALETTE.length];
+        colorMap.set(label, nextColor);
+      }
+      return colorMap.get(label);
+    });
   }
   function setYearOptions(selectEl, placeholder, years) {
     if (!selectEl) return;
@@ -3989,39 +4062,91 @@ window.renderAll = renderAll;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const counts = buildYearCounts(rows);
+    const breakdown = yearlyTrendBreakdownSelect?.value || 'overall';
     let labels = [];
     let values = [];
+    let datasets = [];
 
     if (!counts || counts.size === 0) {
       labels = ['No data'];
       values = [0];
     } else {
-      const fromValue = yearlyTrendSelect?.value || '';
-      const toValue = yearlyTrendToSelect?.value || '';
-      const years = Array.from(counts.keys())
-        .map((year) => Number(year))
-        .filter((year) => Number.isFinite(year))
-        .sort((a, b) => a - b);
-      const latest = years.length ? years[years.length - 1] : null;
-
-      if (fromValue && toValue) {
-        const start = Math.min(Number(fromValue), Number(toValue));
-        const end = Math.max(Number(fromValue), Number(toValue));
-        labels = [];
-        values = [];
-        for (let year = start; year <= end; year += 1) {
-          const yearKey = String(year);
-          labels.push(yearKey);
-          values.push(counts.get(yearKey) || 0);
-        }
+      const selectedYears = getSelectedYearRange(counts);
+      labels = selectedYears.length ? selectedYears : ['No data'];
+      if (breakdown === 'overall') {
+        values = labels.map((year) => counts.get(year) || 0);
       } else {
-        const yearKey = fromValue || toValue || (latest !== null ? String(latest) : '');
-        if (yearKey) {
-          labels = [yearKey];
-          values = [counts.get(yearKey) || 0];
+        const { columns } = hivState;
+        const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
+        const hasPatient = Boolean(columns.patientId);
+        const yearSet = new Set(selectedYears);
+        const seen = new Set();
+        const categoryCounts = new Map();
+        let hasUnknown = false;
+
+        rows.forEach((row) => {
+          if (!dateKey) return;
+          const year = extractYearFromRow(row, dateKey);
+          if (!Number.isFinite(year)) return;
+          const yearKey = String(year);
+          if (!yearSet.has(yearKey)) return;
+          let category = '';
+          if (breakdown === 'age') {
+            category = hivAgeGroupWithUnknown(row?.[columns.age]);
+          } else if (breakdown === 'gender') {
+            category = stringValue(row, columns.gender);
+          } else if (breakdown === 'race') {
+            category = stringValue(row, columns.race);
+          } else if (breakdown === 'nationality') {
+            category = stringValue(row, columns.nationality);
+          } else if (breakdown === 'risk') {
+            category = stringValue(row, columns.risk);
+          } else if (breakdown === 'modeTransmission') {
+            category = stringValue(row, columns.modeTransmission);
+          }
+          if (!category) {
+            category = 'Unknown';
+          }
+          if (category === 'Unknown') {
+            hasUnknown = true;
+          }
+          if (hasPatient) {
+            const pid = String(row?.[columns.patientId] ?? '').trim();
+            if (!pid) return;
+            const seenKey = `${yearKey}__${pid}`;
+            if (seen.has(seenKey)) return;
+            seen.add(seenKey);
+          }
+          if (!categoryCounts.has(category)) {
+            categoryCounts.set(category, new Map());
+          }
+          const yearCounts = categoryCounts.get(category);
+          yearCounts.set(yearKey, (yearCounts.get(yearKey) || 0) + 1);
+        });
+
+        let categories = [];
+        if (breakdown === 'age') {
+          categories = AGE_GROUP_ORDER.filter((label) => categoryCounts.has(label));
         } else {
+          categories = Array.from(categoryCounts.keys())
+            .filter((label) => label !== 'Unknown')
+            .sort((a, b) => a.localeCompare(b));
+        }
+        if (hasUnknown && categoryCounts.has('Unknown')) {
+          categories.push('Unknown');
+        }
+
+        if (!categories.length) {
           labels = ['No data'];
           values = [0];
+        } else {
+          const colors = getYearBarColors(breakdown, categories);
+          datasets = categories.map((category, idx) => ({
+            label: category,
+            data: labels.map((year) => categoryCounts.get(category)?.get(year) || 0),
+            backgroundColor: colors[idx],
+            borderRadius: 4,
+          }));
         }
       }
     }
@@ -4030,20 +4155,24 @@ window.renderAll = renderAll;
       hivCharts.yearBar.destroy();
     }
 
+    const chartDatasets = datasets.length
+      ? datasets
+      : [{
+        label: 'Patients',
+        data: values,
+        backgroundColor: '#6366f1',
+        borderRadius: 4,
+      }];
+
     hivCharts.yearBar = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
-        datasets: [{
-          label: 'Patients',
-          data: values,
-          backgroundColor: '#6366f1',
-          borderRadius: 4,
-        }],
+        datasets: chartDatasets,
       },
       options: {
         responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: datasets.length > 0 } },
         scales: {
           x: { title: { display: true, text: 'Year' } },
           y: { title: { display: true, text: 'Patient count' }, beginAtZero: true, ticks: { precision: 0 } },
@@ -4353,6 +4482,9 @@ window.renderAll = renderAll;
   }
   if (yearlyTrendToSelect) {
     yearlyTrendToSelect.addEventListener('change', renderFiltered);
+  }
+  if (yearlyTrendBreakdownSelect) {
+    yearlyTrendBreakdownSelect.addEventListener('change', renderFiltered);
   }
 
   if (typeof window.renderHivDashboard !== 'function') {
