@@ -3710,6 +3710,20 @@ window.renderAll = renderAll;
     return Number(val).toLocaleString('en-US');
   }
 
+  const MAX_PIE_ENTRIES = 8;
+
+  function limitEntries(entries, maxEntries = MAX_PIE_ENTRIES) {
+    if (!Array.isArray(entries) || entries.length <= maxEntries) return entries;
+    const keepCount = Math.max(maxEntries - 1, 1);
+    const kept = entries.slice(0, keepCount);
+    const remainder = entries.slice(keepCount);
+    const otherTotal = remainder.reduce((sum, [, count]) => sum + count, 0);
+    if (otherTotal > 0) {
+      kept.push(['Other', otherTotal]);
+    }
+    return kept;
+  }
+
   function isNonEmpty(value) {
     return value !== null && value !== undefined && String(value).trim() !== '';
   }
@@ -3753,9 +3767,9 @@ window.renderAll = renderAll;
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'bottom' },
+          legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 8 } },
           tooltip: { callbacks: { label: (tt) => `${tt.label}: ${tt.raw}` } },
         },
       },
@@ -3777,7 +3791,9 @@ window.renderAll = renderAll;
       createOrUpdateHivPie(canvasId, ['No data'], [1]);
       return;
     }
-    const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    const entries = limitEntries(
+      Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
+    );
     createOrUpdateHivPie(
       canvasId,
       entries.map(([label]) => label),
@@ -3796,7 +3812,9 @@ window.renderAll = renderAll;
       createOrUpdateHivPie(canvasId, ['No data'], [1]);
       return;
     }
-    const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    const entries = limitEntries(
+      Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
+    );
     createOrUpdateHivPie(
       canvasId,
       entries.map(([label]) => label),
@@ -3820,10 +3838,11 @@ window.renderAll = renderAll;
       .filter((label) => !order.includes(label))
       .sort((a, b) => counts.get(b) - counts.get(a));
     const labels = orderedLabels.concat(extraLabels);
+    const entries = limitEntries(labels.map((label) => [label, counts.get(label)]));
     createOrUpdateHivPie(
       canvasId,
-      labels,
-      labels.map((label) => counts.get(label))
+      entries.map(([label]) => label),
+      entries.map(([, count]) => count)
     );
   }
 
