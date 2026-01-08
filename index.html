@@ -1201,7 +1201,6 @@
   </div>
   <h2>5. Demographics and risk profiles</h2>
   <div class="card">
-    <p class="muted">Demographic and risk profile breakdown for the selected filters.</p>
     <p class="muted" id="hiv_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
         <div class="demo-block-title">Age</div>
@@ -3489,6 +3488,7 @@ window.renderAll = renderAll;
    const hivCharts = {
     yearBar: null,
     pies: {},
+    pieColors: {},
   };
 
   const hivState = {
@@ -3746,6 +3746,30 @@ window.renderAll = renderAll;
     return String(raw).trim();
   }
 
+  const HIV_PIE_PALETTE = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+  const HIV_NO_DATA_COLOR = '#9ca3af';
+
+  function getHivPieColorMap(canvasId) {
+    if (!hivCharts.pieColors[canvasId]) {
+      hivCharts.pieColors[canvasId] = new Map();
+    }
+    return hivCharts.pieColors[canvasId];
+  }
+
+  function getHivPieColors(canvasId, labels) {
+    if (labels.length === 1 && labels[0] === 'No data') {
+      return [HIV_NO_DATA_COLOR];
+    }
+    const colorMap = getHivPieColorMap(canvasId);
+    return labels.map((label) => {
+      if (!colorMap.has(label)) {
+        const nextColor = HIV_PIE_PALETTE[colorMap.size % HIV_PIE_PALETTE.length];
+        colorMap.set(label, nextColor);
+      }
+      return colorMap.get(label);
+    });
+  }
+
   function createOrUpdateHivPie(canvasId, labels, values) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -3755,9 +3779,7 @@ window.renderAll = renderAll;
       hivCharts.pies[canvasId].destroy();
     }
 
-    const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-    const isNoData = labels.length === 1 && labels[0] === 'No data';
-    const colors = isNoData ? ['#9ca3af'] : labels.map((_, i) => palette[i % palette.length]);
+    const colors = getHivPieColors(canvasId, labels);
 
     hivCharts.pies[canvasId] = new Chart(ctx, {
       type: 'pie',
@@ -4360,6 +4382,7 @@ window.renderAll = renderAll;
         window.hivRows = enriched;
         hivState.rows = enriched;
         hivState.columns = inferColumns(rows.length ? Object.keys(rows[0]) : []);
+        hivCharts.pieColors = {};
 
         showStatus(`HIV records loaded: ${enriched.length}`);
 
