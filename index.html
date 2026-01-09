@@ -1613,11 +1613,11 @@
   <div class="card">
     <div class="filters-row" style="margin-bottom: 12px;">
       <div class="filter-field">
-        <label for="dengue_filter_week_from"><strong>Epid minggu (Tkh Daftar) From</strong></label>
+        <label for="dengue_filter_week_from"><strong>Epid minggu (Tkh Daftar) from</strong></label>
         <select id="dengue_filter_week_from"></select>
       </div>
       <div class="filter-field">
-        <label for="dengue_filter_week_to"><strong>Epid minggu (Tkh Daftar) To</strong></label>
+        <label for="dengue_filter_week_to"><strong>to</strong></label>
         <select id="dengue_filter_week_to"></select>
       </div>
     </div>
@@ -1663,7 +1663,7 @@
         <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>
       </div>
     </div>
-    <div class="note">All numbers update based on the loaded dataset.</div>
+    <div class="note">All numbers update based on filters above.</div>
   </div>
 
   <h2>3. Weekly trend</h2>
@@ -1681,11 +1681,11 @@
       </div>
     </div>
     <canvas id="dengue_weekly_trend"></canvas>
-    <div class="note">All numbers update based on the loaded dataset.</div>
+    <div class="note">All numbers update based on filters above.</div>
   </div>
   <h2>4. Case distribution map</h2>
   <div class="card">
-    <div class="note">Red dots follow the Section 2 filter (Epid minggu Tkh Daftar).</div>
+    <div class="note">Date slider follow the Section 2 epid week filter.</div>
     <div id="dengue_case_map" class="map-container"></div>
     <div class="slider-row">
       <span class="muted">Date</span>
@@ -1723,7 +1723,7 @@
     </div>
   </div>
 
-  <h2>5. Demography</h2>
+  <h2>6. Demography</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -7046,6 +7046,7 @@ window.renderAll = renderAll;
 
     const pcrEntries = buildCounts(dengueState.columns.pcr);
     charts.pcr = createPie('dengue_chart_pcr', pcrEntries.map(e => e[0]), pcrEntries.map(e => e[1]));
+  }
 
   function updateDemographyCharts(rows) {
     const countBy = (key) => {
