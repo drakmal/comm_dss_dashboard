@@ -7333,8 +7333,10 @@ window.renderAll = renderAll;
       try {
         const bytes = new Uint8Array(e.target.result);
         const wb = XLSX.read(bytes, { type: 'array' });
-        const ws = wb.Sheets['Users'];
-        if (!ws) throw new Error('Worksheet "Users" not found.');
+        const preferredSheet = wb.Sheets['Users'];
+        const fallbackSheetName = wb.SheetNames[0];
+        const ws = preferredSheet || (fallbackSheetName ? wb.Sheets[fallbackSheetName] : null);
+        if (!ws) throw new Error('No worksheet found in file.');
 
         const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
         const keys = rows.length ? Object.keys(rows[0]) : [];
@@ -7350,7 +7352,8 @@ window.renderAll = renderAll;
         mapState.userViewLocked = false;
         populateWeekFilters(enriched);
 
-        setStatus(`Dengue records loaded: ${enriched.length}`);
+        const sheetLabel = preferredSheet ? 'Users' : (fallbackSheetName || 'Unknown sheet');
+        setStatus(`Dengue records loaded: ${enriched.length} (${sheetLabel})`);
         renderAll();
       } catch (err) {
         console.error(err);
