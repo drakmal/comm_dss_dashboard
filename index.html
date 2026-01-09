@@ -1674,7 +1674,7 @@
         <select id="dengue_trend_date_mode">
           <option value="onset">Tarikh Onset</option>
           <option value="notif">Tkh Notifikasi</option>
-          <option value="reg">Tarikh Daftar</option>
+          <option value="reg" selected>Tarikh Daftar</option>
           <option value="diagnosis">Tarikh Diagnosis</option>
           <option value="input">Tkh Input Notifikasi</option>
         </select>
@@ -1685,6 +1685,7 @@
   </div>
   <h2>4. Case distribution map</h2>
   <div class="card">
+    <div class="note">Red dots follow the Section 2 filter (Epid minggu Tkh Daftar).</div>
     <div id="dengue_case_map" class="map-container"></div>
     <div class="slider-row">
       <span class="muted">Date</span>
@@ -1705,7 +1706,7 @@
       </label>
     </div>
   </div>
-  <h2>5. Surveillance & lab profile</h2>
+  <h2>5. Lab profiles</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -1718,10 +1719,6 @@
       <div class="demo-card">
         <div class="demo-block-title">Ujian PCR</div>
         <canvas id="dengue_chart_pcr"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Symptom prevalence</div>
-        <canvas id="dengue_chart_symptoms"></canvas>
       </div>
     </div>
   </div>
@@ -1810,20 +1807,8 @@
     </div>
     <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
-        <div class="kpi-title">Missing Tarikh Onset</div>
-        <div class="kpi-value" id="dengue_missing_onset">-</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">Missing Tkh Notifikasi</div>
-        <div class="kpi-value" id="dengue_missing_notif">-</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">Missing Tarikh Siasatan Kes</div>
-        <div class="kpi-value" id="dengue_missing_siasat">-</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">Missing Aktiviti Pertama</div>
-        <div class="kpi-value" id="dengue_missing_first_action">-</div>
+        <div class="kpi-title">Missing Lokaliti Keutamaan</div>
+        <div class="kpi-value" id="dengue_missing_lokaliti_priority">-</div>
       </div>
     </div>
   </div>
@@ -6282,7 +6267,7 @@ window.renderAll = renderAll;
   const weekFromSelect = document.getElementById('dengue_filter_week_from');
   const weekToSelect = document.getElementById('dengue_filter_week_to');
 
-  let trendDateMode = 'onset';
+  let trendDateMode = 'reg';
   let filterWeekFrom = null;
   let filterWeekTo = null;
   const mapState = {
@@ -6331,10 +6316,7 @@ window.renderAll = renderAll;
   };
 
   const missingEls = {
-    onset: document.getElementById('dengue_missing_onset'),
-    notif: document.getElementById('dengue_missing_notif'),
-    siasat: document.getElementById('dengue_missing_siasat'),
-    firstAction: document.getElementById('dengue_missing_first_action'),
+    lokalitiPriority: document.getElementById('dengue_missing_lokaliti_priority'),
   };
 
   const tables = {
@@ -6347,7 +6329,6 @@ window.renderAll = renderAll;
     rapid: null,
     elisa: null,
     pcr: null,
-    symptoms: null,
     demo: {
       jantina: null,
       age: null,
@@ -6490,6 +6471,16 @@ window.renderAll = renderAll;
     return { any, ns1, igm, igg };
   }
 
+  function parseLokalitiPriority(raw) {
+    if (raw === null || raw === undefined) return null;
+    const text = String(raw).trim();
+    if (!text) return null;
+    const numeric = parseInt(text, 10);
+    if ([1, 2, 3, 4].includes(numeric)) return String(numeric);
+    const match = text.match(/\b([1-4])\b/);
+    return match ? match[1] : null;
+  }
+
   function ageGroupFromYears(age) {
     if (!Number.isFinite(age)) return null;
     if (age <= 6) return '0-6';
@@ -6500,6 +6491,17 @@ window.renderAll = renderAll;
     if (age <= 60) return '45-60';
     return '>60';
   }
+
+  const AGE_GROUP_ORDER = ['0-6', '7-12', '13-17', '18-25', '26-44', '45-60', '>60'];
+  const AGE_GROUP_COLORS = {
+    '0-6': '#0ea5e9',
+    '7-12': '#22c55e',
+    '13-17': '#a855f7',
+    '18-25': '#f97316',
+    '26-44': '#eab308',
+    '45-60': '#6366f1',
+    '>60': '#ef4444',
+  };
 
   function setStatus(message, isError = false) {
     if (fileStatus) fileStatus.textContent = message;
@@ -6910,8 +6912,8 @@ window.renderAll = renderAll;
 
     const priorityCounts = { '1': 0, '2': 0, '3': 0, '4': 0 };
     rows.forEach(r => {
-      const raw = val(r, dengueState.columns.lokalitiPriority);
-      if (priorityCounts.hasOwnProperty(raw)) priorityCounts[raw] += 1;
+      const raw = parseLokalitiPriority(val(r, dengueState.columns.lokalitiPriority));
+      if (raw && priorityCounts.hasOwnProperty(raw)) priorityCounts[raw] += 1;
     });
 
     kpi.total.textContent = formatNumber(total);
@@ -6968,7 +6970,7 @@ window.renderAll = renderAll;
     });
   }
 
-  function createPie(canvasId, labels, values) {
+  function createPie(canvasId, labels, values, colors = null) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -6977,11 +6979,12 @@ window.renderAll = renderAll;
       values = [1];
     }
     const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+    const backgroundColors = colors && colors.length ? colors : labels.map((_, i) => palette[i % palette.length]);
     return new Chart(ctx, {
       type: 'pie',
       data: {
         labels,
-        datasets: [{ data: values, backgroundColor: labels.map((_, i) => palette[i % palette.length]), borderColor: '#fff', borderWidth: 2 }]
+        datasets: [{ data: values, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2 }]
       },
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
@@ -7020,7 +7023,6 @@ window.renderAll = renderAll;
     if (charts.rapid) charts.rapid.destroy();
     if (charts.elisa) charts.elisa.destroy();
     if (charts.pcr) charts.pcr.destroy();
-    if (charts.symptoms) charts.symptoms.destroy();
 
     const rapidCounts = {
       NS1: rows.filter(r => r._rapid.ns1).length,
@@ -7044,16 +7046,6 @@ window.renderAll = renderAll;
 
     const pcrEntries = buildCounts(dengueState.columns.pcr);
     charts.pcr = createPie('dengue_chart_pcr', pcrEntries.map(e => e[0]), pcrEntries.map(e => e[1]));
-
-    const symptomLabels = [];
-    const symptomCounts = [];
-    dengueState.symptomDefs.forEach(def => {
-      const yesCount = rows.filter(r => parseYesNo(val(r, def.key)) === 'Ya').length;
-      symptomLabels.push(def.label);
-      symptomCounts.push(yesCount);
-    });
-    charts.symptoms = createBar('dengue_chart_symptoms', symptomLabels, symptomCounts, 'Ya');
-  }
 
   function updateDemographyCharts(rows) {
     const countBy = (key) => {
@@ -7083,8 +7075,13 @@ window.renderAll = renderAll;
     const jantina = countBy(dengueState.columns.jantina);
     charts.demo.jantina = createPie('dengue_demo_jantina', jantina.map(e => e[0]), jantina.map(e => e[1]));
 
-    const ageEntries = Array.from(ageCounts.entries());
-    charts.demo.age = createPie('dengue_demo_agegroup', ageEntries.map(e => e[0]), ageEntries.map(e => e[1]));
+    const ageEntries = AGE_GROUP_ORDER
+      .map(label => [label, ageCounts.get(label) || 0])
+      .filter(([, count]) => count > 0);
+    const ageLabels = ageEntries.map(e => e[0]);
+    const ageValues = ageEntries.map(e => e[1]);
+    const ageColors = ageLabels.map(label => AGE_GROUP_COLORS[label] || '#94a3b8');
+    charts.demo.age = createPie('dengue_demo_agegroup', ageLabels, ageValues, ageColors);
 
     const warga = countBy(dengueState.columns.warga);
     charts.demo.warga = createPie('dengue_demo_warga', warga.map(e => e[0]), warga.map(e => e[1]));
@@ -7198,16 +7195,9 @@ window.renderAll = renderAll;
     const onsetNotif = rows.map(r => diffDays(r._dates?.onset, r._dates?.notif));
     const notifSiasat = rows.map(r => diffDays(r._dates?.notif, parseDateAny(r[dengueState.columns.siasatDate])));
     const siasatAksi = rows.map(r => diffDays(parseDateAny(r[dengueState.columns.siasatDate]), r._firstActionDate));
+    const lokalitiMissing = rows.filter(r => !parseLokalitiPriority(val(r, dengueState.columns.lokalitiPriority))).length;
 
-    const onsetMissing = rows.filter(r => !r._dates?.onset).length;
-    const notifMissing = rows.filter(r => !r._dates?.notif).length;
-    const siasatMissing = rows.filter(r => !parseDateAny(r[dengueState.columns.siasatDate])).length;
-    const actionMissing = rows.filter(r => !r._firstActionDate).length;
-
-    missingEls.onset.textContent = formatNumber(onsetMissing);
-    missingEls.notif.textContent = formatNumber(notifMissing);
-    missingEls.siasat.textContent = formatNumber(siasatMissing);
-    missingEls.firstAction.textContent = formatNumber(actionMissing);
+    missingEls.lokalitiPriority.textContent = formatNumber(lokalitiMissing);
 
     if (charts.timeline.onsetNotif) charts.timeline.onsetNotif.destroy();
     if (charts.timeline.notifSiasat) charts.timeline.notifSiasat.destroy();
