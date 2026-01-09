@@ -1373,7 +1373,7 @@
     </div>
     <canvas id="hiv_year_bar"></canvas>
   </div>
-  <h2>5. Demographics and risk profiles</h2>
+  <h2>4. Demographics and risk profiles</h2>
   <div class="card">
     <p class="muted" id="hiv_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
@@ -1485,26 +1485,10 @@
           <option value="">Year</option>
         </select>
       </div>
-      <div class="filter-field align-right">
-        <label for="hepc_yearly_trend_breakdown">Breakdown by</label>
-        <select id="hepc_yearly_trend_breakdown">
-          <option value="overall" selected>Overall</option>
-          <option value="age">Age</option>
-          <option value="gender">Gender</option>
-          <option value="race">Race</option>
-          <option value="nationality">Nationality</option>
-          <option value="risk">Risk group</option>
-          <option value="modeTransmission">Mode of transmission</option>
-        </select>
-      </div>
     </div>
     <canvas id="hepc_year_bar"></canvas>
   </div>
-  <h2>4. Prophylaxis and co-infections</h2>
-  <div class="card">
-    <div class="note">All numbers update based on filters above.</div>
-  </div>
-  <h2>5. Demographics and risk profiles</h2>  <div class="card">
+  <h2>4. Demographics and risk profiles</h2>  <div class="card">
     <p class="muted" id="hepc_demo_filters">Filters on: Site: All • Year of treatment: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
         <div class="demo-block-title">Age</div>
@@ -5130,7 +5114,6 @@ window.renderAll = renderAll;
   const demoFiltersEl = document.getElementById('hepc_demo_filters');
   const yearlyTrendSelect = document.getElementById('hepc_yearly_trend_year');
   const yearlyTrendToSelect = document.getElementById('hepc_yearly_trend_year_to');
-  const yearlyTrendBreakdownSelect = document.getElementById('hepc_yearly_trend_breakdown');
   const kpiEls = {
     total: document.getElementById('hepc_kpi_total_patients'),
     onArtCount: document.getElementById('hepc_kpi_on_art_count'),
@@ -5159,7 +5142,6 @@ window.renderAll = renderAll;
     yearBar: null,
     pies: {},
     pieColors: {},
-    yearBarColors: {},
   };
 
   const hepcState = {
@@ -5579,7 +5561,7 @@ window.renderAll = renderAll;
 
   function buildYearCounts(rows) {
     const { columns } = hepcState;
-    const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
+    const dateKey = columns.treatmentStartDate;
     if (!dateKey) return null;
 
     const hasPatient = Boolean(columns.patientId);
@@ -5633,24 +5615,7 @@ window.renderAll = renderAll;
     return single ? [String(single)] : [];
   }
 
-  function getYearBarColorMap(breakdown) {
-    if (!hepcCharts.yearBarColors[breakdown]) {
-      hepcCharts.yearBarColors[breakdown] = new Map();
-    }
-    return hepcCharts.yearBarColors[breakdown];
-  }
-
-  function getYearBarColors(breakdown, labels) {
-    const colorMap = getYearBarColorMap(breakdown);
-    return labels.map((label) => {
-      if (!colorMap.has(label)) {
-        const nextColor = HEPC_PIE_PALETTE[colorMap.size % HEPC_PIE_PALETTE.length];
-        colorMap.set(label, nextColor);
-      }
-      return colorMap.get(label);
-    });
-  }
-  function setYearOptions(selectEl, placeholder, years) {
+   function setYearOptions(selectEl, placeholder, years) {
     if (!selectEl) return;
     const current = selectEl.value;
     selectEl.innerHTML = '';
@@ -5720,10 +5685,8 @@ window.renderAll = renderAll;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const counts = buildYearCounts(rows);
-    const breakdown = yearlyTrendBreakdownSelect?.value || 'overall';
     let labels = [];
     let values = [];
-    let datasets = [];
 
     if (!counts || counts.size === 0) {
       labels = ['No data'];
@@ -5731,106 +5694,27 @@ window.renderAll = renderAll;
     } else {
       const selectedYears = getSelectedYearRange(counts);
       labels = selectedYears.length ? selectedYears : ['No data'];
-      if (breakdown === 'overall') {
-        values = labels.map((year) => counts.get(year) || 0);
-      } else {
-        const { columns } = hepcState;
-        const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
-        const hasPatient = Boolean(columns.patientId);
-        const yearSet = new Set(selectedYears);
-        const seen = new Set();
-        const categoryCounts = new Map();
-        let hasUnknown = false;
-
-        rows.forEach((row) => {
-          if (!dateKey) return;
-          const year = extractYearFromRow(row, dateKey);
-          if (!Number.isFinite(year)) return;
-          const yearKey = String(year);
-          if (!yearSet.has(yearKey)) return;
-          let category = '';
-          if (breakdown === 'age') {
-            category = hivAgeGroupWithUnknown(row?.[columns.age]);
-          } else if (breakdown === 'gender') {
-            category = stringValue(row, columns.gender);
-          } else if (breakdown === 'race') {
-            category = stringValue(row, columns.race);
-          } else if (breakdown === 'nationality') {
-            category = stringValue(row, columns.nationality);
-          } else if (breakdown === 'risk') {
-            category = stringValue(row, columns.risk);
-          } else if (breakdown === 'modeTransmission') {
-            category = stringValue(row, columns.modeTransmission);
-          }
-          if (!category) {
-            category = 'Unknown';
-          }
-          if (category === 'Unknown') {
-            hasUnknown = true;
-          }
-          if (hasPatient) {
-            const pid = String(row?.[columns.patientId] ?? '').trim();
-            if (!pid) return;
-            const seenKey = `${yearKey}__${pid}`;
-            if (seen.has(seenKey)) return;
-            seen.add(seenKey);
-          }
-          if (!categoryCounts.has(category)) {
-            categoryCounts.set(category, new Map());
-          }
-          const yearCounts = categoryCounts.get(category);
-          yearCounts.set(yearKey, (yearCounts.get(yearKey) || 0) + 1);
-        });
-
-        let categories = [];
-        if (breakdown === 'age') {
-          categories = AGE_GROUP_ORDER.filter((label) => categoryCounts.has(label));
-        } else {
-          categories = Array.from(categoryCounts.keys())
-            .filter((label) => label !== 'Unknown')
-            .sort((a, b) => a.localeCompare(b));
-        }
-        if (hasUnknown && categoryCounts.has('Unknown')) {
-          categories.push('Unknown');
-        }
-
-        if (!categories.length) {
-          labels = ['No data'];
-          values = [0];
-        } else {
-          const colors = getYearBarColors(breakdown, categories);
-          datasets = categories.map((category, idx) => ({
-            label: category,
-            data: labels.map((year) => categoryCounts.get(category)?.get(year) || 0),
-            backgroundColor: colors[idx],
-            borderRadius: 4,
-          }));
-        }
-      }
+      values = labels.map((year) => counts.get(year) || 0);
     }
 
     if (hepcCharts.yearBar && hepcCharts.yearBar.destroy) {
       hepcCharts.yearBar.destroy();
     }
 
-    const chartDatasets = datasets.length
-      ? datasets
-      : [{
-        label: 'Patients',
-        data: values,
-        backgroundColor: '#6366f1',
-        borderRadius: 4,
-      }];
-
     hepcCharts.yearBar = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
-        datasets: chartDatasets,
+        datasets: [{
+          label: 'Patients',
+          data: values,
+          backgroundColor: '#6366f1',
+          borderRadius: 4,
+        }],
       },
       options: {
         responsive: true,
-        plugins: { legend: { display: datasets.length > 0 } },
+        plugins: { legend: { display: false } },
         scales: {
           x: { title: { display: true, text: 'Year' } },
           y: { title: { display: true, text: 'Patient count' }, beginAtZero: true, ticks: { precision: 0 } },
@@ -5841,7 +5725,7 @@ window.renderAll = renderAll;
 
   function filterRowsByYearSelection(rows) {
     const { columns } = hepcState;
-    const dateKey = columns.firstVisitDate || columns.diagnoseDate || columns.lastUpdated;
+    const dateKey = columns.treatmentStartDate;
     if (!dateKey || !Array.isArray(rows) || rows.length === 0) return rows;
 
     const fromValue = yearlyTrendSelect?.value || '';
@@ -6150,9 +6034,6 @@ window.renderAll = renderAll;
   }
   if (yearlyTrendToSelect) {
     yearlyTrendToSelect.addEventListener('change', renderFiltered);
-  }
-  if (yearlyTrendBreakdownSelect) {
-    yearlyTrendBreakdownSelect.addEventListener('change', renderFiltered);
   }
 
   if (typeof window.renderHepcDashboard !== 'function') {
