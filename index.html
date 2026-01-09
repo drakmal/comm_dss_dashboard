@@ -1627,6 +1627,11 @@
         <div class="kpi-value" id="dengue_kpi_total">-</div>
       </div>
       <div class="kpi-box">
+        <div class="kpi-title">Incidence</div>
+        <div class="kpi-value" id="dengue_kpi_incidence">-</div>
+        <div class="kpi-sub">per 100,000 population</div>
+      </div>
+      <div class="kpi-box">
         <div class="kpi-title">Outbreak cases</div>
         <div class="kpi-value" id="dengue_kpi_outbreak_cases">-</div>
       </div>
@@ -6304,6 +6309,7 @@ window.renderAll = renderAll;
   };
   const kpi = {
     total: document.getElementById('dengue_kpi_total'),
+    incidence: document.getElementById('dengue_kpi_incidence'),
     outbreakCases: document.getElementById('dengue_kpi_outbreak_cases'),
     outbreakClusters: document.getElementById('dengue_kpi_outbreak_clusters'),
     topMukim: document.getElementById('dengue_kpi_top_mukim'),
@@ -6916,7 +6922,19 @@ window.renderAll = renderAll;
       if (raw && priorityCounts.hasOwnProperty(raw)) priorityCounts[raw] += 1;
     });
 
+    const denomPop = Number(window.dosmSelectedPopulation ?? NaN);
+    let incidenceText = '-';
+    if (Number.isFinite(denomPop) && denomPop > 0) {
+      const rate = (total / denomPop) * 100000;
+      const rounded = Math.round(rate * 10) / 10;
+      incidenceText = rounded.toLocaleString('en-US', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+    }
+
     kpi.total.textContent = formatNumber(total);
+    if (kpi.incidence) kpi.incidence.textContent = incidenceText;
     kpi.outbreakCases.textContent = formatNumber(outbreakRows.length);
     kpi.outbreakClusters.textContent = formatNumber(outbreakSet.size);
     kpi.topMukim.textContent = topFromMap(countBy(dengueState.columns.mukim));
@@ -7226,6 +7244,15 @@ window.renderAll = renderAll;
     updateClusters(filtered);
     updateTimeliness(filtered);
   }
+
+  const previousUpdatePopulationRates = window.updatePopulationRates;
+  window.updatePopulationRates = function () {
+    if (typeof previousUpdatePopulationRates === 'function') {
+      previousUpdatePopulationRates();
+    }
+    if (!dengueState.rows.length) return;
+    renderKpis(applyFilters());
+  };
 
   if (trendDateSelect) {
     trendDateSelect.value = trendDateMode;
