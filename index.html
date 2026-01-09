@@ -1865,6 +1865,12 @@
   }
   window.normalizeStateForDOSM = normalizeStateForDOSM;
 
+  const PERAK_MERGE_STATE = 'perak';
+  const PERAK_MERGE_DISTRICTS = new Map([
+    ['larut dan matang', 'Larut, Matang dan Selama'],
+    ['selama', 'Larut, Matang dan Selama']
+  ]);
+
   function toPeople(val) {
     const raw = String(val ?? '').replace(/,/g, '').trim();
     if (!raw) return null;
@@ -1938,6 +1944,8 @@
     stateLabels.clear();
     districtCache.clear();
 
+    const perakParts = new Map(); // normDistrict -> { population, ts, year }
+
     rows.forEach(row => {
       const stateRaw = row.state ?? row.State;
       const districtRaw = row.district ?? row.District;
@@ -1958,16 +1966,48 @@
       const normState = normalizeStateForDOSM(stateDisplay);
       const normDistrict = normalizeDistrictName(districtDisplay);
 
+      if (normState === PERAK_MERGE_STATE && PERAK_MERGE_DISTRICTS.has(normDistrict)) {
+        const existingPart = perakParts.get(normDistrict);
+        if (!existingPart || ts > existingPart.ts || (ts === existingPart.ts && people > existingPart.population)) {
+          perakParts.set(normDistrict, { population: people, ts, year });
+        }
+        stateLabels.set(normState, stateDisplay);
+        return;
+      }
+
       stateLabels.set(normState, stateDisplay);
       if (!stateDistricts.has(normState)) stateDistricts.set(normState, new Set());
       stateDistricts.get(normState).add(districtDisplay);
-
       const key = `${normState}|${normDistrict}`;
       const existing = districtCache.get(key);
       if (!existing || ts > existing.ts || (ts === existing.ts && people > existing.population)) {
         districtCache.set(key, { population: people, ts, year });
       }
     });
+
+    if (perakParts.size > 0) {
+      const combinedLabel = PERAK_MERGE_DISTRICTS.get('larut dan matang') || 'Larut, Matang dan Selama';
+      const combinedNorm = normalizeDistrictName(combinedLabel);
+      let combinedPopulation = 0;
+      let combinedTs = null;
+      let combinedYear = null;
+
+      perakParts.forEach(part => {
+        combinedPopulation += Number(part.population) || 0;
+        if (combinedTs == null || part.ts > combinedTs) {
+          combinedTs = part.ts;
+          combinedYear = part.year;
+        }
+      });
+
+      if (!stateDistricts.has(PERAK_MERGE_STATE)) stateDistricts.set(PERAK_MERGE_STATE, new Set());
+      stateDistricts.get(PERAK_MERGE_STATE).add(combinedLabel);
+      districtCache.set(`${PERAK_MERGE_STATE}|${combinedNorm}`, {
+        population: combinedPopulation,
+        ts: combinedTs ?? 0,
+        year: combinedYear ?? null
+      });
+    }
   }
 
   function buildCachesFromCompact(data) {
@@ -1976,7 +2016,6 @@
     districtCache.clear();
     stateCache.clear();
     malaysiaLatest = null;
-
     if (!data || typeof data !== 'object') return;
 
     if (data.malaysia && data.malaysia.population != null) {
@@ -1998,6 +2037,7 @@
     });
 
     const districts = data.districts || {};
+    const perakParts = new Map();
     Object.entries(districts).forEach(([stateName, districtMap]) => {
       if (!stateName || !districtMap) return;
       const normState = normalizeStateForDOSM(stateName);
@@ -2006,8 +2046,16 @@
 
       Object.entries(districtMap).forEach(([districtName, info]) => {
         if (!districtName || !info) return;
+        const normDistrict = normalizeDistrictName(districtName);
+        if (normState === PERAK_MERGE_STATE && PERAK_MERGE_DISTRICTS.has(normDistrict)) {
+          perakParts.set(normDistrict, {
+            population: Number(info.population),
+            year: info.year ?? null
+          });
+          return;
+        }
         stateDistricts.get(normState).add(districtName);
-        const key = `${normState}|${normalizeDistrictName(districtName)}`;
+        const key = `${normState}|${normDistrict}`;
         districtCache.set(key, {
           population: Number(info.population),
           year: info.year ?? null,
@@ -2015,6 +2063,26 @@
         });
       });
     });
+
+    if (perakParts.size > 0) {
+      const combinedLabel = PERAK_MERGE_DISTRICTS.get('larut dan matang') || 'Larut, Matang dan Selama';
+      const combinedNorm = normalizeDistrictName(combinedLabel);
+      let combinedPopulation = 0;
+      let combinedYear = null;
+      perakParts.forEach(part => {
+        combinedPopulation += Number(part.population) || 0;
+        if (combinedYear == null && part.year != null) {
+          combinedYear = part.year;
+        }
+      });
+      if (!stateDistricts.has(PERAK_MERGE_STATE)) stateDistricts.set(PERAK_MERGE_STATE, new Set());
+      stateDistricts.get(PERAK_MERGE_STATE).add(combinedLabel);
+      districtCache.set(`${PERAK_MERGE_STATE}|${combinedNorm}`, {
+        population: combinedPopulation,
+        year: combinedYear,
+        ts: 0
+      });
+    }
   }
 
 function buildStateCaches(rows) {
