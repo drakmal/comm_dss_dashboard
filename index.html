@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: AGPL-3.0-only
+Copyright (C) 2026 drakmal
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1503,16 +1508,44 @@
         <canvas id="hepc_pie_race"></canvas>
       </div>
       <div class="demo-card">
-        <div class="demo-block-title">Nationality</div>
-        <canvas id="hepc_pie_nationality"></canvas>
+        <div class="demo-block-title">PWID</div>
+        <canvas id="hepc_pie_pwid"></canvas>
       </div>
       <div class="demo-card">
-        <div class="demo-block-title">Risk group</div>
-        <canvas id="hepc_pie_risk_group"></canvas>
+        <div class="demo-block-title">Blood transfusion</div>
+        <canvas id="hepc_pie_blood_transfusion"></canvas>
       </div>
       <div class="demo-card">
-        <div class="demo-block-title">Mode of transmission</div>
-        <canvas id="hepc_pie_mode_transmission"></canvas>
+        <div class="demo-block-title">Organ transplant</div>
+        <canvas id="hepc_pie_organ_transplant"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Needle stick injury</div>
+        <canvas id="hepc_pie_needle_stick_injury"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Sexual</div>
+        <canvas id="hepc_pie_sexual"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Tattoo</div>
+        <canvas id="hepc_pie_tattoo"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Body piercing</div>
+        <canvas id="hepc_pie_body_piercing"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Hemodialysis</div>
+        <canvas id="hepc_pie_hemodialysis"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Vertical transmission</div>
+        <canvas id="hepc_pie_vertical_transmission"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Unknown</div>
+        <canvas id="hepc_pie_unknown"></canvas>
       </div>
     </div>
   </div>
@@ -3487,16 +3520,6 @@ window.renderAll = renderAll;
 
 </script>
 
-<footer id="creditFooter" style="
-  margin-top: 14px;
-  padding: 10px 12px;
-  font-size: 12px;
-  opacity: 0.85;
-  text-align: center;
-">
-  by Dr Ahmad Akmal Bin Ahmad Nizam, 2025
-</footer>
-
 <script>
 /* =======================
    MEASLES DASHBOARD (Tab 3)
@@ -5268,12 +5291,18 @@ window.renderAll = renderAll;
       gender: find(['Gender', 'Sex', 'Jantina']),
       age: find(['Age', 'Age (Years)', 'Umur', 'Umur (Tahun)', 'Age Years']),
       race: find(['Race', 'Ethnicity', 'Bangsa', 'Keturunan']),
-      nationality: find(['Nationality', 'Warganegara', 'Citizenship', 'Status Kewarganegaraan']),
-      modeTransmission: find(['Mode of Transmission', 'Transmission Mode', 'Cara Penularan', 'Mode transmission']),
-      risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
+      pwid: find(['PWID', 'People who inject drugs', 'Drug injection', 'Pwid']),
+      bloodTransfusion: find(['Blood transfusion', 'Transfusion']),
+      organTransplant: find(['Organ transplant', 'Organ transplantation', 'Transplant']),
+      needleStickInjury: find(['Needle stick injury', 'Needlestick injury', 'Needle stick']),
+      sexual: find(['Sexual']),
+      tattoo: find(['Tattoo']),
+      bodyPiercing: find(['Body piercing', 'Body-piercing', 'Piercing']),
+      hemodialysis: find(['Hemodialysis', 'Haemodialysis', 'Dialysis']),
+      verticalTransmission: find(['Vertical transmission', 'Mother to child', 'Mother-to-child', 'MTCT']),
+      unknownTransmission: find(['Unknown', 'Unknown transmission']),
       firstVisitDate: find(['First visit date', 'Tarikh lawatan pertama', 'First Visit Date']),
-      diagnoseDate: find(['Date diagnose Hep C', 'Tarikh diagnosis Hep C', 'Diagnosis Date']),
-      treatmentStartDate: find(['Date Start Treatment', 'Date start treatment', 'Treatment Start Date']),
+      diagnoseDate: find(['Date diagnose Hep C', 'Tarikh diagnosis Hep C', 'Diagnosis Date']),      treatmentStartDate: find(['Date Start Treatment', 'Date start treatment', 'Treatment Start Date']),
       viralLoadDate: find(['Viral Load Date', 'Tarikh Viral Load', 'VL Date', 'Viral load date']),
       lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
@@ -5759,11 +5788,17 @@ window.renderAll = renderAll;
     );
     pieFromColumn(filteredRows, 'hepc_pie_gender', columns.gender);
     pieFromColumn(filteredRows, 'hepc_pie_race', columns.race);
-    pieFromColumn(filteredRows, 'hepc_pie_nationality', columns.nationality);
-    pieFromColumn(filteredRows, 'hepc_pie_risk_group', columns.risk);
-    pieFromColumn(filteredRows, 'hepc_pie_mode_transmission', columns.modeTransmission);
+    pieFromColumn(filteredRows, 'hepc_pie_pwid', columns.pwid);
+    pieFromColumn(filteredRows, 'hepc_pie_blood_transfusion', columns.bloodTransfusion);
+    pieFromColumn(filteredRows, 'hepc_pie_organ_transplant', columns.organTransplant);
+    pieFromColumn(filteredRows, 'hepc_pie_needle_stick_injury', columns.needleStickInjury);
+    pieFromColumn(filteredRows, 'hepc_pie_sexual', columns.sexual);
+    pieFromColumn(filteredRows, 'hepc_pie_tattoo', columns.tattoo);
+    pieFromColumn(filteredRows, 'hepc_pie_body_piercing', columns.bodyPiercing);
+    pieFromColumn(filteredRows, 'hepc_pie_hemodialysis', columns.hemodialysis);
+    pieFromColumn(filteredRows, 'hepc_pie_vertical_transmission', columns.verticalTransmission);
+    pieFromColumn(filteredRows, 'hepc_pie_unknown', columns.unknownTransmission);
   }
-
   function updateKpiDisplays(result) {
     if (!kpiEls.total) return;
 
