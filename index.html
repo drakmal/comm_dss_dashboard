@@ -473,9 +473,54 @@
       margin-top: 12px;
     }
 
-    .slider-row input[type="range"] {
+    .slider-field {
+      position: relative;
       flex: 1;
       min-width: 220px;
+    }
+
+    .slider-field input[type="range"] {
+      width: 100%;
+    }
+
+    .slider-hover {
+      position: absolute;
+      top: -30px;
+      left: 0;
+      transform: translateX(-50%);
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #d0d0d0;
+      background: #ffffff;
+      font-size: 0.75rem;
+      color: #444;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease;
+    }
+
+    .slider-hover.is-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .map-checkboxes {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .checkbox-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: #444;
     }
   </style>
 </head>
@@ -1627,8 +1672,21 @@
     <div id="dengue_case_map" class="map-container"></div>
     <div class="slider-row">
       <span class="muted">Tarikh / Date</span>
-      <input type="range" id="dengue_map_slider" min="0" max="0" step="1" value="0" disabled>
+      <div class="slider-field">
+        <input type="range" id="dengue_map_slider" min="0" max="0" step="1" value="0" disabled>
+        <span id="dengue_map_date_hover" class="slider-hover" aria-hidden="true"></span>
+      </div>
       <span id="dengue_map_date_label" class="muted">-</span>
+    </div>
+    <div class="map-checkboxes">
+      <label class="checkbox-field" for="dengue_map_show_all">
+        <input type="checkbox" id="dengue_map_show_all">
+        Show all cases
+      </label>
+      <label class="checkbox-field" for="dengue_map_delay">
+        <input type="checkbox" id="dengue_map_delay">
+        7-days delay
+      </label>
     </div>
     <div class="note">Default: all cases shown. Drag timeline to view cases on an exact date.</div>
   </div>
@@ -6203,16 +6261,28 @@ window.renderAll = renderAll;
   const mapContainer = document.getElementById('dengue_case_map');
   const mapSlider = document.getElementById('dengue_map_slider');
   const mapDateLabel = document.getElementById('dengue_map_date_label');
+  const mapDateHover = document.getElementById('dengue_map_date_hover');
+  const mapShowAllCheckbox = document.getElementById('dengue_map_show_all');
+  const mapDelayCheckbox = document.getElementById('dengue_map_delay');
 
   let trendDateMode = 'onset';
-  const mapState = {
+   const mapState = {
     map: null,
     markers: null,
     timelineActive: false,
     minDate: null,
     maxDate: null,
     selectedDate: null,
+    showAllCases: false,
+    delayVisible: false,
   };
+
+  if (mapShowAllCheckbox) {
+    mapState.showAllCases = mapShowAllCheckbox.checked;
+  }
+  if (mapDelayCheckbox) {
+    mapState.delayVisible = mapDelayCheckbox.checked;
+  }
 
   const outbreakEls = {
     grid: document.getElementById('dengue_cluster_grid'),
@@ -6547,6 +6617,39 @@ window.renderAll = renderAll;
     mapDateLabel.textContent = date ? formatDateKey(date) : '-';
   }
 
+  function setMapHoverLabel(date) {
+    if (!mapDateHover) return;
+    mapDateHover.textContent = date ? formatDateKey(date) : '-';
+  }
+
+  function setMapHoverVisibility(isVisible) {
+    if (!mapDateHover) return;
+    mapDateHover.classList.toggle('is-visible', isVisible);
+  }
+
+  function positionMapHoverLabel() {
+    if (!mapDateHover || !mapSlider || !mapSlider.parentElement) return;
+    const min = Number(mapSlider.min || 0);
+    const max = Number(mapSlider.max || 0);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return;
+    const value = Number(mapSlider.value || 0);
+    const percent = (value - min) / (max - min);
+    const sliderOffset = mapSlider.offsetLeft;
+    const sliderWidth = mapSlider.offsetWidth;
+    mapDateHover.style.left = `${sliderOffset + percent * sliderWidth}px`;
+  }
+
+  function updateMapHoverFromSlider() {
+    if (!mapState.minDate || !mapSlider) {
+      setMapHoverLabel(null);
+      return;
+    }
+    const offset = parseInt(mapSlider.value, 10) || 0;
+    const date = new Date(mapState.minDate.getTime() + offset * 86400000);
+    setMapHoverLabel(date);
+    positionMapHoverLabel();
+  }
+
   function updateMapSliderRange(rows) {
     if (!mapSlider) return;
     const dateRows = rows.filter(r => r._coords && getTrendDate(r, trendDateMode));
@@ -6563,6 +6666,8 @@ window.renderAll = renderAll;
       mapSlider.value = 0;
       mapSlider.disabled = true;
       setMapDateLabel(null);
+      setMapHoverLabel(null);
+      setMapHoverVisibility(false);
       return;
     }
     const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
@@ -6584,6 +6689,7 @@ window.renderAll = renderAll;
       mapState.selectedDate = new Date(minDate.getTime() + boundedOffset * 86400000);
     }
     setMapDateLabel(mapState.selectedDate);
+    updateMapHoverFromSlider();
   }
 
   function updateMapMarkers(rows) {
@@ -6592,9 +6698,20 @@ window.renderAll = renderAll;
     mapState.markers.clearLayers();
     const allRows = rows.filter(r => r._coords);
     let displayRows = allRows;
-    if (mapState.timelineActive && mapState.selectedDate) {
-      const targetKey = formatDateKey(mapState.selectedDate);
-      displayRows = allRows.filter(r => getTrendDateKey(r, trendDateMode) === targetKey);
+    if (mapState.timelineActive && mapState.selectedDate && !mapState.showAllCases) {
+      const selected = mapState.selectedDate;
+      if (mapState.delayVisible) {
+        displayRows = allRows.filter(r => {
+          const dateValue = getTrendDate(r, trendDateMode);
+          const normalized = startOfDay(dateValue);
+          if (!normalized) return false;
+          const diff = diffDays(normalized, selected);
+          return Number.isFinite(diff) && diff >= 0 && diff <= 7;
+        });
+      } else {
+        const targetKey = formatDateKey(selected);
+        displayRows = allRows.filter(r => getTrendDateKey(r, trendDateMode) === targetKey);
+      }
     }
     displayRows.forEach(r => {
       const marker = L.circleMarker([r._lat, r._lng], {
@@ -7029,10 +7146,50 @@ window.renderAll = renderAll;
       mapState.timelineActive = true;
       mapState.selectedDate = new Date(mapState.minDate.getTime() + offset * 86400000);
       setMapDateLabel(mapState.selectedDate);
+      updateMapHoverFromSlider();
+      setMapHoverVisibility(true);
+      updateMapMarkers(applyFilters());
+    });
+    mapSlider.addEventListener('mouseenter', () => {
+      updateMapHoverFromSlider();
+      setMapHoverVisibility(true);
+    });
+    mapSlider.addEventListener('mousemove', () => {
+      updateMapHoverFromSlider();
+      setMapHoverVisibility(true);
+    });
+    mapSlider.addEventListener('mouseleave', () => {
+      setMapHoverVisibility(false);
+    });
+    mapSlider.addEventListener('focus', () => {
+      updateMapHoverFromSlider();
+      setMapHoverVisibility(true);
+    });
+    mapSlider.addEventListener('blur', () => {
+      setMapHoverVisibility(false);
+    });
+    mapSlider.addEventListener('touchstart', () => {
+      updateMapHoverFromSlider();
+      setMapHoverVisibility(true);
+    }, { passive: true });
+    mapSlider.addEventListener('touchend', () => {
+      setMapHoverVisibility(false);
+    }, { passive: true });
+  }
+
+  if (mapShowAllCheckbox) {
+    mapShowAllCheckbox.addEventListener('change', () => {
+      mapState.showAllCases = mapShowAllCheckbox.checked;
       updateMapMarkers(applyFilters());
     });
   }
 
+  if (mapDelayCheckbox) {
+    mapDelayCheckbox.addEventListener('change', () => {
+      mapState.delayVisible = mapDelayCheckbox.checked;
+      updateMapMarkers(applyFilters());
+    });
+  }
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.dataset.tab === 'dengue') {
