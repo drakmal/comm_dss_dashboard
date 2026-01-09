@@ -1271,7 +1271,7 @@
         <div class="kpi-sub" id="hiv_kpi_on_art_pct_sub">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">% Viral suppressio</div>
+        <div class="kpi-title">% Viral suppression</div>
         <div class="kpi-value" id="hiv_kpi_vl_suppression_pct">-</div>
         <div class="kpi-sub" id="hiv_kpi_vl_suppression_sub">-</div>
       </div>
@@ -1425,14 +1425,8 @@
         </select>
       </div>
       <div class="filter-field">
-        <label for="hepc_filter_risk">Risk Group:</label>
-        <select id="hepc_filter_risk" disabled>
-          <option value="ALL">All</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label for="hepc_filter_year">Year:</label>
-        <select id="hepc_filter_year" disabled>
+        <label for="hepc_filter_treatment_year">Year of treatment:</label>
+        <select id="hepc_filter_treatment_year" disabled>
           <option value="ALL">All</option>
         </select>
       </div>
@@ -1443,19 +1437,19 @@
         <div class="kpi-value" id="hepc_kpi_total_patients">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">On ART treatment</div>
+        <div class="kpi-title">Complete treatment</div>
         <div class="kpi-value" id="hepc_kpi_on_art_count">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Transfer out</div>
+        <div class="kpi-title">Still on treatment</div>
         <div class="kpi-value" id="hepc_kpi_transfer_out">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Died</div>
+        <div class="kpi-title">Incomplete</div>
         <div class="kpi-value" id="hepc_kpi_died">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Loss to follow-up</div>
+        <div class="kpi-title">Missing</div>
         <div class="kpi-value" id="hepc_kpi_ltfu">-</div>
       </div>
       <div class="kpi-box">
@@ -1464,7 +1458,7 @@
         <div class="kpi-sub" id="hepc_kpi_on_art_pct_sub">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">% Viral suppressio</div>
+        <div class="kpi-title">% Viral suppression</div>
         <div class="kpi-value" id="hepc_kpi_vl_suppression_pct">-</div>
         <div class="kpi-sub" id="hepc_kpi_vl_suppression_sub">-</div>
       </div>
@@ -1568,7 +1562,7 @@
   </div>
   <h2>5. Demographics and risk profiles</h2>
   <div class="card">
-    <p class="muted" id="hepc_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
+    <p class="muted" id="hepc_demo_filters">Filters on: Site: All • Year of treatment: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
         <div class="demo-block-title">Age</div>
         <canvas id="hepc_pie_age"></canvas>
@@ -4343,8 +4337,7 @@ window.renderAll = renderAll;
     }
 
     setSelectOptions(filters.site, uniq(r => r?.[columns.site]));
-    setSelectOptions(filters.risk, uniq(r => r?.[columns.risk]));
-    setSelectOptions(filters.year, uniq(r => extractYear(r, columns.firstVisitDate)));
+    setSelectOptions(filters.treatmentYear, uniq(r => extractYear(r, columns.treatmentStartDate)));
   }
   function normalizeLabel(value) {
     return String(value ?? '').trim().toLowerCase();
@@ -4945,19 +4938,19 @@ window.renderAll = renderAll;
       const suppressionVal = hasSuppression ? row?.[columns.viralSuppression] : null;
 
       const record = existing || {
-        onArt: false,
-        transferOut: false,
-        died: false,
-        ltfu: false,
+        complete: false,
+        stillOnTreatment: false,
+        incomplete: false,
+        missing: false,
         suppressed: false,
       };
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'on art treatment') record.onArt = true;
-        if (normStatus === 'transfer out') record.transferOut = true;
-        if (normStatus === 'died') record.died = true;
-        if (normStatus === 'loss to follow-up') record.ltfu = true;
+        if (normStatus === 'complete') record.complete = true;
+        if (normStatus === 'still on treatment') record.stillOnTreatment = true;
+        if (normStatus === 'incomplete') record.incomplete = true;
+        if (normStatus === 'missing') record.missing = true;
       }
 
       if (hasSuppression && isExactLabel(suppressionVal, 'Yes (<1000 copies/mL)')) {
@@ -4974,15 +4967,15 @@ window.renderAll = renderAll;
     result.totalPatients = perPatient.size;
     if (!result.totalPatients) return result;
 
-     perPatient.forEach((info) => {
+    perPatient.forEach((info) => {
       if (hasStatus) {
-        if (info.onArt) result.onArtTreatment += 1;
-        if (info.transferOut) result.transferOut += 1;
-        if (info.died) result.died += 1;
-        if (info.ltfu) result.ltfu += 1;
-        if (!info.died) result.onArtEligible += 1;
+        if (info.complete) result.onArtTreatment += 1;
+        if (info.stillOnTreatment) result.transferOut += 1;
+        if (info.incomplete) result.died += 1;
+        if (info.missing) result.ltfu += 1;
+        if (!info.incomplete) result.onArtEligible += 1;
       }
-      if (hasSuppression && info.suppressed && info.onArt) {
+      if (hasSuppression && info.suppressed && info.complete) {
         result.vlSuppressed += 1;
       }
     });
@@ -5189,8 +5182,7 @@ window.renderAll = renderAll;
   const errorEl = document.getElementById('hepc_error'); 
   const filters = {
     site: document.getElementById('hepc_filter_site'),
-    risk: document.getElementById('hepc_filter_risk'),
-    year: document.getElementById('hepc_filter_year'),
+    treatmentYear: document.getElementById('hepc_filter_treatment_year'),
   };
   const demoFiltersEl = document.getElementById('hepc_demo_filters');
   const yearlyTrendSelect = document.getElementById('hepc_yearly_trend_year');
@@ -5243,6 +5235,7 @@ window.renderAll = renderAll;
     viralSuppression: null,
     currentStatus: null,
     firstVisitDate: null,
+      treatmentStartDate: null,
       pcpProphylaxis:null,
       tbInfectionStatus: null,
       tbPreventiveTreatment: null,
@@ -5254,7 +5247,7 @@ window.renderAll = renderAll;
       hcvTestDate: null,
       hcvResult: null,
     },
-    filters: { site: 'ALL', risk: 'ALL', month: 'ALL', year: 'ALL' },
+    filters: { site: 'ALL', treatmentYear: 'ALL', month: 'ALL' },
   };
 
   if (!fileInput || !statusEl) return;
@@ -5353,6 +5346,7 @@ window.renderAll = renderAll;
       risk: find(['Risk Group', 'RiskGroup', 'Kumpulan Risiko']),
       firstVisitDate: find(['First visit date', 'Tarikh lawatan pertama', 'First Visit Date']),
       diagnoseDate: find(['Date diagnose Hep C', 'Tarikh diagnosis Hep C', 'Diagnosis Date']),
+      treatmentStartDate: find(['Date Start Treatment', 'Date start treatment', 'Treatment Start Date']),
       viralLoadDate: find(['Viral Load Date', 'Tarikh Viral Load', 'VL Date', 'Viral load date']),
       lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
@@ -5419,8 +5413,7 @@ window.renderAll = renderAll;
     }
 
     setSelectOptions(filters.site, uniq(r => r?.[columns.site]));
-    setSelectOptions(filters.risk, uniq(r => r?.[columns.risk]));
-    setSelectOptions(filters.year, uniq(r => extractYear(r, columns.firstVisitDate)));
+    setSelectOptions(filters.treatmentYear, uniq(r => extractYear(r, columns.treatmentStartDate)));
   }
   function normalizeLabel(value) {
     return String(value ?? '').trim().toLowerCase();
@@ -6021,19 +6014,19 @@ window.renderAll = renderAll;
       const suppressionVal = hasSuppression ? row?.[columns.viralSuppression] : null;
 
       const record = existing || {
-        onArt: false,
-        transferOut: false,
-        died: false,
-        ltfu: false,
+        complete: false,
+        stillOnTreatment: false,
+        incomplete: false,
+        missing: false,
         suppressed: false,
       };
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'on art treatment') record.onArt = true;
-        if (normStatus === 'transfer out') record.transferOut = true;
-        if (normStatus === 'died') record.died = true;
-        if (normStatus === 'loss to follow-up') record.ltfu = true;
+        if (normStatus === 'complete') record.complete = true;
+        if (normStatus === 'still on treatment') record.stillOnTreatment = true;
+        if (normStatus === 'incomplete') record.incomplete = true;
+        if (normStatus === 'missing') record.missing = true;
       }
 
       if (hasSuppression && isExactLabel(suppressionVal, 'Yes (<1000 copies/mL)')) {
@@ -6052,13 +6045,13 @@ window.renderAll = renderAll;
 
      perPatient.forEach((info) => {
       if (hasStatus) {
-        if (info.onArt) result.onArtTreatment += 1;
-        if (info.transferOut) result.transferOut += 1;
-        if (info.died) result.died += 1;
-        if (info.ltfu) result.ltfu += 1;
-        if (!info.died) result.onArtEligible += 1;
+        if (info.complete) result.onArtTreatment += 1;
+        if (info.stillOnTreatment) result.transferOut += 1;
+        if (info.incomplete) result.died += 1;
+        if (info.missing) result.ltfu += 1;
+        if (!info.incomplete) result.onArtEligible += 1;
       }
-      if (hasSuppression && info.suppressed && info.onArt) {
+      if (hasSuppression && info.suppressed && info.complete) {
         result.vlSuppressed += 1;
       }
     });
@@ -6132,8 +6125,7 @@ window.renderAll = renderAll;
     };
 
     const siteLabel = pickLabel(filters.site, hepcState.filters.site);
-    const riskLabel = pickLabel(filters.risk, hepcState.filters.risk);
-    const yearLabel = pickLabel(filters.year, hepcState.filters.year);
+    const treatmentYearLabel = pickLabel(filters.treatmentYear, hepcState.filters.treatmentYear);
 
     const fromValue = yearlyTrendSelect?.value || '';
     const toValue = yearlyTrendToSelect?.value || '';
@@ -6150,7 +6142,7 @@ window.renderAll = renderAll;
       }
     }
 
-    demoFiltersEl.textContent = `Filters on: Site: ${siteLabel} • Risk group: ${riskLabel} • Year: ${yearLabel} • Yearly trend: ${trendLabel}`;
+    demoFiltersEl.textContent = `Filters on: Site: ${siteLabel} • Year of treatment: ${treatmentYearLabel} • Yearly trend: ${trendLabel}`;
   }
 
   function applyFilters() {
@@ -6158,10 +6150,9 @@ window.renderAll = renderAll;
     const rows = hepcState.rows || [];
     const filtered = rows.filter(r => {
       if (f.site !== 'ALL' && columns.site && String(r?.[columns.site]) !== f.site) return false;
-      if (f.risk !== 'ALL' && columns.risk && String(r?.[columns.risk]) !== f.risk) return false;
-      if (f.year !== 'ALL' && columns.firstVisitDate) {
-        const year = extractYear(r, columns.firstVisitDate);
-        if (year !== f.year) return false;
+      if (f.treatmentYear !== 'ALL' && columns.treatmentStartDate) {
+        const year = extractYear(r, columns.treatmentStartDate);
+        if (year !== f.treatmentYear) return false;
       }
       return true;
     });
@@ -6170,8 +6161,7 @@ window.renderAll = renderAll;
 
   function onFilterChange() {
     hepcState.filters.site = filters.site?.value || 'ALL';
-    hepcState.filters.risk = filters.risk?.value || 'ALL';
-    hepcState.filters.year = filters.year?.value || 'ALL';
+    hepcState.filters.treatmentYear = filters.treatmentYear?.value || 'ALL';
     renderFiltered();
   }
 
