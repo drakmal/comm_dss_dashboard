@@ -1449,6 +1449,10 @@
         <div class="kpi-value" id="hepc_kpi_incomplete_drug_side_effect">-</div>
       </div>
       <div class="kpi-box">
+        <div class="kpi-title">Default</div>
+        <div class="kpi-value" id="hepc_kpi_defaulted">-</div>
+      </div>
+      <div class="kpi-box">
         <div class="kpi-title">Missing</div>
         <div class="kpi-value" id="hepc_kpi_ltfu">-</div>
       </div>
@@ -5193,6 +5197,7 @@ window.renderAll = renderAll;
     onArtCount: document.getElementById('hepc_kpi_on_art_count'),
     transferOut: document.getElementById('hepc_kpi_transfer_out'),
     incompleteDrugSideEffect: document.getElementById('hepc_kpi_incomplete_drug_side_effect'),
+    defaulted: document.getElementById('hepc_kpi_defaulted'),
     ltfu: document.getElementById('hepc_kpi_ltfu'),
     onArtPct: document.getElementById('hepc_kpi_on_art_pct'),
     onArtPctSub: document.getElementById('hepc_kpi_on_art_pct_sub'),
@@ -5945,6 +5950,7 @@ window.renderAll = renderAll;
       onArtTreatment,
       transferOut,
       incompleteDrugSideEffect,
+      defaulted,
       ltfu,
       onArtEligible,
       vlSuppressed,
@@ -5957,6 +5963,7 @@ window.renderAll = renderAll;
       kpiEls.incompleteDrugSideEffect,
       Number.isFinite(incompleteDrugSideEffect) ? formatNumber(incompleteDrugSideEffect) : '-'
     );
+    setVal(kpiEls.defaulted, Number.isFinite(defaulted) ? formatNumber(defaulted) : '-');
     setVal(kpiEls.ltfu, Number.isFinite(ltfu) ? formatNumber(ltfu) : '-');
 
     const vlDenom = Number.isFinite(onArtTreatment) ? onArtTreatment : null;
@@ -6000,6 +6007,7 @@ window.renderAll = renderAll;
       onArtTreatment: hasStatus ? 0 : null,
       transferOut: hasStatus ? 0 : null,
       incompleteDrugSideEffect: hasIncompleteReason ? 0 : null,
+      defaulted: hasIncompleteReason ? 0 : null,
       ltfu: hasStatus ? 0 : null,
       onArtEligible: hasStatus ? 0 : null,
       vlSuppressed: hasSuppression ? 0 : null,
@@ -6012,6 +6020,9 @@ window.renderAll = renderAll;
     rows.forEach((row) => {
       if (hasIncompleteReason && isExactLabel(row?.[columns.reasonForIncomplete], 'due to drug side effect')) {
         result.incompleteDrugSideEffect += 1;
+      }
+      if (hasIncompleteReason && isExactLabel(row?.[columns.reasonForIncomplete], 'defaulted')) {
+        result.defaulted += 1;
       }
 
       const rawId = row?.[patientKey];
