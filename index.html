@@ -1445,8 +1445,8 @@
         <div class="kpi-value" id="hepc_kpi_transfer_out">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Incomplete</div>
-        <div class="kpi-value" id="hepc_kpi_died">-</div>
+        <div class="kpi-title">Incomplete due to drug side effect</div>
+        <div class="kpi-value" id="hepc_kpi_incomplete_drug_side_effect">-</div>
       </div>
       <div class="kpi-box">
         <div class="kpi-title">Missing</div>
@@ -5192,7 +5192,7 @@ window.renderAll = renderAll;
     total: document.getElementById('hepc_kpi_total_patients'),
     onArtCount: document.getElementById('hepc_kpi_on_art_count'),
     transferOut: document.getElementById('hepc_kpi_transfer_out'),
-    died: document.getElementById('hepc_kpi_died'),
+    incompleteDrugSideEffect: document.getElementById('hepc_kpi_incomplete_drug_side_effect'),
     ltfu: document.getElementById('hepc_kpi_ltfu'),
     onArtPct: document.getElementById('hepc_kpi_on_art_pct'),
     onArtPctSub: document.getElementById('hepc_kpi_on_art_pct_sub'),
@@ -5352,6 +5352,7 @@ window.renderAll = renderAll;
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
       currentStatus: find(['Status of Treatment']),
+      reasonForIncomplete: find(['Reason for incomplete', 'Reason for Incomplete', 'Reason for Incomplete Treatment']),
       pcpProphylaxis: find(['PCP prophylaxis', 'PCP Prophylaxis']),
       tbInfectionStatus: find(['Status of TB Infection', 'TB Infection Status', 'TB Infection']),
       tbPreventiveTreatment: find(['TB Preventive Treatment', 'TB preventive treatment']),
@@ -5943,7 +5944,7 @@ window.renderAll = renderAll;
       totalPatients,
       onArtTreatment,
       transferOut,
-      died,
+      incompleteDrugSideEffect,
       ltfu,
       onArtEligible,
       vlSuppressed,
@@ -5952,7 +5953,10 @@ window.renderAll = renderAll;
     setVal(kpiEls.total, formatNumber(totalPatients));
     setVal(kpiEls.onArtCount, Number.isFinite(onArtTreatment) ? formatNumber(onArtTreatment) : '-');
     setVal(kpiEls.transferOut, Number.isFinite(transferOut) ? formatNumber(transferOut) : '-');
-    setVal(kpiEls.died, Number.isFinite(died) ? formatNumber(died) : '-');
+    setVal(
+      kpiEls.incompleteDrugSideEffect,
+      Number.isFinite(incompleteDrugSideEffect) ? formatNumber(incompleteDrugSideEffect) : '-'
+    );
     setVal(kpiEls.ltfu, Number.isFinite(ltfu) ? formatNumber(ltfu) : '-');
 
     const vlDenom = Number.isFinite(onArtTreatment) ? onArtTreatment : null;
@@ -5989,12 +5993,13 @@ window.renderAll = renderAll;
     const patientKey = columns.patientId;
     const hasStatus = Boolean(columns.currentStatus);
     const hasSuppression = Boolean(columns.viralSuppression);
+    const hasIncompleteReason = Boolean(columns.reasonForIncomplete);
 
     const result = {
       totalPatients: 0,
       onArtTreatment: hasStatus ? 0 : null,
       transferOut: hasStatus ? 0 : null,
-      died: hasStatus ? 0 : null,
+      incompleteDrugSideEffect: hasIncompleteReason ? 0 : null,
       ltfu: hasStatus ? 0 : null,
       onArtEligible: hasStatus ? 0 : null,
       vlSuppressed: hasSuppression ? 0 : null,
@@ -6005,6 +6010,10 @@ window.renderAll = renderAll;
     const perPatient = new Map();
 
     rows.forEach((row) => {
+      if (hasIncompleteReason && isExactLabel(row?.[columns.reasonForIncomplete], 'due to drug side effect')) {
+        result.incompleteDrugSideEffect += 1;
+      }
+
       const rawId = row?.[patientKey];
       const pid = String(rawId ?? '').trim();
       if (!pid) return;
@@ -6047,7 +6056,6 @@ window.renderAll = renderAll;
       if (hasStatus) {
         if (info.complete) result.onArtTreatment += 1;
         if (info.stillOnTreatment) result.transferOut += 1;
-        if (info.incomplete) result.died += 1;
         if (info.missing) result.ltfu += 1;
         if (!info.incomplete) result.onArtEligible += 1;
       }
