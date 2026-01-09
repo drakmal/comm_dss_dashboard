@@ -463,6 +463,8 @@
       height: 420px;
       border-radius: 10px;
       overflow: hidden;
+      position: relative;
+      z-index: 1;
     }
 
     .slider-row {
@@ -471,6 +473,8 @@
       align-items: center;
       flex-wrap: wrap;
       margin-top: 12px;
+      position: relative;
+      z-index: 2;
     }
 
     .slider-field {
@@ -497,6 +501,7 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
       white-space: nowrap;
       pointer-events: none;
+      z-index: 3;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.12s ease;
@@ -1594,28 +1599,29 @@
 
 <section class="tab-panel" data-tab="dengue" id="tab-dengue">
   <h2>1. Upload Dengue Excel file</h2>
+  <p class="subtitle"> from edenguev2 > Muat turun > Fail kes > Jenis tarikh: Onset > Pilih 'tahun', 'epid mula' dan 'epid akhir' > klik 'check all' > klik 'Muat turun'.</p>
   <div class="card">
     <div class="upload-row">
-      <label for="fileInput_dengue"><b>Choose File / Pilih fail</b></label>
+      <label for="fileInput_dengue"><b>Load Hep C Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_dengue" accept=".xls,.xlsx">
       <div id="dengue_file_status" class="muted">No file loaded yet.</div>
     </div>
     <div id="dengue_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
 
-  <h2>2. KPI</h2>
+  <h2>2. Filters and key numbers</h2>
   <div class="card">
     <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
-        <div class="kpi-title">Jumlah Kes / Total cases</div>
+        <div class="kpi-title">Total cases</div>
         <div class="kpi-value" id="dengue_kpi_total">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Kes Wabak / Outbreak cases</div>
+        <div class="kpi-title">Outbreak cases</div>
         <div class="kpi-value" id="dengue_kpi_outbreak_cases">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Bil. Wabak / # Outbreak clusters</div>
+        <div class="kpi-title"># Outbreak</div>
         <div class="kpi-value" id="dengue_kpi_outbreak_clusters">-</div>
       </div>
       <div class="kpi-box">
@@ -1644,17 +1650,17 @@
       </div>
       <div class="kpi-box">
         <div class="kpi-title">Lokaliti Keutamaan (1–4)</div>
-        <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>␊
+        <ul class="kpi-list" id="dengue_kpi_lokaliti_priority"></ul>
       </div>
     </div>
     <div class="note">All numbers update based on the loaded dataset.</div>
   </div>
 
-  <h2>3. Weekly trend (Notification) / Trend Mingguan (Notifikasi)</h2>
+  <h2>3. Weekly trend</h2>
   <div class="card">
     <div class="filters-row" style="margin-bottom: 8px;">
       <div class="filter-field">
-        <label for="dengue_trend_date_mode"><strong>Tarikh Trend / Trend Date</strong></label>
+        <label for="dengue_trend_date_mode"><strong>Trend Date</strong></label>
         <select id="dengue_trend_date_mode">
           <option value="onset">Tarikh Onset</option>
           <option value="notif">Tkh Notifikasi</option>
@@ -1671,7 +1677,7 @@
   <div class="card">
     <div id="dengue_case_map" class="map-container"></div>
     <div class="slider-row">
-      <span class="muted">Tarikh / Date</span>
+      <span class="muted">Date</span>
       <div class="slider-field">
         <input type="range" id="dengue_map_slider" min="0" max="0" step="1" value="0" disabled>
         <span id="dengue_map_date_hover" class="slider-hover" aria-hidden="true"></span>
@@ -1688,9 +1694,8 @@
         7-days delay
       </label>
     </div>
-    <div class="note">Default: all cases shown. Drag timeline to view cases on an exact date.</div>
   </div>
-  <h2>5. Surveillance & lab profile / Profil Survelan & Makmal</h2>
+  <h2>5. Surveillance & lab profile</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -1711,7 +1716,7 @@
     </div>
   </div>
 
-  <h2>5. Demography / Demografi</h2>
+  <h2>5. Demography</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -1741,7 +1746,7 @@
     </div>
   </div>
 
-  <h2>6. Hotspot (Lokaliti + Map)</h2>
+  <h2>6. Top 10</h2>
   <div class="card">
     <div class="table-grid">
       <div>
@@ -1772,12 +1777,12 @@
     <div class="note" style="margin-top:10px;">Map placeholder (coordinate plotting can be added later).</div>
   </div>
 
-  <h2>7. Kluster Wabak / Outbreak clusters</h2>
+  <h2>7. Outbreak clusters</h2>
   <div class="card">
     <div id="dengue_cluster_grid" class="cluster-grid"></div>
   </div>
 
-  <h2>8. Timeliness / Ketepatan Masa</h2>
+  <h2>8. Timeliness</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -6275,6 +6280,7 @@ window.renderAll = renderAll;
     selectedDate: null,
     showAllCases: false,
     delayVisible: false,
+    userViewLocked: false,
   };
 
   if (mapShowAllCheckbox) {
@@ -6610,6 +6616,11 @@ window.renderAll = renderAll;
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(mapState.map);
     mapState.markers = L.featureGroup().addTo(mapState.map);
+    mapState.map.on('zoomstart dragstart', (event) => {
+      if (event && event.originalEvent) {
+        mapState.userViewLocked = true;
+      }
+    });
   }
 
   function setMapDateLabel(date) {
@@ -6753,10 +6764,12 @@ window.renderAll = renderAll;
     const bounds = boundsRows.length
       ? L.latLngBounds(boundsRows.map(r => [r._lat, r._lng]))
       : null;
-    if (bounds && bounds.isValid()) {
-      mapState.map.fitBounds(bounds, { padding: [20, 20] });
-    } else {
-      mapState.map.setView([4.2105, 101.9758], 6);
+    if (!mapState.userViewLocked) {
+      if (bounds && bounds.isValid()) {
+        mapState.map.fitBounds(bounds, { padding: [20, 20] });
+      } else {
+        mapState.map.setView([4.2105, 101.9758], 6);
+      }
     }
   }
 
@@ -7226,6 +7239,7 @@ window.renderAll = renderAll;
         window.dengueData = enriched;
         mapState.timelineActive = false;
         mapState.selectedDate = null;
+        mapState.userViewLocked = false;
 
         setStatus(`Dengue records loaded: ${enriched.length}`);
         renderAll();
