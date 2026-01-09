@@ -1611,6 +1611,16 @@
 
   <h2>2. Filters and key numbers</h2>
   <div class="card">
+    <div class="filters-row" style="margin-bottom: 12px;">
+      <div class="filter-field">
+        <label for="dengue_filter_week_from"><strong>Epid minggu (Tkh Daftar) From</strong></label>
+        <select id="dengue_filter_week_from"></select>
+      </div>
+      <div class="filter-field">
+        <label for="dengue_filter_week_to"><strong>Epid minggu (Tkh Daftar) To</strong></label>
+        <select id="dengue_filter_week_to"></select>
+      </div>
+    </div>
     <div class="kpi-grid" style="margin-top:12px;">
       <div class="kpi-box">
         <div class="kpi-title">Total cases</div>
@@ -6269,8 +6279,12 @@ window.renderAll = renderAll;
   const mapDateHover = document.getElementById('dengue_map_date_hover');
   const mapShowAllCheckbox = document.getElementById('dengue_map_show_all');
   const mapDelayCheckbox = document.getElementById('dengue_map_delay');
+  const weekFromSelect = document.getElementById('dengue_filter_week_from');
+  const weekToSelect = document.getElementById('dengue_filter_week_to');
 
   let trendDateMode = 'onset';
+  let filterWeekFrom = null;
+  let filterWeekTo = null;
   const mapState = {
     map: null,
     markers: null,
@@ -6290,6 +6304,14 @@ window.renderAll = renderAll;
   }
   if (mapDelayCheckbox) {
     mapState.delayVisible = mapDelayCheckbox.checked;
+  }
+  if (weekFromSelect) {
+    weekFromSelect.innerHTML = '<option value="">-</option>';
+    weekFromSelect.disabled = true;
+  }
+  if (weekToSelect) {
+    weekToSelect.innerHTML = '<option value="">-</option>';
+    weekToSelect.disabled = true;
   }
 
   const outbreakEls = {
@@ -6604,10 +6626,54 @@ window.renderAll = renderAll;
     return d ? isoWeek(d) : null;
   }
 
+  function getRegWeek(row) {
+    const raw = parseInt(val(row, dengueState.columns.regWeek), 10);
+    if (Number.isFinite(raw) && raw > 0) return raw;
+    const regDate = row._dates?.reg;
+    return regDate ? isoWeek(regDate) : null;
+  }
+
   function getTrendDateKey(row, mode) {
     const date = getTrendDate(row, mode);
     const normalized = startOfDay(date);
     return normalized ? formatDateKey(normalized) : null;
+  }
+
+  function populateWeekFilters(rows) {
+    if (!weekFromSelect || !weekToSelect) return;
+    const weekValues = rows
+      .map(r => getRegWeek(r))
+      .filter(v => Number.isFinite(v) && v > 0)
+      .sort((a, b) => a - b);
+    const uniqueWeeks = Array.from(new Set(weekValues));
+
+    if (!uniqueWeeks.length) {
+      weekFromSelect.innerHTML = '<option value="">-</option>';
+      weekToSelect.innerHTML = '<option value="">-</option>';
+      weekFromSelect.disabled = true;
+      weekToSelect.disabled = true;
+      filterWeekFrom = null;
+      filterWeekTo = null;
+      return;
+    }
+
+    const buildOptions = () => uniqueWeeks.map(week => (
+      `<option value="${week}">${week}</option>`
+    )).join('');
+
+    weekFromSelect.innerHTML = buildOptions();
+    weekToSelect.innerHTML = buildOptions();
+    weekFromSelect.disabled = false;
+    weekToSelect.disabled = false;
+
+    const minWeek = uniqueWeeks[0];
+    const maxWeek = uniqueWeeks[uniqueWeeks.length - 1];
+    const currentFrom = Number.isFinite(filterWeekFrom) && uniqueWeeks.includes(filterWeekFrom) ? filterWeekFrom : minWeek;
+    const currentTo = Number.isFinite(filterWeekTo) && uniqueWeeks.includes(filterWeekTo) ? filterWeekTo : maxWeek;
+    filterWeekFrom = currentFrom;
+    filterWeekTo = currentTo;
+    weekFromSelect.value = String(currentFrom);
+    weekToSelect.value = String(currentTo);
   }
 
   function ensureDengueMap() {
@@ -6798,7 +6864,16 @@ window.renderAll = renderAll;
   }
 
   function applyFilters() {
-    return dengueState.rows;
+    let rows = dengueState.rows;
+    if (Number.isFinite(filterWeekFrom) || Number.isFinite(filterWeekTo)) {
+      const fromWeek = Number.isFinite(filterWeekFrom) ? filterWeekFrom : -Infinity;
+      const toWeek = Number.isFinite(filterWeekTo) ? filterWeekTo : Infinity;
+      rows = rows.filter(r => {
+        const wk = getRegWeek(r);
+        return Number.isFinite(wk) && wk >= fromWeek && wk <= toWeek;
+      });
+    }
+    return rows;
   }
 
   function renderKpis(rows) {
@@ -7171,6 +7246,30 @@ window.renderAll = renderAll;
     });
   }
 
+  if (weekFromSelect) {
+    weekFromSelect.addEventListener('change', () => {
+      const nextFrom = parseInt(weekFromSelect.value, 10);
+      filterWeekFrom = Number.isFinite(nextFrom) ? nextFrom : null;
+      if (Number.isFinite(filterWeekTo) && Number.isFinite(filterWeekFrom) && filterWeekFrom > filterWeekTo) {
+        filterWeekTo = filterWeekFrom;
+        if (weekToSelect) weekToSelect.value = String(filterWeekTo);
+      }
+      renderAll();
+    });
+  }
+
+  if (weekToSelect) {
+    weekToSelect.addEventListener('change', () => {
+      const nextTo = parseInt(weekToSelect.value, 10);
+      filterWeekTo = Number.isFinite(nextTo) ? nextTo : null;
+      if (Number.isFinite(filterWeekTo) && Number.isFinite(filterWeekFrom) && filterWeekTo < filterWeekFrom) {
+        filterWeekFrom = filterWeekTo;
+        if (weekFromSelect) weekFromSelect.value = String(filterWeekFrom);
+      }
+      renderAll();
+    });
+  }
+
   if (mapSlider) {
     mapSlider.addEventListener('input', () => {
       if (!mapState.minDate) return;
@@ -7259,6 +7358,7 @@ window.renderAll = renderAll;
         mapState.timelineActive = false;
         mapState.selectedDate = null;
         mapState.userViewLocked = false;
+        populateWeekFilters(enriched);
 
         setStatus(`Dengue records loaded: ${enriched.length}`);
         renderAll();
