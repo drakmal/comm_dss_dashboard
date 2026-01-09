@@ -1457,12 +1457,12 @@
         <div class="kpi-value" id="hepc_kpi_ltfu">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">% on ART</div>
+        <div class="kpi-title">% complete</div>
         <div class="kpi-value" id="hepc_kpi_on_art_pct">-</div>
         <div class="kpi-sub" id="hepc_kpi_on_art_pct_sub">-</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">% Viral suppression</div>
+        <div class="kpi-title">% SVR HCV RNA undetected</div>
         <div class="kpi-value" id="hepc_kpi_vl_suppression_pct">-</div>
         <div class="kpi-sub" id="hepc_kpi_vl_suppression_sub">-</div>
       </div>
@@ -4897,7 +4897,7 @@ window.renderAll = renderAll;
         : '-'
     );
 
-    const onArtDenom = (Number.isFinite(onArtEligible) ? onArtEligible : null);
+    const onArtDenom = (Number.isFinite(totalPatients) ? totalPatients : null);
     setVal(
       kpiEls.onArtPct,
       (Number.isFinite(onArtTreatment) && Number.isFinite(onArtDenom) && onArtDenom > 0)
@@ -5238,6 +5238,7 @@ window.renderAll = renderAll;
     lastUpdated: null,
     patientId: null,
     viralSuppression: null,
+    svrHcvRnaResult: null,
     currentStatus: null,
     firstVisitDate: null,
       treatmentStartDate: null,
@@ -5356,6 +5357,8 @@ window.renderAll = renderAll;
       lastUpdated: find(['Date Last Updated', 'Tarikh Kemaskini', 'Last Updated', 'Updated Date']),
       patientId: find(['Patient ID', 'PatientID', 'Client ID', 'Unique ID', 'ID Pesakit']),
       viralSuppression: find(['Viral Suppression', 'VL Suppression', 'Suppression Status']),
+      svrHcvRnaResult: find([
+        'SVR HCV RNA Result']),
       currentStatus: find(['Status of Treatment']),
       reasonForIncomplete: find(['Reason for incomplete', 'Reason for Incomplete', 'Reason for Incomplete Treatment']),
       pcpProphylaxis: find(['PCP prophylaxis', 'PCP Prophylaxis']),
@@ -5980,7 +5983,7 @@ window.renderAll = renderAll;
         : '-'
     );
 
-    const onArtDenom = (Number.isFinite(onArtEligible) ? onArtEligible : null);
+    const onArtDenom = (Number.isFinite(totalPatients) ? totalPatients : null);
     setVal(
       kpiEls.onArtPct,
       (Number.isFinite(onArtTreatment) && Number.isFinite(onArtDenom) && onArtDenom > 0)
@@ -5999,7 +6002,7 @@ window.renderAll = renderAll;
     const { columns } = hepcState;
     const patientKey = columns.patientId;
     const hasStatus = Boolean(columns.currentStatus);
-    const hasSuppression = Boolean(columns.viralSuppression);
+    const hasSuppression = Boolean(columns.svrHcvRnaResult);
     const hasIncompleteReason = Boolean(columns.reasonForIncomplete);
 
     const result = {
@@ -6031,7 +6034,7 @@ window.renderAll = renderAll;
 
       const existing = perPatient.get(pid);
       const statusVal = hasStatus ? row?.[columns.currentStatus] : null;
-      const suppressionVal = hasSuppression ? row?.[columns.viralSuppression] : null;
+      const suppressionVal = hasSuppression ? row?.[columns.svrHcvRnaResult] : null;
 
       const record = existing || {
         complete: false,
@@ -6049,7 +6052,7 @@ window.renderAll = renderAll;
         if (normStatus === 'missing') record.missing = true;
       }
 
-      if (hasSuppression && isExactLabel(suppressionVal, 'Yes (<1000 copies/mL)')) {
+      if (hasSuppression && isExactLabel(suppressionVal, 'Not detected / Effective')) {
         record.suppressed = true;
       }
 
