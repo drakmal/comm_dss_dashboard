@@ -1602,7 +1602,7 @@
   <p class="subtitle"> from edenguev2 > Muat turun > Fail kes > Jenis tarikh: Onset > Pilih 'tahun', 'epid mula' dan 'epid akhir' > klik 'check all' > klik 'Muat turun'.</p>
   <div class="card">
     <div class="upload-row">
-      <label for="fileInput_dengue"><b>Load Hep C Excel (.xls/.xlsx)</b></label>
+      <label for="fileInput_dengue"><b>Load Dengue Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_dengue" accept=".xls,.xlsx">
       <div id="dengue_file_status" class="muted">No file loaded yet.</div>
     </div>
@@ -6271,7 +6271,7 @@ window.renderAll = renderAll;
   const mapDelayCheckbox = document.getElementById('dengue_map_delay');
 
   let trendDateMode = 'onset';
-   const mapState = {
+  const mapState = {
     map: null,
     markers: null,
     timelineActive: false,
@@ -6281,6 +6281,8 @@ window.renderAll = renderAll;
     showAllCases: false,
     delayVisible: false,
     userViewLocked: false,
+    _programmaticMove: false,
+    _programmaticMoveTimeout: null,
   };
 
   if (mapShowAllCheckbox) {
@@ -6616,11 +6618,15 @@ window.renderAll = renderAll;
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(mapState.map);
     mapState.markers = L.featureGroup().addTo(mapState.map);
-    mapState.map.on('zoomstart dragstart', (event) => {
-      if (event && event.originalEvent) {
+    const lockView = () => {
+      if (!mapState._programmaticMove) {
         mapState.userViewLocked = true;
       }
-    });
+    };
+    mapState.map.on('mousedown touchstart dragstart zoomstart', lockView);
+    if (mapContainer) {
+      mapContainer.addEventListener('wheel', lockView, { passive: true });
+    }
   }
 
   function setMapDateLabel(date) {
@@ -6765,6 +6771,19 @@ window.renderAll = renderAll;
       ? L.latLngBounds(boundsRows.map(r => [r._lat, r._lng]))
       : null;
     if (!mapState.userViewLocked) {
+      const clearProgrammaticMove = () => {
+        mapState._programmaticMove = false;
+        if (mapState._programmaticMoveTimeout) {
+          clearTimeout(mapState._programmaticMoveTimeout);
+          mapState._programmaticMoveTimeout = null;
+        }
+      };
+      mapState._programmaticMove = true;
+      mapState.map.once('moveend', clearProgrammaticMove);
+      if (mapState._programmaticMoveTimeout) {
+        clearTimeout(mapState._programmaticMoveTimeout);
+      }
+      mapState._programmaticMoveTimeout = setTimeout(clearProgrammaticMove, 800);
       if (bounds && bounds.isValid()) {
         mapState.map.fitBounds(bounds, { padding: [20, 20] });
       } else {
