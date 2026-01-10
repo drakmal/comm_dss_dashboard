@@ -1,0 +1,10 @@
+{
+  "2024-01-01": {
+    "hex_demo_1": { "rain_mm": 12.3, "temp_c": 30.1, "rh_pct": 78.2 },
+    "hex_demo_2": { "rain_mm": 4.8,  "temp_c": 29.4, "rh_pct": 83.0 }
+  },
+  "2024-01-02": {
+    "hex_demo_1": { "rain_mm": 0.0,  "temp_c": 31.0, "rh_pct": 74.0 },
+    "hex_demo_2": { "rain_mm": 22.1, "temp_c": 28.9, "rh_pct": 86.5 }
+  }
+}
