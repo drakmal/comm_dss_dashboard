@@ -6799,7 +6799,9 @@ window.renderAll = renderAll;
         mapState.map.removeLayer(meteoState.hexLayer);
       }
       meteoState.hexLayer = L.geoJSON(hexFC, {
-        renderer: L.canvas(),
+        renderer: L.svg(),
+        interactive: false,
+        pane: 'meteoHexPane',
         style: {
           color: '#475569',
           weight: 0.5,
@@ -6807,6 +6809,13 @@ window.renderAll = renderAll;
           opacity: 1,
         },
       }).addTo(mapState.map);
+      requestAnimationFrame(() => {
+        mapState.map.invalidateSize(false);
+        mapState.map.panBy([0, 0], { animate: false });
+      });
+      if (mapState.markers) {
+        mapState.markers.bringToFront();
+      }
     }
     const dateStr = getCurrentMapDateKey();
     if (dateStr) {
@@ -7020,10 +7029,14 @@ window.renderAll = renderAll;
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
     mapState.map = L.map(mapContainer).setView([4.2105, 101.9758], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(mapState.map);
+    const meteoPane = mapState.map.createPane('meteoHexPane');
+    meteoPane.style.zIndex = 400;
+    const casePane = mapState.map.createPane('casePane');
+    casePane.style.zIndex = 650;
     mapState.markers = L.featureGroup().addTo(mapState.map);
     const lockView = () => {
       if (!mapState._programmaticMove) {
@@ -7144,7 +7157,8 @@ window.renderAll = renderAll;
         color: '#dc2626',
         fillColor: '#dc2626',
         fillOpacity: 0.8,
-        weight: 1
+        weight: 1,
+        pane: 'casePane'
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
