@@ -6138,6 +6138,14 @@ window.renderAll = renderAll;
   const mapDelayCheckbox = document.getElementById('dengue_map_delay');
   const weekFromSelect = document.getElementById('dengue_filter_week_from');
   const weekToSelect = document.getElementById('dengue_filter_week_to');
+  const dengueDistrictSelect = document.getElementById('dengue_filter_district');
+
+  // Expected location for the ADM2 boundary file.
+  const MALAYSIA_ADM2_URL = 'data/boundaries/malaysia_adm2_simplified.geojson';
+  let malaysiaADM2 = null;
+  let districtIndex = null;
+  let malaysiaADM2Promise = null;
+  let districtDuplicateWarned = false;
 
   let trendDateMode = 'reg';
   let filterWeekFrom = null;
@@ -6154,6 +6162,8 @@ window.renderAll = renderAll;
     userViewLocked: false,
     _programmaticMove: false,
     _programmaticMoveTimeout: null,
+    districtOutline: null,
+    selectedDistrictFeature: null,
   };
 
   if (mapShowAllCheckbox) {
@@ -6225,6 +6235,10 @@ window.renderAll = renderAll;
 
   function norm(value) {
     return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function normName(value) {
+    return String(value ?? '').trim().toLowerCase();
   }
 
   function val(row, key) {
@@ -6362,6 +6376,127 @@ window.renderAll = renderAll;
     const roman = romanMatch[1].replace(/L/g, 'I');
     const romanMap = { I: '1', II: '2', III: '3', IV: '4' };
     return romanMap[roman] || null;
+  }
+
+  function getDistrictNameFromFeature(feature) {
+    if (!feature || typeof feature !== 'object') return '';
+    const props = feature.properties || {};
+    const nameKeys = ['shapeName', 'ADM2_NAME', 'NAME_2', 'name', 'district', 'NAME'];
+    for (const key of nameKeys) {
+      const raw = props[key];
+      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+    }
+    for (const value of Object.values(props)) {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return '';
+  }
+
+  function buildDistrictIndex(featureCollection) {
+    if (!featureCollection || !Array.isArray(featureCollection.features)) return null;
+    const index = new Map();
+    featureCollection.features.forEach(feature => {
+      const name = getDistrictNameFromFeature(feature);
+      const key = normName(name);
+      if (!key) return;
+      if (index.has(key)) {
+        if (!districtDuplicateWarned) {
+          console.warn(`[Dengue] Duplicate district boundary name detected: ${name}`);
+          districtDuplicateWarned = true;
+        }
+        return;
+      }
+      index.set(key, feature);
+    });
+    return index;
+  }
+
+  async function loadMalaysiaDistrictBoundaries() {
+    if (malaysiaADM2) return malaysiaADM2;
+    if (malaysiaADM2Promise) return malaysiaADM2Promise;
+    malaysiaADM2Promise = fetch(MALAYSIA_ADM2_URL)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(json => {
+        malaysiaADM2 = json;
+        districtIndex = buildDistrictIndex(json);
+        return malaysiaADM2;
+      })
+      .catch(err => {
+        console.warn(`[Dengue] Failed to load district boundaries: ${err.message || err}`);
+        malaysiaADM2 = null;
+        districtIndex = null;
+        return null;
+      });
+    return malaysiaADM2Promise;
+  }
+
+  function getDistrictFeatureByName(districtName) {
+    if (!districtIndex) return null;
+    const key = normName(districtName);
+    if (!key) return null;
+    return districtIndex.get(key) || null;
+  }
+
+  function getSelectedDistrictFeature(districtName) {
+    return getDistrictFeatureByName(districtName);
+  }
+
+  function getInferredDistrictName(rows) {
+    const districtKey = dengueState.columns.daerah;
+    if (!districtKey) return null;
+    const names = new Map();
+    rows.forEach(r => {
+      const district = val(r, districtKey);
+      const key = normName(district);
+      if (!key) return;
+      if (!names.has(key)) names.set(key, district);
+    });
+    if (names.size === 1) {
+      return Array.from(names.values())[0];
+    }
+    return null;
+  }
+
+  async function updateDengueDistrictOutline(districtName) {
+    ensureDengueMap();
+    if (!mapState.map) return;
+    if (!districtName) {
+      if (mapState.districtOutline) {
+        mapState.map.removeLayer(mapState.districtOutline);
+        mapState.districtOutline = null;
+      }
+      mapState.selectedDistrictFeature = null;
+      return;
+    }
+    await loadMalaysiaDistrictBoundaries();
+    if (!districtIndex) {
+      mapState.selectedDistrictFeature = null;
+      return;
+    }
+    const feature = getSelectedDistrictFeature(districtName);
+    mapState.selectedDistrictFeature = feature || null;
+    if (!feature) {
+      console.warn(`[Dengue] District boundary not found for "${districtName}"`);
+      if (mapState.districtOutline) {
+        mapState.map.removeLayer(mapState.districtOutline);
+        mapState.districtOutline = null;
+      }
+      return;
+    }
+    if (mapState.districtOutline) {
+      mapState.map.removeLayer(mapState.districtOutline);
+    }
+    mapState.districtOutline = L.geoJSON(feature, {
+      style: {
+        color: '#1f2937',
+        weight: 2,
+        fillOpacity: 0.05,
+      },
+      interactive: false,
+    }).addTo(mapState.map);
   }
 
   function ageGroupFromYears(age) {
@@ -6578,6 +6713,7 @@ window.renderAll = renderAll;
     if (mapContainer) {
       mapContainer.addEventListener('wheel', lockView, { passive: true });
     }
+    loadMalaysiaDistrictBoundaries();
   }
 
   function setMapDateLabel(date) {
@@ -7112,6 +7248,8 @@ window.renderAll = renderAll;
   function renderAll() {
     if (!dengueState.rows.length) return;
     const filtered = applyFilters();
+    const selectedDistrict = dengueDistrictSelect?.value || getInferredDistrictName(filtered);
+    updateDengueDistrictOutline(selectedDistrict);
     renderKpis(filtered);
     updateWeeklyTrend(filtered);
     updateCaseMap(filtered);
@@ -7214,6 +7352,11 @@ window.renderAll = renderAll;
     mapDelayCheckbox.addEventListener('change', () => {
       mapState.delayVisible = mapDelayCheckbox.checked;
       updateMapMarkers(applyFilters());
+    });
+  }
+  if (dengueDistrictSelect) {
+    dengueDistrictSelect.addEventListener('change', () => {
+      updateDengueDistrictOutline(dengueDistrictSelect.value);
     });
   }
   document.querySelectorAll('.tab-btn').forEach(btn => {
