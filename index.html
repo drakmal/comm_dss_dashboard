@@ -6351,7 +6351,17 @@ window.renderAll = renderAll;
     const numeric = parseInt(text, 10);
     if ([1, 2, 3, 4].includes(numeric)) return String(numeric);
     const match = text.match(/\b([1-4])\b/);
-    return match ? match[1] : null;
+    if (match) return match[1];
+    const romanSource = text
+      .toUpperCase()
+      .replace(/\bLOKALITI\b|\bKEUTAMAAN\b/g, '')
+      .trim();
+    if (!romanSource) return null;
+    const romanMatch = romanSource.match(/\b([IVL]+)\b/);
+    if (!romanMatch) return null;
+    const roman = romanMatch[1].replace(/L/g, 'I');
+    const romanMap = { I: '1', II: '2', III: '3', IV: '4' };
+    return romanMap[roman] || null;
   }
 
   function ageGroupFromYears(age) {
@@ -7320,5 +7330,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
 
