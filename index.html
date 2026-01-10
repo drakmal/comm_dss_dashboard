@@ -1860,7 +1860,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       try {
         console.info('[DOSM] Loading compact population dataset…', COMPACT_URLS);
         const compactText = await fetchWithFallback(COMPACT_URLS);
-        const compactPayload = compactText.trimStart();
+        const compactPayload = normalizeJsonPayload(compactText);
         if (!compactPayload.startsWith('{') && !compactPayload.startsWith('[')) {
           throw new Error('Compact dataset response is not valid JSON.');
         }
@@ -1966,6 +1966,14 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     const wb = XLSX.read(text, { type: 'string' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     return XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+  }
+
+  function normalizeJsonPayload(text) {
+    let payload = text.replace(/^\uFEFF/, '');
+    payload = payload.replace(/^\s*<!--[\s\S]*?-->\s*/g, '');
+    payload = payload.replace(/^\s*\/\*[\s\S]*?\*\/\s*/g, '');
+    payload = payload.replace(/^\s*\/\/.*(?:\r?\n)?/g, '');
+    return payload.trimStart();
   }
 
   async function fetchWithFallback(urls) {
@@ -6605,8 +6613,8 @@ window.renderAll = renderAll;
       return null;
     }
     const bbox = turf.bbox(districtFeature);
-    const grid = turf.hexGrid(bbox, 10, { units: 'kilometers' });
-    const filtered = grid.features.filter(hex => turf.booleanIntersects(hex, districtFeature));
+    const grid = turf.hexGrid(bbox, 1, { units: 'kilometers' });
+    const filtered = grid.features.filter(hex => turf.booleanPointInPolygon(turf.centroid(hex), districtFeature));
     const features = filtered.map(hex => {
       const centroid = turf.centroid(hex);
       const [lng, lat] = centroid.geometry.coordinates;
