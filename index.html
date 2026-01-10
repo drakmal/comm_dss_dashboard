@@ -10,10 +10,10 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
   <title>District Health Office Communicable Disease Dashboards</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
   <script
@@ -531,6 +531,36 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       gap: 6px;
       font-size: 0.9rem;
       color: #444;
+    }
+
+    .meteo-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .meteo-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    .meteo-legend .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .meteo-legend .legend-swatch {
+      width: 14px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(0, 0, 0, 0.18);
     }
   </style>
 </head>
@@ -1663,6 +1693,21 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <input type="checkbox" id="dengue_map_delay">
         7-days delay
       </label>
+    </div>
+    <div class="meteo-controls">
+      <label class="checkbox-field" for="dengue_meteo_toggle">
+        <input type="checkbox" id="dengue_meteo_toggle" checked>
+        Meteorology (10 km grid)
+      </label>
+      <div class="filter-field">
+        <label for="dengue_meteo_variable"><strong>Variable</strong></label>
+        <select id="dengue_meteo_variable">
+          <option value="rain_mm">Rainfall (mm)</option>
+          <option value="temp_c">Temperature (°C)</option>
+          <option value="rh_pct">Relative humidity (%)</option>
+        </select>
+      </div>
+      <div id="dengue_meteo_legend" class="meteo-legend" aria-live="polite"></div>
     </div>
   </div>
   <h2>5. Lab profiles</h2>
@@ -6139,6 +6184,9 @@ window.renderAll = renderAll;
   const weekFromSelect = document.getElementById('dengue_filter_week_from');
   const weekToSelect = document.getElementById('dengue_filter_week_to');
   const dengueDistrictSelect = document.getElementById('dengue_filter_district');
+  const meteoToggle = document.getElementById('dengue_meteo_toggle');
+  const meteoVariableSelect = document.getElementById('dengue_meteo_variable');
+  const meteoLegendEl = document.getElementById('dengue_meteo_legend');
 
   // Expected location for the ADM2 boundary file.
   const MALAYSIA_ADM2_URL = 'data/boundaries/malaysia_adm2_simplified.geojson';
@@ -6164,6 +6212,20 @@ window.renderAll = renderAll;
     _programmaticMoveTimeout: null,
     districtOutline: null,
     selectedDistrictFeature: null,
+  };
+
+  const meteoState = {
+    enabled: meteoToggle ? meteoToggle.checked : true,
+    variableKey: meteoVariableSelect ? meteoVariableSelect.value : 'rain_mm',
+    hexLayer: null,
+    hexFeatureCollection: null,
+    districtKey: null,
+    meteoCacheByYear: new Map(),
+    meteoMockByYear: new Map(),
+    activeMeteo: null,
+    activeYear: null,
+    warnedMissingDistrict: false,
+    warnedMissingTurf: false,
   };
 
   if (mapShowAllCheckbox) {
@@ -6497,6 +6559,257 @@ window.renderAll = renderAll;
       },
       interactive: false,
     }).addTo(mapState.map);
+  }
+
+  const METEO_VARIABLES = {
+    rain_mm: {
+      label: 'Rainfall',
+      units: 'mm',
+      breaks: [0, 5, 10, 20, 30, 40, 60],
+      colors: ['#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1'],
+    },
+    temp_c: {
+      label: 'Temperature',
+      units: '°C',
+      breaks: [24, 26, 28, 29, 30, 31, 33],
+      colors: ['#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309'],
+    },
+    rh_pct: {
+      label: 'Relative humidity',
+      units: '%',
+      breaks: [60, 65, 70, 75, 80, 85, 90, 95],
+      colors: ['#ecfeff', '#cffafe', '#a5f3fc', '#67e8f9', '#22d3ee', '#06b6d4', '#0891b2', '#0e7490'],
+    },
+  };
+
+  function hashString(input) {
+    let hash = 0;
+    const str = String(input);
+    for (let i = 0; i < str.length; i += 1) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function encodeCoord(value) {
+    return value.toFixed(4).replace(/-/g, 'm').replace(/\./g, 'p');
+  }
+
+  function buildHexGridForDistrict(districtFeature) {
+    if (!window.turf) {
+      if (!meteoState.warnedMissingTurf) {
+        console.warn('[Dengue] Turf.js unavailable; meteorology overlay disabled.');
+        meteoState.warnedMissingTurf = true;
+      }
+      return null;
+    }
+    const bbox = turf.bbox(districtFeature);
+    const grid = turf.hexGrid(bbox, 10, { units: 'kilometers' });
+    const filtered = grid.features.filter(hex => turf.booleanIntersects(hex, districtFeature));
+    const features = filtered.map(hex => {
+      const centroid = turf.centroid(hex);
+      const [lng, lat] = centroid.geometry.coordinates;
+      const cellId = `h_${encodeCoord(lat)}_${encodeCoord(lng)}`;
+      const next = { ...hex };
+      next.properties = { ...(hex.properties || {}), cell_id: cellId };
+      return next;
+    });
+    return { type: 'FeatureCollection', features };
+  }
+
+  function getDateListForYear(year) {
+    if (!mapState.minDate || !mapState.maxDate) return [];
+    const start = startOfDay(mapState.minDate);
+    const end = startOfDay(mapState.maxDate);
+    if (!start || !end) return [];
+    const dates = [];
+    const cursor = new Date(start.getTime());
+    while (cursor <= end) {
+      if (cursor.getFullYear() === Number(year)) {
+        dates.push(formatDateKey(cursor));
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  }
+
+  function generateMockMeteo(hexFC, dateList) {
+    const output = {};
+    const dates = dateList.length ? dateList : [getCurrentMapDateKey()].filter(Boolean);
+    dates.forEach(dateStr => {
+      output[dateStr] = {};
+      hexFC.features.forEach(feature => {
+        const cellId = feature.properties?.cell_id;
+        if (!cellId) return;
+        const rain = (hashString(`${cellId}-${dateStr}`) % 60) / 1.2;
+        const temp = 24 + (hashString(`${cellId}-${dateStr}-t`) % 90) / 10;
+        const rh = 60 + (hashString(`${cellId}-${dateStr}-h`) % 35);
+        output[dateStr][cellId] = {
+          rain_mm: Number(rain.toFixed(1)),
+          temp_c: Number(temp.toFixed(1)),
+          rh_pct: Math.round(rh),
+        };
+      });
+    });
+    return output;
+  }
+
+  async function loadMeteoYear(year) {
+    try {
+      const response = await fetch(`data/meteo/meteo_cells_${year}.json`);
+      if (!response.ok) return null;
+      const json = await response.json();
+      return json;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function getMeteoForYear(year, hexFC) {
+    if (meteoState.meteoCacheByYear.has(year)) {
+      return meteoState.meteoCacheByYear.get(year);
+    }
+    const loaded = await loadMeteoYear(year);
+    if (loaded) {
+      meteoState.meteoCacheByYear.set(year, loaded);
+      return loaded;
+    }
+    if (meteoState.meteoMockByYear.has(year)) {
+      return meteoState.meteoMockByYear.get(year);
+    }
+    const dates = getDateListForYear(year);
+    const mock = generateMockMeteo(hexFC, dates);
+    meteoState.meteoMockByYear.set(year, mock);
+    return mock;
+  }
+
+  function formatMeteoValue(value, key) {
+    if (!Number.isFinite(value)) return 'N/A';
+    if (key === 'rh_pct') return `${Math.round(value)}`;
+    return `${Number(value).toFixed(1)}`;
+  }
+
+  function getMeteoColor(value, config) {
+    if (!Number.isFinite(value)) return null;
+    const breaks = config.breaks;
+    const colors = config.colors;
+    for (let i = 0; i < breaks.length - 1; i += 1) {
+      if (value < breaks[i + 1]) return colors[i];
+    }
+    return colors[colors.length - 1];
+  }
+
+  function getCurrentMapDateKey() {
+    const date = mapState.selectedDate || mapState.minDate;
+    if (!date) return null;
+    return formatDateKey(startOfDay(date));
+  }
+
+  function updateMeteoLegend(variableKey) {
+    if (!meteoLegendEl) return;
+    const config = METEO_VARIABLES[variableKey];
+    if (!config) return;
+    const ranges = config.breaks.map((value, idx) => {
+      if (idx === config.breaks.length - 1) {
+        return `≥ ${value}`;
+      }
+      return `${value}–${config.breaks[idx + 1]}`;
+    });
+    const legendItems = ranges.map((label, idx) => (
+      `<span class="legend-item"><span class="legend-swatch" style="background:${config.colors[idx]};"></span>${label}</span>`
+    ));
+    meteoLegendEl.innerHTML = `<strong>${config.label} (${config.units})</strong> ${legendItems.join('')}`;
+  }
+
+  function refreshHexStyles(dateStr, variableKey) {
+    if (!meteoState.hexLayer) return;
+    const config = METEO_VARIABLES[variableKey];
+    if (!config) return;
+    const meteo = meteoState.activeMeteo || {};
+    meteoState.hexLayer.eachLayer(layer => {
+      const cellId = layer.feature?.properties?.cell_id;
+      const value = cellId && dateStr ? meteo?.[dateStr]?.[cellId]?.[variableKey] : null;
+      const fillColor = getMeteoColor(value, config);
+      layer.setStyle({
+        fillColor: fillColor || '#94a3b8',
+        fillOpacity: Number.isFinite(value) ? 0.55 : 0,
+        color: '#475569',
+        weight: 0.5,
+        opacity: 1,
+      });
+      const displayValue = Number.isFinite(value) ? formatMeteoValue(value, variableKey) : 'N/A';
+      const tooltipContent = [
+        `<strong>${cellId || 'Unknown cell'}</strong>`,
+        `${config.label}: ${displayValue} ${config.units}`,
+        `Date: ${dateStr || '-'}`
+      ].join('<br>');
+      if (layer.getTooltip()) {
+        layer.setTooltipContent(tooltipContent);
+      } else {
+        layer.bindTooltip(tooltipContent, { sticky: true });
+      }
+    });
+  }
+
+  function removeMeteoLayer() {
+    if (mapState.map && meteoState.hexLayer) {
+      mapState.map.removeLayer(meteoState.hexLayer);
+    }
+    meteoState.hexLayer = null;
+    meteoState.hexFeatureCollection = null;
+  }
+
+  async function updateMeteoOverlay({ rebuild = false } = {}) {
+    if (!meteoState.enabled) {
+      removeMeteoLayer();
+      return;
+    }
+    ensureDengueMap();
+    if (!mapState.map) return;
+    const districtFeature = mapState.selectedDistrictFeature;
+    if (!districtFeature) {
+      removeMeteoLayer();
+      if (!meteoState.warnedMissingDistrict) {
+        console.warn('[Dengue] District boundary not found; meteorology overlay disabled.');
+        meteoState.warnedMissingDistrict = true;
+      }
+      return;
+    }
+    if (!window.turf) {
+      removeMeteoLayer();
+      return;
+    }
+    const districtKey = normName(getDistrictNameFromFeature(districtFeature));
+    const needsRebuild = rebuild || !meteoState.hexFeatureCollection || meteoState.districtKey !== districtKey;
+    if (needsRebuild) {
+      const hexFC = buildHexGridForDistrict(districtFeature);
+      if (!hexFC) return;
+      meteoState.hexFeatureCollection = hexFC;
+      meteoState.districtKey = districtKey;
+      if (meteoState.hexLayer) {
+        mapState.map.removeLayer(meteoState.hexLayer);
+      }
+      meteoState.hexLayer = L.geoJSON(hexFC, {
+        renderer: L.canvas(),
+        style: {
+          color: '#475569',
+          weight: 0.5,
+          fillOpacity: 0.55,
+          opacity: 1,
+        },
+      }).addTo(mapState.map);
+    }
+    const dateStr = getCurrentMapDateKey();
+    if (dateStr) {
+      const year = dateStr.slice(0, 4);
+      if (year && (!meteoState.activeYear || meteoState.activeYear !== year)) {
+        meteoState.activeMeteo = await getMeteoForYear(year, meteoState.hexFeatureCollection);
+        meteoState.activeYear = year;
+      }
+    }
+    updateMeteoLegend(meteoState.variableKey);
+    refreshHexStyles(dateStr, meteoState.variableKey);
   }
 
   function ageGroupFromYears(age) {
@@ -7249,7 +7562,7 @@ window.renderAll = renderAll;
     if (!dengueState.rows.length) return;
     const filtered = applyFilters();
     const selectedDistrict = dengueDistrictSelect?.value || getInferredDistrictName(filtered);
-    updateDengueDistrictOutline(selectedDistrict);
+    const outlinePromise = updateDengueDistrictOutline(selectedDistrict);
     renderKpis(filtered);
     updateWeeklyTrend(filtered);
     updateCaseMap(filtered);
@@ -7258,6 +7571,11 @@ window.renderAll = renderAll;
     updateTopTables(filtered);
     updateClusters(filtered);
     updateTimeliness(filtered);
+    if (outlinePromise && typeof outlinePromise.then === 'function') {
+      outlinePromise.then(() => updateMeteoOverlay({ rebuild: true }));
+    } else {
+      updateMeteoOverlay({ rebuild: true });
+    }
   }
 
   const previousUpdatePopulationRates = window.updatePopulationRates;
@@ -7312,9 +7630,10 @@ window.renderAll = renderAll;
       setMapDateLabel(mapState.selectedDate);
       updateMapHoverFromSlider();
       setMapHoverVisibility(true);
+      mapState.userViewLocked = true;
       updateMapMarkers(applyFilters());
-    });
-    mapSlider.addEventListener('mouseenter', () => {
+      updateMeteoOverlay();
+    });    mapSlider.addEventListener('mouseenter', () => {
       updateMapHoverFromSlider();
       setMapHoverVisibility(true);
     });
@@ -7356,7 +7675,20 @@ window.renderAll = renderAll;
   }
   if (dengueDistrictSelect) {
     dengueDistrictSelect.addEventListener('change', () => {
-      updateDengueDistrictOutline(dengueDistrictSelect.value);
+      updateDengueDistrictOutline(dengueDistrictSelect.value)
+        .then(() => updateMeteoOverlay({ rebuild: true }));
+    });
+  }
+  if (meteoToggle) {
+    meteoToggle.addEventListener('change', () => {
+      meteoState.enabled = meteoToggle.checked;
+      updateMeteoOverlay({ rebuild: true });
+    });
+  }
+  if (meteoVariableSelect) {
+    meteoVariableSelect.addEventListener('change', () => {
+      meteoState.variableKey = meteoVariableSelect.value;
+      updateMeteoOverlay();
     });
   }
   document.querySelectorAll('.tab-btn').forEach(btn => {
