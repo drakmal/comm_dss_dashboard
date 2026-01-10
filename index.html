@@ -1697,7 +1697,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="meteo-controls">
       <label class="checkbox-field" for="dengue_meteo_toggle">
         <input type="checkbox" id="dengue_meteo_toggle" checked>
-        Meteorology (10 km grid)
+        Meteorology (2 km grid)
       </label>
       <div class="filter-field">
         <label for="dengue_meteo_variable"><strong>Variable</strong></label>
@@ -1707,6 +1707,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           <option value="rh_pct">Relative humidity (%)</option>
         </select>
       </div>
+      <button class="btn" type="button" id="dengue_meteo_export">Export meteo grid</button>
       <div id="dengue_meteo_legend" class="meteo-legend" aria-live="polite"></div>
     </div>
   </div>
@@ -6194,6 +6195,7 @@ window.renderAll = renderAll;
   const dengueDistrictSelect = document.getElementById('dengue_filter_district');
   const meteoToggle = document.getElementById('dengue_meteo_toggle');
   const meteoVariableSelect = document.getElementById('dengue_meteo_variable');
+  const meteoExportBtn = document.getElementById('dengue_meteo_export');
   const meteoLegendEl = document.getElementById('dengue_meteo_legend');
 
   // Expected location for the ADM2 boundary file.
@@ -6569,6 +6571,7 @@ window.renderAll = renderAll;
     }).addTo(mapState.map);
   }
 
+  const METEO_GRID_KM = 2;
   const METEO_VARIABLES = {
     rain_mm: {
       label: 'Rainfall',
@@ -6613,7 +6616,7 @@ window.renderAll = renderAll;
       return null;
     }
     const bbox = turf.bbox(districtFeature);
-    const grid = turf.hexGrid(bbox, 1, { units: 'kilometers' });
+    const grid = turf.hexGrid(bbox, METEO_GRID_KM, { units: 'kilometers' });
     const filtered = grid.features.filter(hex => turf.booleanPointInPolygon(turf.centroid(hex), districtFeature));
     const features = filtered.map(hex => {
       const centroid = turf.centroid(hex);
@@ -6624,6 +6627,39 @@ window.renderAll = renderAll;
       return next;
     });
     return { type: 'FeatureCollection', features };
+  }
+
+  function formatDistrictFilename(value) {
+    const cleaned = normName(value).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return cleaned || 'unknown';
+  }
+
+  function exportMeteoGrid() {
+    const hexFC = meteoState.hexFeatureCollection;
+    if (!hexFC) {
+      console.warn('[Dengue] No meteorology grid available for export.');
+      return;
+    }
+    const districtName = dengueDistrictSelect?.value
+      || getDistrictNameFromFeature(mapState.selectedDistrictFeature)
+      || 'unknown';
+    const payload = {
+      type: 'FeatureCollection',
+      features: hexFC.features,
+      districtName,
+      gridKm: METEO_GRID_KM,
+      createdAt: new Date().toISOString(),
+      source: 'dengue dashboard',
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/geo+json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hexgrid_${formatDistrictFilename(districtName)}_${METEO_GRID_KM}km.geojson`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
   function getDateListForYear(year) {
@@ -7711,6 +7747,11 @@ window.renderAll = renderAll;
     meteoVariableSelect.addEventListener('change', () => {
       meteoState.variableKey = meteoVariableSelect.value;
       updateMeteoOverlay();
+    });
+  }
+  if (meteoExportBtn) {
+    meteoExportBtn.addEventListener('click', () => {
+      exportMeteoGrid();
     });
   }
   document.querySelectorAll('.tab-btn').forEach(btn => {
