@@ -68,6 +68,68 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       flex-wrap: wrap;
     }
 
+    .enotis-upload-row {
+      align-items: center;
+    }
+
+    .enotis-mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 999px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+    }
+
+    .enotis-toggle-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #4338ca;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .enotis-toggle-btn.is-active {
+      background: #4338ca;
+      color: #ffffff;
+      border-color: #4338ca;
+      box-shadow: 0 1px 2px rgba(67, 56, 202, 0.2);
+    }
+
+    .enotis-toggle-btn:focus-visible {
+      outline: 2px solid #6366f1;
+      outline-offset: 2px;
+    }
+
+    .enotis-compare-badge {
+      display: none;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e0e7ff;
+      color: #4338ca;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    #tab-enotis.compare-mode .enotis-compare-badge {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .enotis-upload-helper {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #6b7280;
+    }
+
     .is-hidden {
       display: none !important;
     }
@@ -694,13 +756,20 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
   <h2>1. Upload Enotifikasi Excel file</h2>
   <p class="subtitle">from eNotifikasi > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
   <div class="card">
-    <div class="upload-row">
+    <div class="upload-row enotis-upload-row">
       <div class="enotis-single-only" id="enotisSingleUpload">
         <label for="fileInput_enotis"><strong>Excel file (.xls / .xlsx):</strong></label>
         <input type="file" id="fileInput_enotis" accept=".xls,.xlsx" />
       </div>
+      <div class="enotis-mode-toggle" role="tablist" aria-label="Enotis upload mode">
+        <button class="enotis-toggle-btn is-active" type="button" id="toggleSingle_enotis" role="tab" aria-selected="true">Single</button>
+        <button class="enotis-toggle-btn" type="button" id="toggleCompare_enotis" role="tab" aria-selected="false">Compare<sup>pro</sup></button>
+        <span class="enotis-compare-badge" aria-live="polite">Compare mode (ON)</span>
+      </div>
       <div class="muted enotis-single-only" id="fileInfo_enotis">No file loaded yet.</div>
-      <button class="btn" type="button" id="toggleCompare_enotis">Compare mode</button>
+    </div>
+    <div class="enotis-upload-helper">
+      Compare mode lets you upload two Excel files (e.g., 2025 vs 2026) and view results side-by-side. Filters apply to both panels.
     </div>
     <div class="upload-row enotis-compare-only enotis-compare-uploads" id="enotisCompareUploads">
       <div class="enotis-compare-upload-grid">
@@ -2548,6 +2617,7 @@ function getStateLatest(stateDisplay) {
 
 <script>
   const enotisTab = document.getElementById('tab-enotis');
+  const singleToggle = document.getElementById('toggleSingle_enotis');
   const compareToggle = document.getElementById('toggleCompare_enotis');
 
   const fileInput_enotis = document.getElementById('fileInput_enotis');
@@ -2848,7 +2918,14 @@ function getStateLatest(stateDisplay) {
   function setCompareMode(enabled) {
     enotisState.mode = enabled ? 'compare' : 'single';
     enotisTab.classList.toggle('compare-mode', enabled);
-    compareToggle.textContent = enabled ? 'Exit compare mode' : 'Compare mode';
+    if (singleToggle) {
+      singleToggle.classList.toggle('is-active', !enabled);
+      singleToggle.setAttribute('aria-selected', String(!enabled));
+    }
+    if (compareToggle) {
+      compareToggle.classList.toggle('is-active', enabled);
+      compareToggle.setAttribute('aria-selected', String(enabled));
+    }
 
     if (enabled) {
       diagnosisSelect.value = 'ALL';
@@ -3447,9 +3524,21 @@ function getStateLatest(stateDisplay) {
 
   dateSelect.addEventListener('change', updateDashboard);
 
-  compareToggle.addEventListener('click', () => {
-    setCompareMode(enotisState.mode !== 'compare');
-  });
+  if (singleToggle) {
+    singleToggle.addEventListener('click', () => {
+      if (enotisState.mode !== 'single') {
+        setCompareMode(false);
+      }
+    });
+  }
+
+  if (compareToggle) {
+    compareToggle.addEventListener('click', () => {
+      if (enotisState.mode !== 'compare') {
+        setCompareMode(true);
+      }
+    });
+  }
 
   updatePanelHeader(enotisState.compare.a);
   updatePanelHeader(enotisState.compare.b);
