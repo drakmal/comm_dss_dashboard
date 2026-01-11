@@ -68,6 +68,77 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       flex-wrap: wrap;
     }
 
+    .is-hidden {
+      display: none !important;
+    }
+
+    #tab-enotis.compare-mode .enotis-single-only {
+      display: none !important;
+    }
+
+    #tab-enotis.compare-mode .enotis-compare-only {
+      display: block;
+    }
+
+    .enotis-compare-only {
+      display: none;
+    }
+
+    .enotis-compare-uploads {
+      width: 100%;
+    }
+
+    .enotis-compare-upload-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      width: 100%;
+    }
+
+    .enotis-compare-panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .enotis-compare-panel {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .enotis-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .enotis-panel-section {
+      margin-top: 16px;
+    }
+
+    .enotis-panel-section h4 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    .enotis-panel-message {
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .enotis-compare-upload-grid,
+      .enotis-compare-panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     input[type="file"] {
       padding: 4px;
     }
@@ -624,14 +695,28 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
   <p class="subtitle">from eNotifikasi > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
   <div class="card">
     <div class="upload-row">
-      <div>
+      <div class="enotis-single-only" id="enotisSingleUpload">
         <label for="fileInput_enotis"><strong>Excel file (.xls / .xlsx):</strong></label>
         <input type="file" id="fileInput_enotis" accept=".xls,.xlsx" />
       </div>
-      <div class="muted" id="fileInfo_enotis">No file loaded yet.</div>
+      <div class="muted enotis-single-only" id="fileInfo_enotis">No file loaded yet.</div>
+      <button class="btn" type="button" id="toggleCompare_enotis">Compare mode</button>
+    </div>
+    <div class="upload-row enotis-compare-only enotis-compare-uploads" id="enotisCompareUploads">
+      <div class="enotis-compare-upload-grid">
+        <div>
+          <label for="fileInput_enotis_A"><strong>File A (.xls / .xlsx):</strong></label>
+          <input type="file" id="fileInput_enotis_A" accept=".xls,.xlsx" />
+          <div class="muted" id="fileInfo_enotis_A">No file loaded yet.</div>
+        </div>
+        <div>
+          <label for="fileInput_enotis_B"><strong>File B (.xls / .xlsx):</strong></label>
+          <input type="file" id="fileInput_enotis_B" accept=".xls,.xlsx" />
+          <div class="muted" id="fileInfo_enotis_B">No file loaded yet.</div>
+        </div>
+      </div>
     </div>
   </div>
-
   <h2>2. Filters and key numbers</h2>
   <div class="card">
     <div class="filters-row">
@@ -664,7 +749,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
     </div>
 
-    <div class="kpi-grid">
+    <div class="kpi-grid enotis-single-only">
       <div class="kpi-box">
         <div class="kpi-title">Total notifications</div>
         <div class="kpi-value" id="kpiTotal_enotis">0</div>
@@ -676,66 +761,190 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
     </div>
 
-    <div class="note">
+    <div class="note enotis-single-only">
       All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
     </div>
   </div>
 
-  <h2>3. Diagnosis breakdown</h2>
-  <div class="card">
-    <p class="muted">
-      Counts of each diagnosis after applying the filters above.
-    </p>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:70%;">Diagnosis</th>
-          <th>Notifications</th>
-        </tr>
-      </thead>
-      <tbody id="diagnosisTableBody_enotis">
-        <tr>
-          <td>No data</td>
-          <td>0</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="enotis-compare-only" id="enotisCompareResults">
+    <div class="enotis-compare-panel-grid">
+      <div class="enotis-compare-panel">
+        <div class="enotis-panel-header" id="enotisPanelHeaderA">File A (Year: Unknown)</div>
+        <div class="muted enotis-panel-message" id="enotisPanelMessageA">No file loaded yet.</div>
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <div class="kpi-title">Total notifications</div>
+            <div class="kpi-value" id="kpiTotal_enotis_A">0</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Number of diagnosis</div>
+            <div class="kpi-value" id="kpiDiseases_enotis_A">0</div>
+          </div>
+        </div>
+        <div class="note">
+          All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Diagnosis breakdown</h4>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70%;">Diagnosis</th>
+                <th>Notifications</th>
+              </tr>
+            </thead>
+            <tbody id="diagnosisTableBody_enotis_A">
+              <tr>
+                <td>No data</td>
+                <td>0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Weekly trend</h4>
+          <canvas id="weeklyChart_enotis_A"></canvas>
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Demography</h4>
+          <div class="demography-grid">
+            <div class="demo-card">
+              <div class="demo-block-title">Jantina</div>
+              <canvas id="genderChart_enotis_A"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Umur</div>
+              <canvas id="ageChart_enotis_A"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Status Kewarganegaraan</div>
+              <canvas id="citizenChart_enotis_A"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Bangsa</div>
+              <canvas id="ethnicityChart_enotis_A"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="enotis-compare-panel">
+        <div class="enotis-panel-header" id="enotisPanelHeaderB">File B (Year: Unknown)</div>
+        <div class="muted enotis-panel-message" id="enotisPanelMessageB">No file loaded yet.</div>
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <div class="kpi-title">Total notifications</div>
+            <div class="kpi-value" id="kpiTotal_enotis_B">0</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Number of diagnosis</div>
+            <div class="kpi-value" id="kpiDiseases_enotis_B">0</div>
+          </div>
+        </div>
+        <div class="note">
+          All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Diagnosis breakdown</h4>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70%;">Diagnosis</th>
+                <th>Notifications</th>
+              </tr>
+            </thead>
+            <tbody id="diagnosisTableBody_enotis_B">
+              <tr>
+                <td>No data</td>
+                <td>0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Weekly trend</h4>
+          <canvas id="weeklyChart_enotis_B"></canvas>
+        </div>
+        <div class="enotis-panel-section">
+          <h4>Demography</h4>
+          <div class="demography-grid">
+            <div class="demo-card">
+              <div class="demo-block-title">Jantina</div>
+              <canvas id="genderChart_enotis_B"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Umur</div>
+              <canvas id="ageChart_enotis_B"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Status Kewarganegaraan</div>
+              <canvas id="citizenChart_enotis_B"></canvas>
+            </div>
+            <div class="demo-card">
+              <div class="demo-block-title">Bangsa</div>
+              <canvas id="ethnicityChart_enotis_B"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <h2>4. Weekly trend</h2>
-  <div class="card">
-    <p class="muted">
-      Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
-    </p>
-    <canvas id="weeklyChart_enotis"></canvas>
-  </div>
+  <div class="enotis-single-only" id="enotisSingleResults">
+    <h2>3. Diagnosis breakdown</h2>
+    <div class="card">
+      <p class="muted">
+        Counts of each diagnosis after applying the filters above.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70%;">Diagnosis</th>
+            <th>Notifications</th>
+          </tr>
+        </thead>
+        <tbody id="diagnosisTableBody_enotis">
+          <tr>
+            <td>No data</td>
+            <td>0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <h2>5. Demography</h2>
-  <div class="card">
-    <p class="muted">
-      Distribution of cases by gender, age, nationality, and ethnicity after applying the filters above.
-    </p>
-    <div class="demography-grid">
-      <div class="demo-card">
-        <div class="demo-block-title">Jantina</div>
-        <canvas id="genderChart_enotis"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Umur</div>
-        <canvas id="ageChart_enotis"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Status Kewarganegaraan</div>
-        <canvas id="citizenChart_enotis"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Bangsa</div>
-        <canvas id="ethnicityChart_enotis"></canvas>
+    <h2>4. Weekly trend</h2>
+    <div class="card">
+      <p class="muted">
+        Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
+      </p>
+      <canvas id="weeklyChart_enotis"></canvas>
+    </div>
+
+    <h2>5. Demography</h2>
+    <div class="card">
+      <p class="muted">
+        Distribution of cases by gender, age, nationality, and ethnicity after applying the filters above.
+      </p>
+      <div class="demography-grid">
+        <div class="demo-card">
+          <div class="demo-block-title">Jantina</div>
+          <canvas id="genderChart_enotis"></canvas>
+        </div>
+        <div class="demo-card">
+          <div class="demo-block-title">Umur</div>
+          <canvas id="ageChart_enotis"></canvas>
+        </div>
+        <div class="demo-card">
+          <div class="demo-block-title">Status Kewarganegaraan</div>
+          <canvas id="citizenChart_enotis"></canvas>
+        </div>
+        <div class="demo-card">
+          <div class="demo-block-title">Bangsa</div>
+          <canvas id="ethnicityChart_enotis"></canvas>
+        </div>
       </div>
     </div>
   </div>
 </section>
-
 <section class="tab-panel" data-tab="tb" id="tab-tb">
 
   <h2>1. Upload National Tuberculosis Registry Excel file</h2>
@@ -2338,204 +2547,24 @@ function getStateLatest(stateDisplay) {
 </script>
 
 <script>
-  // We will try to detect columns safely by matching header names loosely.
-  const columnMap = {
-       diagnosis: null,
-   status: null,
-   week: null,
-   date: null,
-   gender: null,
-   age: null,
-   citizen: null,
-   ethnicity: null
- };
+  const enotisTab = document.getElementById('tab-enotis');
+  const compareToggle = document.getElementById('toggleCompare_enotis');
 
- let rawData = [];
- let weeklyChart_enotis = null;
- let genderChart_enotis = null;
- let ageChart_enotis = null;
- let citizenChart_enotis = null;
- let ethnicityChart_enotis = null;
+  const fileInput_enotis = document.getElementById('fileInput_enotis');
+  const fileInfo_enotis = document.getElementById('fileInfo_enotis');
+  const fileInput_enotis_A = document.getElementById('fileInput_enotis_A');
+  const fileInput_enotis_B = document.getElementById('fileInput_enotis_B');
+  const fileInfo_enotis_A = document.getElementById('fileInfo_enotis_A');
+  const fileInfo_enotis_B = document.getElementById('fileInfo_enotis_B');
 
- const fileInput_enotis = document.getElementById('fileInput_enotis');
- const fileInfo_enotis = document.getElementById('fileInfo_enotis');
+  const diagnosisSelect = document.getElementById('filterDiagnosis_enotis');
+  const statusSelect = document.getElementById('filterStatus_enotis');
+  const weekSelect = document.getElementById('filterWeek_enotis');
+  const dateSelect = document.getElementById('filterDate_enotis');
 
- const diagnosisSelect = document.getElementById('filterDiagnosis_enotis');
- const statusSelect = document.getElementById('filterStatus_enotis');
- const weekSelect = document.getElementById('filterWeek_enotis');
- const dateSelect = document.getElementById('filterDate_enotis');
-
- const kpiTotal_enotis = document.getElementById('kpiTotal_enotis');
- const kpiDiseases_enotis = document.getElementById('kpiDiseases_enotis');
-
+  const kpiTotal_enotis = document.getElementById('kpiTotal_enotis');
+  const kpiDiseases_enotis = document.getElementById('kpiDiseases_enotis');
   const diagnosisTableBody_enotis = document.getElementById('diagnosisTableBody_enotis');
-
-  fileInput_enotis.addEventListener('change', handleFileSelect);
-  diagnosisSelect.addEventListener('change', () => {
-    rebuildDateOptions();
-    updateDashboard();
-  });
-
-  statusSelect.addEventListener('change', () => {
-    rebuildDateOptions();
-    updateDashboard();
-  });
-
-  weekSelect.addEventListener('change', () => {
-    // When week changes, reset date to ALL, then rebuild available dates for that week
-    dateSelect.value = 'ALL';
-    rebuildDateOptions();
-    updateDashboard();
-  });
-
-  dateSelect.addEventListener('change', updateDashboard);
-
-  function handleFileSelect(evt) {
-    const file = evt.target.files[0];
-    if (!file) return;
-
-    fileInfo_enotis.textContent = `Loading ${file.name} ...`;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-
-      rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
-
-      fileInfo_enotis.textContent = `Loaded ${file.name} with ${rawData.length} rows.`;
-
-      if (!rawData || rawData.length === 0) {
-        alert("No rows found in the first sheet.");
-        return;
-      }
-
-      inferColumns();
-      buildFilterOptions();
-      rebuildDateOptions();
-      updateDashboard();
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  // Tries to find a matching header among keys, using several candidate names.
-  function findColumnKey(keys, candidates) {
-    const norm = s => s.toString().toLowerCase().replace(/\s+/g, ' ').trim();
-
-    const normKeys = keys.map(k => ({ key: k, normKey: norm(k) }));
-    const normCandidates = candidates.map(c => norm(c));
-
-    // Exact (normalized) match
-    for (const { key, normKey } of normKeys) {
-      if (normCandidates.includes(normKey)) return key;
-    }
-
-    // Starts-with match (e.g. "Jantina" vs "Jantina Pesakit")
-    for (const { key, normKey } of normKeys) {
-      for (const c of normCandidates) {
-        if (normKey.startsWith(c)) return key;
-      }
-    }
-
-    return null;
-  }
-
-  function inferColumns() {
-    const firstRow = rawData[0];
-    const keys = Object.keys(firstRow || {});
-
-    columnMap.diagnosis = findColumnKey(keys, ['Diagnosis', 'DX']);
-    columnMap.status = findColumnKey(keys, ['Notifikasi Status', 'Status Notifikasi', 'BR']);
-    columnMap.week   = findColumnKey(keys, ['Epid Minggu (Tkh Notifikasi)', 'Epid Minggu', 'Epid Week']);
-    columnMap.date   = findColumnKey(keys, ['Tkh Notifikasi']);
-
-    columnMap.gender   = findColumnKey(keys, ['Jantina', 'Sex', 'Gender', 'Jantina Pesakit']);
-    columnMap.age      = findColumnKey(keys, ['Umur', 'Age', 'Umur Pesakit']);
-    columnMap.citizen  = findColumnKey(keys, ['Status Kewarganegaraan', 'Kewarganegaraan', 'Citizenship']);
-    columnMap.ethnicity= findColumnKey(keys, ['Bangsa', 'Keturunan', 'Etnik', 'Ethnicity']);
-
-    console.log('Detected columns:', columnMap);
-  }
-
-  function buildFilterOptions() {
-    const diagSet = new Set();
-    const statusSet = new Set();
-    const weekSet = new Set();
-
-    rawData.forEach(row => {
-      const dxKey = columnMap.diagnosis;
-      const stKey = columnMap.status;
-      const wkKey = columnMap.week;
-
-      const dx = dxKey ? row[dxKey] : null;
-      const st = stKey ? row[stKey] : null;
-      const wk = wkKey ? row[wkKey] : null;
-
-      if (dx != null && String(dx).trim() !== '') diagSet.add(String(dx).trim());
-      if (st != null && String(st).trim() !== '') statusSet.add(String(st).trim());
-      if (wk != null && String(wk).trim() !== '') {
-        const num = parseInt(wk, 10);
-        if (!isNaN(num)) weekSet.add(num);
-      }
-    });
-
-    // Diagnosis dropdown
-    diagnosisSelect.innerHTML = '';
-    const optAllDx = document.createElement('option');
-    optAllDx.value = 'ALL';
-    optAllDx.textContent = 'All diagnosis';
-    diagnosisSelect.appendChild(optAllDx);
-
-    Array.from(diagSet).sort().forEach(dx => {
-      const opt = document.createElement('option');
-      opt.value = dx;
-      opt.textContent = dx;
-      diagnosisSelect.appendChild(opt);
-    });
-
-    // Status dropdown
-    statusSelect.innerHTML = '';
-    const optAllSt = document.createElement('option');
-    optAllSt.value = 'ALL';
-    optAllSt.textContent = 'All status';
-    statusSelect.appendChild(optAllSt);
-
-    Array.from(statusSet).sort().forEach(st => {
-      const opt = document.createElement('option');
-      opt.value = st;
-      opt.textContent = st;
-      statusSelect.appendChild(opt);
-    });
-
-    // Week dropdown
-    weekSelect.innerHTML = '';
-    const optAllWk = document.createElement('option');
-    optAllWk.value = 'ALL';
-    optAllWk.textContent = 'All weeks';
-    weekSelect.appendChild(optAllWk);
-
-    Array.from(weekSet).sort((a, b) => a - b).forEach(wk => {
-      const opt = document.createElement('option');
-      opt.value = wk;
-      opt.textContent = `Week ${wk}`;
-      weekSelect.appendChild(opt);
-    });
-
-    // Date dropdown reset (will be populated after a week is selected)
-    dateSelect.innerHTML = '';
-    const optAllDt = document.createElement('option');
-    optAllDt.value = 'ALL';
-    optAllDt.textContent = 'All dates';
-    dateSelect.appendChild(optAllDt);
-    dateSelect.disabled = true;
-
-    diagnosisSelect.disabled = false;
-    statusSelect.disabled = false;
-    weekSelect.disabled = false;
-  }
 
   // --- Date helpers (Excel date serial / string -> ISO yyyy-mm-dd) ---
   function toISODate(val) {
@@ -2593,12 +2622,418 @@ function getStateLatest(stateDisplay) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
-  // Build Date dropdown based on selected Epid Week (+ current diagnosis/status filters).
+  function createEmptyColumnMap() {
+    return {
+      diagnosis: null,
+      status: null,
+      week: null,
+      date: null,
+      gender: null,
+      age: null,
+      citizen: null,
+      ethnicity: null
+    };
+  }
+
+  function createPanelState(options) {
+    return {
+      label: options.label || '',
+      rawData: [],
+      columnMap: createEmptyColumnMap(),
+      charts: {
+        weekly: null,
+        gender: null,
+        age: null,
+        citizen: null,
+        ethnicity: null
+      },
+      fileInput: options.fileInput || null,
+      fileInfo: options.fileInfo || null,
+      headerEl: options.headerEl || null,
+      messageEl: options.messageEl || null,
+      defaultMessage: options.defaultMessage || '',
+      hasFile: false,
+      errorMessage: '',
+      kpiTotalEl: options.kpiTotalEl || null,
+      kpiDiseasesEl: options.kpiDiseasesEl || null,
+      tableBody: options.tableBody || null,
+      canvasIds: options.canvasIds || {}
+    };
+  }
+
+  const enotisState = {
+    mode: 'single',
+    single: createPanelState({
+      label: 'Single',
+      fileInput: fileInput_enotis,
+      fileInfo: fileInfo_enotis,
+      kpiTotalEl: kpiTotal_enotis,
+      kpiDiseasesEl: kpiDiseases_enotis,
+      tableBody: diagnosisTableBody_enotis,
+      canvasIds: {
+        weekly: 'weeklyChart_enotis',
+        gender: 'genderChart_enotis',
+        age: 'ageChart_enotis',
+        citizen: 'citizenChart_enotis',
+        ethnicity: 'ethnicityChart_enotis'
+      }
+    }),
+    compare: {
+      a: createPanelState({
+        label: 'File A',
+        fileInput: fileInput_enotis_A,
+        fileInfo: fileInfo_enotis_A,
+        headerEl: document.getElementById('enotisPanelHeaderA'),
+        messageEl: document.getElementById('enotisPanelMessageA'),
+        defaultMessage: 'No file loaded yet.',
+        kpiTotalEl: document.getElementById('kpiTotal_enotis_A'),
+        kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_A'),
+        tableBody: document.getElementById('diagnosisTableBody_enotis_A'),
+        canvasIds: {
+          weekly: 'weeklyChart_enotis_A',
+          gender: 'genderChart_enotis_A',
+          age: 'ageChart_enotis_A',
+          citizen: 'citizenChart_enotis_A',
+          ethnicity: 'ethnicityChart_enotis_A'
+        }
+      }),
+      b: createPanelState({
+        label: 'File B',
+        fileInput: fileInput_enotis_B,
+        fileInfo: fileInfo_enotis_B,
+        headerEl: document.getElementById('enotisPanelHeaderB'),
+        messageEl: document.getElementById('enotisPanelMessageB'),
+        defaultMessage: 'No file loaded yet.',
+        kpiTotalEl: document.getElementById('kpiTotal_enotis_B'),
+        kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_B'),
+        tableBody: document.getElementById('diagnosisTableBody_enotis_B'),
+        canvasIds: {
+          weekly: 'weeklyChart_enotis_B',
+          gender: 'genderChart_enotis_B',
+          age: 'ageChart_enotis_B',
+          citizen: 'citizenChart_enotis_B',
+          ethnicity: 'ethnicityChart_enotis_B'
+        }
+      })
+    }
+  };
+
+  function setPanelMessage(panel, message) {
+    if (!panel.messageEl) return;
+    panel.messageEl.textContent = message;
+    panel.messageEl.classList.toggle('is-hidden', !message);
+  }
+
+  function updatePanelMessage(panel) {
+    if (!panel.messageEl) return;
+    if (panel.errorMessage) {
+      setPanelMessage(panel, panel.errorMessage);
+      return;
+    }
+    if (!panel.hasFile) {
+      setPanelMessage(panel, panel.defaultMessage);
+      return;
+    }
+    setPanelMessage(panel, '');
+  }
+
+  // Tries to find a matching header among keys, using several candidate names.
+  function findColumnKey(keys, candidates) {
+    const norm = s => s.toString().toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const normKeys = keys.map(k => ({ key: k, normKey: norm(k) }));
+    const normCandidates = candidates.map(c => norm(c));
+
+    // Exact (normalized) match
+    for (const { key, normKey } of normKeys) {
+      if (normCandidates.includes(normKey)) return key;
+    }
+
+    // Starts-with match (e.g. "Jantina" vs "Jantina Pesakit")
+    for (const { key, normKey } of normKeys) {
+      for (const c of normCandidates) {
+        if (normKey.startsWith(c)) return key;
+      }
+    }
+
+    return null;
+  }
+
+  function inferColumns(panel) {
+    const firstRow = panel.rawData[0];
+    const keys = Object.keys(firstRow || {});
+
+    panel.columnMap.diagnosis = findColumnKey(keys, ['Diagnosis', 'DX']);
+    panel.columnMap.status = findColumnKey(keys, ['Notifikasi Status', 'Status Notifikasi', 'BR']);
+    panel.columnMap.week = findColumnKey(keys, ['Epid Minggu (Tkh Notifikasi)', 'Epid Minggu', 'Epid Week']);
+    panel.columnMap.date = findColumnKey(keys, ['Tkh Notifikasi']);
+
+    panel.columnMap.gender = findColumnKey(keys, ['Jantina', 'Sex', 'Gender', 'Jantina Pesakit']);
+    panel.columnMap.age = findColumnKey(keys, ['Umur', 'Age', 'Umur Pesakit']);
+    panel.columnMap.citizen = findColumnKey(keys, ['Status Kewarganegaraan', 'Kewarganegaraan', 'Citizenship']);
+    panel.columnMap.ethnicity = findColumnKey(keys, ['Bangsa', 'Keturunan', 'Etnik', 'Ethnicity']);
+
+    console.log(`Detected columns for ${panel.label}:`, panel.columnMap);
+  }
+
+  function detectYearLabel(panel) {
+    const dateKey = panel.columnMap.date;
+    if (!dateKey || !panel.rawData || panel.rawData.length === 0) {
+      return 'Year: Unknown';
+    }
+
+    const yearSet = new Set();
+    panel.rawData.forEach(row => {
+      const iso = toISODate(row[dateKey]);
+      if (!iso || typeof iso !== 'string') return;
+      const match = iso.match(/^(\d{4})-/);
+      if (!match) return;
+      const year = parseInt(match[1], 10);
+      if (!isNaN(year)) yearSet.add(year);
+    });
+
+    if (!yearSet.size) {
+      return 'Year: Unknown';
+    }
+
+    if (yearSet.size === 1) {
+      return `Detected year: ${Array.from(yearSet)[0]}`;
+    }
+
+    const years = Array.from(yearSet).sort((a, b) => a - b);
+    return `Multiple years: ${years[0]}–${years[years.length - 1]}`;
+  }
+
+  function updatePanelHeader(panel) {
+    if (!panel.headerEl) return;
+    panel.headerEl.textContent = `${panel.label} (${detectYearLabel(panel)})`;
+  }
+
+  function destroyPanelCharts(panel) {
+    Object.values(panel.charts).forEach(chart => {
+      if (chart && chart.destroy) chart.destroy();
+    });
+    panel.charts = {
+      weekly: null,
+      gender: null,
+      age: null,
+      citizen: null,
+      ethnicity: null
+    };
+  }
+
+  function resetPanelOutputs(panel) {
+    if (panel.kpiTotalEl) panel.kpiTotalEl.textContent = '0';
+    if (panel.kpiDiseasesEl) panel.kpiDiseasesEl.textContent = '0';
+    if (panel.tableBody) {
+      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
+    }
+    destroyPanelCharts(panel);
+  }
+
+  function resetComparePanels() {
+    [enotisState.compare.a, enotisState.compare.b].forEach(panel => {
+      panel.rawData = [];
+      panel.columnMap = createEmptyColumnMap();
+      panel.hasFile = false;
+      panel.errorMessage = '';
+      if (panel.fileInput) panel.fileInput.value = '';
+      if (panel.fileInfo) panel.fileInfo.textContent = panel.defaultMessage;
+      updatePanelHeader(panel);
+      resetPanelOutputs(panel);
+      updatePanelMessage(panel);
+    });
+  }
+
+  function setCompareMode(enabled) {
+    enotisState.mode = enabled ? 'compare' : 'single';
+    enotisTab.classList.toggle('compare-mode', enabled);
+    compareToggle.textContent = enabled ? 'Exit compare mode' : 'Compare mode';
+
+    if (enabled) {
+      diagnosisSelect.value = 'ALL';
+      statusSelect.value = 'ALL';
+      weekSelect.value = 'ALL';
+      dateSelect.value = 'ALL';
+      dateSelect.disabled = true;
+      destroyPanelCharts(enotisState.single);
+      updatePanelMessage(enotisState.compare.a);
+      updatePanelMessage(enotisState.compare.b);
+      rebuildAllFilters();
+      updateDashboard();
+      return;
+    }
+
+    resetComparePanels();
+    rebuildAllFilters();
+    updateDashboard();
+  }
+
+  function handlePanelFileSelect(panel, file) {
+    if (!file) return;
+    if (panel.fileInfo) panel.fileInfo.textContent = `Loading ${file.name} ...`;
+    panel.hasFile = true;
+    panel.errorMessage = '';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          throw new Error('No sheets found.');
+        }
+        const worksheet = workbook.Sheets[firstSheetName];
+        panel.rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+        if (panel.fileInfo) {
+          panel.fileInfo.textContent = `Loaded ${file.name} with ${panel.rawData.length} rows.`;
+        }
+
+        panel.columnMap = createEmptyColumnMap();
+
+        if (!panel.rawData || panel.rawData.length === 0) {
+          panel.errorMessage = 'No rows found in the first sheet.';
+          updatePanelHeader(panel);
+          resetPanelOutputs(panel);
+          updatePanelMessage(panel);
+          rebuildAllFilters();
+          updateDashboard();
+          return;
+        }
+
+        inferColumns(panel);
+        updatePanelHeader(panel);
+        updatePanelMessage(panel);
+        rebuildAllFilters();
+        rebuildDateOptions();
+        updateDashboard();
+      } catch (error) {
+        console.error(error);
+        panel.rawData = [];
+        panel.columnMap = createEmptyColumnMap();
+        panel.errorMessage = 'Error reading file.';
+        if (panel.fileInfo) {
+          panel.fileInfo.textContent = `Error loading ${file.name}.`;
+        }
+        updatePanelHeader(panel);
+        resetPanelOutputs(panel);
+        updatePanelMessage(panel);
+        rebuildAllFilters();
+        updateDashboard();
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function setSelectOptions(select, values, options) {
+    const prev = select.value || 'ALL';
+    const allLabel = options?.allLabel || 'All';
+    const formatter = options?.formatter || (val => val);
+
+    select.innerHTML = '';
+    const optAll = document.createElement('option');
+    optAll.value = 'ALL';
+    optAll.textContent = allLabel;
+    select.appendChild(optAll);
+
+    values.forEach(value => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = formatter(value);
+      select.appendChild(opt);
+    });
+
+    const valueStrings = values.map(value => String(value));
+    if (prev !== 'ALL' && valueStrings.includes(prev)) {
+      select.value = prev;
+    } else {
+      select.value = 'ALL';
+    }
+  }
+
+  function getPanelsForMode() {
+    if (enotisState.mode === 'compare') {
+      return [enotisState.compare.a, enotisState.compare.b];
+    }
+    return [enotisState.single];
+  }
+
+  function hasAnyData(panels) {
+    return panels.some(panel => panel.rawData && panel.rawData.length);
+  }
+
+  function rebuildDiagnosisStatusOptions() {
+    const panels = getPanelsForMode();
+    if (!hasAnyData(panels)) {
+      setSelectOptions(diagnosisSelect, [], { allLabel: 'All diagnosis' });
+      setSelectOptions(statusSelect, [], { allLabel: 'All status' });
+      setSelectOptions(weekSelect, [], { allLabel: 'All weeks' });
+      setSelectOptions(dateSelect, [], { allLabel: 'All dates' });
+      diagnosisSelect.disabled = true;
+      statusSelect.disabled = true;
+      weekSelect.disabled = true;
+      dateSelect.disabled = true;
+      return false;
+    }
+
+    const diagSet = new Set();
+    const statusSet = new Set();
+
+    panels.forEach(panel => {
+      if (!panel.rawData || !panel.rawData.length) return;
+      const dxKey = panel.columnMap.diagnosis;
+      const stKey = panel.columnMap.status;
+      panel.rawData.forEach(row => {
+        const dx = dxKey ? row[dxKey] : null;
+        const st = stKey ? row[stKey] : null;
+        if (dx != null && String(dx).trim() !== '') diagSet.add(String(dx).trim());
+        if (st != null && String(st).trim() !== '') statusSet.add(String(st).trim());
+      });
+    });
+
+    setSelectOptions(diagnosisSelect, Array.from(diagSet).sort(), { allLabel: 'All diagnosis' });
+    setSelectOptions(statusSelect, Array.from(statusSet).sort(), { allLabel: 'All status' });
+
+    diagnosisSelect.disabled = false;
+    statusSelect.disabled = false;
+    return true;
+  }
+
+  function rebuildWeekOptions() {
+    const panels = getPanelsForMode();
+    if (!hasAnyData(panels)) {
+      setSelectOptions(weekSelect, [], { allLabel: 'All weeks', formatter: wk => `Week ${wk}` });
+      weekSelect.disabled = true;
+      return;
+    }
+
+    const applyFilters = enotisState.mode === 'compare';
+    const dxFilter = applyFilters ? (diagnosisSelect.value || 'ALL') : 'ALL';
+    const stFilter = applyFilters ? (statusSelect.value || 'ALL') : 'ALL';
+    const weekSet = new Set();
+
+    panels.forEach(panel => {
+      if (!panel.rawData || !panel.rawData.length) return;
+      const wkKey = panel.columnMap.week;
+      if (!wkKey) return;
+      panel.rawData.forEach(row => {
+        if (applyFilters && !matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+        const wk = parseInt(row[wkKey], 10);
+        if (!isNaN(wk)) weekSet.add(wk);
+      });
+    });
+
+    const weeks = Array.from(weekSet).sort((a, b) => a - b);
+    setSelectOptions(weekSelect, weeks, { allLabel: 'All weeks', formatter: wk => `Week ${wk}` });
+    weekSelect.disabled = false;
+  }
+
   function rebuildDateOptions() {
     const prev = dateSelect.value || 'ALL';
-
-    // Always reset dropdown first
     dateSelect.innerHTML = '';
+
     const optAll = document.createElement('option');
     optAll.value = 'ALL';
     optAll.textContent = 'All dates';
@@ -2611,43 +3046,27 @@ function getStateLatest(stateDisplay) {
       return;
     }
 
-    const dateKey = columnMap.date;
-    const wkKey = columnMap.week;
-
-    if (!dateKey || !wkKey) {
-      dateSelect.disabled = true;
-      dateSelect.value = 'ALL';
-      return;
-    }
-
+    const panels = getPanelsForMode();
     const dxFilter = diagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
-
     const dateSet = new Set();
 
-    rawData.forEach(row => {
-      // Apply diagnosis + status filters so date list matches other filters
-      const dxKey = columnMap.diagnosis;
-      const stKey = columnMap.status;
+    panels.forEach(panel => {
+      if (!panel.rawData || !panel.rawData.length) return;
+      const dateKey = panel.columnMap.date;
+      const wkKey = panel.columnMap.week;
+      if (!dateKey || !wkKey) return;
 
-      const dx = dxKey ? row[dxKey] : null;
-      const st = stKey ? row[stKey] : null;
-      const wk = row[wkKey];
-
-      const matchDx = (dxFilter === 'ALL') || (dx != null && String(dx).trim() === dxFilter);
-      const matchSt = (stFilter === 'ALL') || (st != null && String(st).trim() === stFilter);
-
-      const wkNum = parseInt(wk, 10);
-      const matchWk = !isNaN(wkNum) && wkNum === parseInt(wkFilter, 10);
-
-      if (!matchDx || !matchSt || !matchWk) return;
-
-      const iso = toISODate(row[dateKey]);
-      if (iso) dateSet.add(iso);
+      panel.rawData.forEach(row => {
+        if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+        const wkNum = parseInt(row[wkKey], 10);
+        if (isNaN(wkNum) || wkNum !== parseInt(wkFilter, 10)) return;
+        const iso = toISODate(row[dateKey]);
+        if (iso) dateSet.add(iso);
+      });
     });
 
-    const dates = Array.from(dateSet).sort(); // ISO dates sort correctly
-
+    const dates = Array.from(dateSet).sort();
     if (!dates.length) {
       dateSelect.disabled = true;
       dateSelect.value = 'ALL';
@@ -2656,69 +3075,97 @@ function getStateLatest(stateDisplay) {
 
     dates.forEach(iso => {
       const opt = document.createElement('option');
-      opt.value = iso;                 // filter uses ISO
-      opt.textContent = isoToDMY(iso); // display as dd/mm/yyyy
+      opt.value = iso;
+      opt.textContent = isoToDMY(iso);
       dateSelect.appendChild(opt);
     });
 
     dateSelect.disabled = false;
-
-    // Restore previous selection if still available
-    if (prev !== 'ALL' && dateSet.has(prev)) dateSelect.value = prev;
-    else dateSelect.value = 'ALL';
+    if (prev !== 'ALL' && dateSet.has(prev)) {
+      dateSelect.value = prev;
+    } else {
+      dateSelect.value = 'ALL';
+    }
   }
 
-  function getFilteredData() {
+  function rebuildAllFilters() {
+    const hasData = rebuildDiagnosisStatusOptions();
+    if (!hasData) return;
+    rebuildWeekOptions();
+    rebuildDateOptions();
+  }
+
+  function matchesDiagnosisStatus(row, panel, dxFilter, stFilter) {
+    const dxKey = panel.columnMap.diagnosis;
+    const stKey = panel.columnMap.status;
+    const dx = dxKey ? row[dxKey] : null;
+    const st = stKey ? row[stKey] : null;
+
+    const matchDx = dxFilter === 'ALL' || (dx != null && String(dx).trim() === dxFilter);
+    const matchSt = stFilter === 'ALL' || (st != null && String(st).trim() === stFilter);
+    return matchDx && matchSt;
+  }
+
+  function getFilteredData(panel) {
     const dxFilter = diagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
     const wkFilter = weekSelect.value || 'ALL';
     const dtFilter = dateSelect.value || 'ALL'; // ISO yyyy-mm-dd (from dropdown)
 
-    return rawData.filter(row => {
-      const dxKey = columnMap.diagnosis;
-      const stKey = columnMap.status;
-      const wkKey = columnMap.week;
-      const dtKey = columnMap.date;
+    return (panel.rawData || []).filter(row => {
+      if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return false;
 
-      const dx = dxKey ? row[dxKey] : null;
-      const st = stKey ? row[stKey] : null;
-      const wk = wkKey ? row[wkKey] : null;
-      const dt = dtKey ? row[dtKey] : null;
-
-      const matchDx = (dxFilter === 'ALL') || (dx != null && String(dx).trim() === dxFilter);
-      const matchSt = (stFilter === 'ALL') || (st != null && String(st).trim() === stFilter);
+      const wkKey = panel.columnMap.week;
+      const dtKey = panel.columnMap.date;
 
       let matchWk = true;
       if (wkFilter !== 'ALL') {
+        const wk = wkKey ? row[wkKey] : null;
         const wkNum = parseInt(wk, 10);
         matchWk = !isNaN(wkNum) && wkNum === parseInt(wkFilter, 10);
       }
 
       let matchDt = true;
       if (dtFilter !== 'ALL') {
+        const dt = dtKey ? row[dtKey] : null;
         const dtIso = toISODate(dt);
-        matchDt = (dtIso != null) && dtIso === dtFilter;
+        matchDt = dtIso != null && dtIso === dtFilter;
       }
 
-      return matchDx && matchSt && matchWk && matchDt;
+      return matchWk && matchDt;
     });
   }
 
   function updateDashboard() {
-    if (!rawData || rawData.length === 0) return;
-
-    const filtered = getFilteredData();
-    updateKpis(filtered);
-    updateDiagnosisTable(filtered);
-    updateWeeklyChart_enotis(filtered);
-    updateDemographyCharts(filtered);
+    if (enotisState.mode === 'compare') {
+      updatePanel(enotisState.compare.a);
+      updatePanel(enotisState.compare.b);
+      return;
+    }
+    updatePanel(enotisState.single);
   }
 
-  function updateKpis(data) {
-    kpiTotal_enotis.textContent = data.length;
+  function updatePanel(panel) {
+    if (!panel.rawData || panel.rawData.length === 0) {
+      resetPanelOutputs(panel);
+      updatePanelMessage(panel);
+      return;
+    }
+
+    const filtered = getFilteredData(panel);
+    updateKpis(panel, filtered);
+    updateDiagnosisTable(panel, filtered);
+    updateWeeklyChart(panel, filtered);
+    updateDemographyCharts(panel, filtered);
+    updatePanelMessage(panel);
+  }
+
+  function updateKpis(panel, data) {
+    if (!panel.kpiTotalEl || !panel.kpiDiseasesEl) return;
+    panel.kpiTotalEl.textContent = data.length;
 
     const diseaseSet = new Set();
-    const dxKey = columnMap.diagnosis;
+    const dxKey = panel.columnMap.diagnosis;
 
     data.forEach(row => {
       const dx = dxKey ? row[dxKey] : null;
@@ -2727,19 +3174,16 @@ function getStateLatest(stateDisplay) {
       }
     });
 
-    kpiDiseases_enotis.textContent = diseaseSet.size;
+    panel.kpiDiseasesEl.textContent = diseaseSet.size;
   }
 
-  // New: update diagnosis breakdown table
-  function updateDiagnosisTable(data) {
-    // Clear table body
-    diagnosisTableBody_enotis.innerHTML = '';
+  function updateDiagnosisTable(panel, data) {
+    if (!panel.tableBody) return;
+    panel.tableBody.innerHTML = '';
 
-    const dxKey = columnMap.diagnosis;
+    const dxKey = panel.columnMap.diagnosis;
     if (!dxKey) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>No diagnosis column found</td><td>0</td>';
-      diagnosisTableBody_enotis.appendChild(tr);
+      panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td></tr>';
       return;
     }
 
@@ -2757,9 +3201,7 @@ function getStateLatest(stateDisplay) {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
     if (!entries.length) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>No data</td><td>0</td>';
-      diagnosisTableBody_enotis.appendChild(tr);
+      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
       return;
     }
 
@@ -2771,17 +3213,22 @@ function getStateLatest(stateDisplay) {
       tdCt.textContent = count;
       tr.appendChild(tdDx);
       tr.appendChild(tdCt);
-      diagnosisTableBody_enotis.appendChild(tr);
+      panel.tableBody.appendChild(tr);
     });
   }
 
-  function updateWeeklyChart_enotis(data) {
-    const wkKey = columnMap.week;
-    if (!wkKey || !rawData || rawData.length === 0) return;
+  function updateWeeklyChart(panel, data) {
+    const wkKey = panel.columnMap.week;
+    if (!wkKey || !panel.rawData || panel.rawData.length === 0) {
+      if (panel.charts.weekly) {
+        panel.charts.weekly.destroy();
+        panel.charts.weekly = null;
+      }
+      return;
+    }
 
-    // 1. Find the highest epidemiological week in the full dataset
     let maxWeek = 0;
-    rawData.forEach(row => {
+    panel.rawData.forEach(row => {
       let wk = row[wkKey];
       if (wk == null || wk === '') return;
       wk = parseInt(wk, 10);
@@ -2790,14 +3237,13 @@ function getStateLatest(stateDisplay) {
     });
 
     if (!maxWeek || maxWeek < 1) {
-      if (weeklyChart_enotis) {
-        weeklyChart_enotis.destroy();
-        weeklyChart_enotis = null;
+      if (panel.charts.weekly) {
+        panel.charts.weekly.destroy();
+        panel.charts.weekly = null;
       }
       return;
     }
 
-    // 2. Count notifications per week for the filtered data
     const weekCounts = {};
     data.forEach(row => {
       let wk = row[wkKey];
@@ -2808,7 +3254,6 @@ function getStateLatest(stateDisplay) {
       weekCounts[wk] += 1;
     });
 
-    // 3. Build continuous series from week 1 to the most recent week
     const weeks = [];
     const counts = [];
     for (let w = 1; w <= maxWeek; w++) {
@@ -2816,13 +3261,13 @@ function getStateLatest(stateDisplay) {
       counts.push(weekCounts[w] || 0);
     }
 
-    const ctx = document.getElementById('weeklyChart_enotis').getContext('2d');
+    const ctx = document.getElementById(panel.canvasIds.weekly).getContext('2d');
 
-    if (weeklyChart_enotis) {
-      weeklyChart_enotis.destroy();
+    if (panel.charts.weekly) {
+      panel.charts.weekly.destroy();
     }
 
-    weeklyChart_enotis = new Chart(ctx, {
+    panel.charts.weekly = new Chart(ctx, {
       type: 'line',
       data: {
         labels: weeks,
@@ -2869,7 +3314,6 @@ function getStateLatest(stateDisplay) {
     });
   }
 
-  // Utility to create category counts for a column
   function buildCategoryCounts(data, colKey) {
     const map = new Map();
     if (!colKey) return map;
@@ -2886,23 +3330,10 @@ function getStateLatest(stateDisplay) {
     return map;
   }
 
-  function yesNoColorForLabel(lbl) {
-    const n = String(lbl ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-    if (n === 'ya' || n === 'yes' || n === '1') return '#ef4444';      // red
-    if (n === 'tidak' || n === 'no' || n === '0') return '#06b6d4';    // blue
-
-    if (n.includes('tidak pasti') || n.includes('unknown')) return '#a3a3a3'; // grey
-    if (n.includes('no data')) return '#a3a3a3';
-
-    return '#9ca3af'; // default grey for other categories
-}
-
   function createOrUpdatePie(chartRef, canvasId, labels, counts) {
     const ctx = document.getElementById(canvasId).getContext('2d');
 
     const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-
     const bgColors = labels.map((_, i) => palette[i % palette.length]);
 
     if (chartRef && chartRef.destroy) {
@@ -2929,57 +3360,102 @@ function getStateLatest(stateDisplay) {
     });
   }
 
-  function updateDemographyCharts(data) {
-    // Gender
-    const genderCounts = buildCategoryCounts(data, columnMap.gender);
+  function updateDemographyCharts(panel, data) {
+    const genderCounts = buildCategoryCounts(data, panel.columnMap.gender);
     const genderLabels = Array.from(genderCounts.keys());
     const genderValues = Array.from(genderCounts.values());
 
-    genderChart_enotis = createOrUpdatePie(
-      genderChart_enotis,
-      'genderChart_enotis',
+    panel.charts.gender = createOrUpdatePie(
+      panel.charts.gender,
+      panel.canvasIds.gender,
       genderLabels.length ? genderLabels : ['No data'],
       genderLabels.length ? genderValues : [1]
     );
 
-    // Age (keep raw ages)
-    const ageCounts = buildCategoryCounts(data, columnMap.age);
+    const ageCounts = buildCategoryCounts(data, panel.columnMap.age);
     const ageLabels = Array.from(ageCounts.keys());
     const ageValues = Array.from(ageCounts.values());
 
-    ageChart_enotis = createOrUpdatePie(
-      ageChart_enotis,
-      'ageChart_enotis',
+    panel.charts.age = createOrUpdatePie(
+      panel.charts.age,
+      panel.canvasIds.age,
       ageLabels.length ? ageLabels : ['No data'],
       ageLabels.length ? ageValues : [1]
     );
 
-    // Citizenship
-    const citizenCounts = buildCategoryCounts(data, columnMap.citizen);
+    const citizenCounts = buildCategoryCounts(data, panel.columnMap.citizen);
     const citizenLabels = Array.from(citizenCounts.keys());
     const citizenValues = Array.from(citizenCounts.values());
 
-    citizenChart_enotis = createOrUpdatePie(
-      citizenChart_enotis,
-      'citizenChart_enotis',
+    panel.charts.citizen = createOrUpdatePie(
+      panel.charts.citizen,
+      panel.canvasIds.citizen,
       citizenLabels.length ? citizenLabels : ['No data'],
       citizenLabels.length ? citizenValues : [1]
     );
 
-    // Ethnicity
-    const ethCounts = buildCategoryCounts(data, columnMap.ethnicity);
+    const ethCounts = buildCategoryCounts(data, panel.columnMap.ethnicity);
     const ethLabels = Array.from(ethCounts.keys());
     const ethValues = Array.from(ethCounts.values());
 
-    ethnicityChart_enotis = createOrUpdatePie(
-      ethnicityChart_enotis,
-      'ethnicityChart_enotis',
+    panel.charts.ethnicity = createOrUpdatePie(
+      panel.charts.ethnicity,
+      panel.canvasIds.ethnicity,
       ethLabels.length ? ethLabels : ['No data'],
       ethLabels.length ? ethValues : [1]
     );
   }
-</script>
 
+  if (fileInput_enotis) {
+    fileInput_enotis.addEventListener('change', evt => {
+      const file = evt.target.files[0];
+      handlePanelFileSelect(enotisState.single, file);
+    });
+  }
+
+  if (fileInput_enotis_A) {
+    fileInput_enotis_A.addEventListener('change', evt => {
+      const file = evt.target.files[0];
+      handlePanelFileSelect(enotisState.compare.a, file);
+    });
+  }
+
+  if (fileInput_enotis_B) {
+    fileInput_enotis_B.addEventListener('change', evt => {
+      const file = evt.target.files[0];
+      handlePanelFileSelect(enotisState.compare.b, file);
+    });
+  }
+
+  diagnosisSelect.addEventListener('change', () => {
+    rebuildWeekOptions();
+    rebuildDateOptions();
+    updateDashboard();
+  });
+
+  statusSelect.addEventListener('change', () => {
+    rebuildWeekOptions();
+    rebuildDateOptions();
+    updateDashboard();
+  });
+
+  weekSelect.addEventListener('change', () => {
+    dateSelect.value = 'ALL';
+    rebuildDateOptions();
+    updateDashboard();
+  });
+
+  dateSelect.addEventListener('change', updateDashboard);
+
+  compareToggle.addEventListener('click', () => {
+    setCompareMode(enotisState.mode !== 'compare');
+  });
+
+  updatePanelHeader(enotisState.compare.a);
+  updatePanelHeader(enotisState.compare.b);
+  updatePanelMessage(enotisState.compare.a);
+  updatePanelMessage(enotisState.compare.b);
+</script>
 <script>
 /* =======================
    TB DASHBOARD (Tab 2)
@@ -6572,7 +7048,7 @@ window.renderAll = renderAll;
     }).addTo(mapState.map);
   }
 
-  const METEO_GRID_KM = 2;
+  const METEO_GRID_KM = 4;
   const METEO_VARIABLES = {
     rain_mm: {
       label: 'Rainfall',
