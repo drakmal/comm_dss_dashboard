@@ -412,6 +412,19 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       font-size: 0.85rem;
     }
 
+    .delta-pos {
+      color: #b91c1c;
+    }
+
+    .delta-neg {
+      color: #15803d;
+    }
+
+    .delta-zero,
+    .delta-disabled {
+      color: #888;
+    }
+
     .error-text {
       color: #b91c1c;
       font-size: 0.9rem;
@@ -795,7 +808,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
 <section class="tab-panel is-active" data-tab="enotis" id="tab-enotis">
   <h2>1. Upload Enotifikasi Excel file</h2>
-  <p class="subtitle">from eNotifikasi > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
+  <p class="subtitle">from eNotifikasi > muat turun > muat turun fail > pilih tahun yang anda perlukan untuk analisis > klik 'tarikh input notifikasi' untuk jenis tarikh > klik 'semua medan' > klik 'muat turun'</p>
   <div class="card">
     <div class="upload-row enotis-upload-row">
       <div class="enotis-single-only" id="enotisSingleUpload">
@@ -844,7 +857,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
 
       <div>
-        <label for="filterWeek_enotis">Epid Week (Tkh Notifikasi):</label>
+        <label for="filterWeek_enotis">Epid Week (Tkh Input Notifikasi):</label>
         <select id="filterWeek_enotis" disabled>
           <option value="ALL">All weeks</option>
         </select>
@@ -1007,12 +1020,14 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           <tr>
             <th style="width:70%;">Diagnosis</th>
             <th>Notifications</th>
+            <th>Changes from previous week</th>
           </tr>
         </thead>
         <tbody id="diagnosisTableBody_enotis">
           <tr>
             <td>No data</td>
             <td>0</td>
+            <td class="delta-disabled">—</td>
           </tr>
         </tbody>
       </table>
@@ -2871,7 +2886,7 @@ function getStateLatest(stateDisplay) {
 
     panel.columnMap.diagnosis = findColumnKey(keys, ['Diagnosis', 'DX']);
     panel.columnMap.status = findColumnKey(keys, ['Notifikasi Status', 'Status Notifikasi', 'BR']);
-    panel.columnMap.week = findColumnKey(keys, ['Epid Minggu (Tkh Notifikasi)', 'Epid Minggu', 'Epid Week']);
+    panel.columnMap.week = findColumnKey(keys, ['Epid Minggu (Tkh Input Notifikasi)']);
     panel.columnMap.date = findColumnKey(keys, ['Tkh Notifikasi']);
 
     panel.columnMap.gender = findColumnKey(keys, ['Jantina', 'Sex', 'Gender', 'Jantina Pesakit']);
@@ -3295,8 +3310,13 @@ function getStateLatest(stateDisplay) {
     panel.tableBody.innerHTML = '';
 
     const dxKey = panel.columnMap.diagnosis;
+    const isSingleDiagnosisTable = enotisState.mode === 'single' && panel === enotisState.single;
     if (!dxKey) {
-      panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td></tr>';
+      if (isSingleDiagnosisTable) {
+        panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td><td class="delta-disabled">—</td></tr>';
+      } else {
+        panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td></tr>';
+      }
       return;
     }
 
@@ -3310,22 +3330,93 @@ function getStateLatest(stateDisplay) {
       countsMap.set(dx, (countsMap.get(dx) || 0) + 1);
     });
 
-    const entries = Array.from(countsMap.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    if (!isSingleDiagnosisTable) {
+      const entries = Array.from(countsMap.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
-    if (!entries.length) {
-      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
+      if (!entries.length) {
+        panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
+        return;
+      }
+
+      entries.forEach(([dx, count]) => {
+        const tr = document.createElement('tr');
+        const tdDx = document.createElement('td');
+        const tdCt = document.createElement('td');
+        tdDx.textContent = dx;
+        tdCt.textContent = count;
+        tr.appendChild(tdDx);
+        tr.appendChild(tdCt);
+        panel.tableBody.appendChild(tr);
+      });
       return;
     }
 
-    entries.forEach(([dx, count]) => {
+    const wkFilter = weekSelect.value || 'ALL';
+    const prevCounts = new Map();
+    const wkKey = panel.columnMap.week;
+    const dxFilter = diagnosisSelect.value || 'ALL';
+    const stFilter = statusSelect.value || 'ALL';
+
+    if (wkFilter !== 'ALL') {
+      const prevWeek = parseInt(wkFilter, 10) - 1;
+      if (prevWeek >= 1 && wkKey) {
+        (panel.rawData || []).forEach(row => {
+          if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+          const wk = row[wkKey];
+          const wkNum = parseInt(wk, 10);
+          if (isNaN(wkNum) || wkNum !== prevWeek) return;
+          let dx = row[dxKey];
+          if (dx == null) return;
+          dx = String(dx).trim();
+          if (!dx) return;
+          prevCounts.set(dx, (prevCounts.get(dx) || 0) + 1);
+        });
+      }
+    }
+
+    const diagnoses = new Set([...countsMap.keys(), ...prevCounts.keys()]);
+    const entries = Array.from(diagnoses)
+      .map(dx => [dx, countsMap.get(dx) || 0, prevCounts.get(dx) || 0])
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+    if (!entries.length) {
+      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td><td class="delta-disabled">—</td></tr>';
+      return;
+    }
+
+    entries.forEach(([dx, count, prevCount]) => {
       const tr = document.createElement('tr');
       const tdDx = document.createElement('td');
       const tdCt = document.createElement('td');
+      const tdDelta = document.createElement('td');
       tdDx.textContent = dx;
       tdCt.textContent = count;
+
+      if (wkFilter === 'ALL') {
+        tdDelta.textContent = '—';
+        tdDelta.classList.add('delta-disabled');
+        tdDelta.setAttribute('aria-label', 'Change disabled for All weeks');
+      } else {
+        const delta = count - prevCount;
+        if (delta > 0) {
+          tdDelta.textContent = `▲ +${delta}`;
+          tdDelta.classList.add('delta-pos');
+          tdDelta.setAttribute('aria-label', `Increase of ${delta} from previous week`);
+        } else if (delta < 0) {
+          tdDelta.textContent = `▼ ${delta}`;
+          tdDelta.classList.add('delta-neg');
+          tdDelta.setAttribute('aria-label', `Decrease of ${Math.abs(delta)} from previous week`);
+        } else {
+          tdDelta.textContent = '0';
+          tdDelta.classList.add('delta-zero');
+          tdDelta.setAttribute('aria-label', 'No change from previous week');
+        }
+      }
+
       tr.appendChild(tdDx);
       tr.appendChild(tdCt);
+      tr.appendChild(tdDelta);
       panel.tableBody.appendChild(tr);
     });
   }
