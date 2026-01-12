@@ -184,6 +184,39 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       gap: 16px;
     }
 
+    .demography-filters {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .demography-toggle {
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #4338ca;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .demography-toggle.is-active {
+      background: #4338ca;
+      color: #ffffff;
+      border-color: #4338ca;
+      box-shadow: 0 1px 2px rgba(67, 56, 202, 0.2);
+    }
+
+    .demography-toggle:focus-visible {
+      outline: 2px solid #6366f1;
+      outline-offset: 2px;
+    }
+
     .enotis-compare-panel {
       background: #ffffff;
       border: 1px solid #e5e7eb;
@@ -913,12 +946,16 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
               <tr>
                 <th style="width:70%;">Diagnosis</th>
                 <th>Notifications</th>
+                <th>Cumulative</th>
+                <th>Changes from previous week</th>
               </tr>
             </thead>
             <tbody id="diagnosisTableBody_enotis_A">
               <tr>
                 <td>No data</td>
                 <td>0</td>
+                <td></td>
+                <td class="delta-disabled">—</td>
               </tr>
             </tbody>
           </table>
@@ -929,6 +966,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         </div>
         <div class="enotis-panel-section">
           <h4>Demography</h4>
+          <div class="demography-filters">
+            <p class="muted" id="enotisDemoFilters_A">
+              Filters on: Diagnosis: All • Notifikasi Status: All • Epid Week (Tkh Input Notifikasi): All
+            </p>
+            <button class="demography-toggle" type="button" id="enotisDemoToggle_A">Cumulative</button>
+          </div>
           <div class="demography-grid">
             <div class="demo-card">
               <div class="demo-block-title">Jantina</div>
@@ -972,12 +1015,16 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
               <tr>
                 <th style="width:70%;">Diagnosis</th>
                 <th>Notifications</th>
+                <th>Cumulative</th>
+                <th>Changes from previous week</th>
               </tr>
             </thead>
             <tbody id="diagnosisTableBody_enotis_B">
               <tr>
                 <td>No data</td>
                 <td>0</td>
+                <td></td>
+                <td class="delta-disabled">—</td>
               </tr>
             </tbody>
           </table>
@@ -988,6 +1035,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         </div>
         <div class="enotis-panel-section">
           <h4>Demography</h4>
+          <div class="demography-filters">
+            <p class="muted" id="enotisDemoFilters_B">
+              Filters on: Diagnosis: All • Notifikasi Status: All • Epid Week (Tkh Input Notifikasi): All
+            </p>
+            <button class="demography-toggle" type="button" id="enotisDemoToggle_B">Cumulative</button>
+          </div>
           <div class="demography-grid">
             <div class="demo-card">
               <div class="demo-block-title">Jantina</div>
@@ -1020,6 +1073,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           <tr>
             <th style="width:70%;">Diagnosis</th>
             <th>Notifications</th>
+            <th>Cumulative</th>
             <th>Changes from previous week</th>
           </tr>
         </thead>
@@ -1027,12 +1081,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           <tr>
             <td>No data</td>
             <td>0</td>
+            <td></td>
             <td class="delta-disabled">—</td>
           </tr>
         </tbody>
       </table>
     </div>
-
   <h2 class="enotis-single-only">4. Weekly trend</h2>
   <div class="card enotis-single-only">      <p class="muted">
         Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
@@ -1041,17 +1095,16 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
 
   <h2 class="enotis-single-only">5. Demography</h2>
-  <div class="card enotis-single-only">      <p class="muted">
-        Distribution of cases by gender, age, nationality, and ethnicity after applying the filters above.
-      </p>
+  <div class="card enotis-single-only">      <div class="demography-filters">
+        <p class="muted" id="enotisDemoFilters">
+          Filters on: Diagnosis: All • Notifikasi Status: All • Epid Week (Tkh Input Notifikasi): All
+        </p>
+        <button class="demography-toggle" type="button" id="enotisDemoToggle">Cumulative</button>
+      </div>
       <div class="demography-grid">
         <div class="demo-card">
           <div class="demo-block-title">Jantina</div>
           <canvas id="genderChart_enotis"></canvas>
-        </div>
-        <div class="demo-card">
-          <div class="demo-block-title">Umur</div>
-          <canvas id="ageChart_enotis"></canvas>
         </div>
         <div class="demo-card">
           <div class="demo-block-title">Status Kewarganegaraan</div>
@@ -2686,6 +2739,14 @@ function getStateLatest(stateDisplay) {
   const kpiTotal_enotis = document.getElementById('kpiTotal_enotis');
   const kpiDiseases_enotis = document.getElementById('kpiDiseases_enotis');
   const diagnosisTableBody_enotis = document.getElementById('diagnosisTableBody_enotis');
+  const demographyFilters = document.getElementById('enotisDemoFilters');
+  const demographyFiltersA = document.getElementById('enotisDemoFilters_A');
+  const demographyFiltersB = document.getElementById('enotisDemoFilters_B');
+  const demographyToggle = document.getElementById('enotisDemoToggle');
+  const demographyToggleA = document.getElementById('enotisDemoToggle_A');
+  const demographyToggleB = document.getElementById('enotisDemoToggle_B');
+
+  let demographyCumulative = false;
 
   // --- Date helpers (Excel date serial / string -> ISO yyyy-mm-dd) ---
   function toISODate(val) {
@@ -2947,7 +3008,7 @@ function getStateLatest(stateDisplay) {
     if (panel.kpiTotalEl) panel.kpiTotalEl.textContent = '0';
     if (panel.kpiDiseasesEl) panel.kpiDiseasesEl.textContent = '0';
     if (panel.tableBody) {
-      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
+      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td><td></td><td class="delta-disabled">—</td></tr>';
     }
     destroyPanelCharts(panel);
   }
@@ -3223,6 +3284,26 @@ function getStateLatest(stateDisplay) {
     rebuildDateOptions();
   }
 
+  function updateDemographyFilters() {
+    const dx = diagnosisSelect.value || 'ALL';
+    const st = statusSelect.value || 'ALL';
+    const wk = weekSelect.value || 'ALL';
+    const dxLabel = dx === 'ALL' ? 'All' : dx;
+    const stLabel = st === 'ALL' ? 'All' : st;
+    const wkLabel = wk === 'ALL' ? 'All' : `Week ${wk}`;
+    const text = `Filters on: Diagnosis: ${dxLabel} • Notifikasi Status: ${stLabel} • Epid Week (Tkh Input Notifikasi): ${wkLabel}`;
+
+    [demographyFilters, demographyFiltersA, demographyFiltersB].forEach(el => {
+      if (el) el.textContent = text;
+    });
+
+    [demographyToggle, demographyToggleA, demographyToggleB].forEach(btn => {
+      if (!btn) return;
+      btn.classList.toggle('is-active', demographyCumulative);
+      btn.setAttribute('aria-pressed', String(demographyCumulative));
+    });
+  }
+
   function matchesDiagnosisStatus(row, panel, dxFilter, stFilter) {
     const dxKey = panel.columnMap.diagnosis;
     const stKey = panel.columnMap.status;
@@ -3234,11 +3315,13 @@ function getStateLatest(stateDisplay) {
     return matchDx && matchSt;
   }
 
-  function getFilteredData(panel) {
+  function getFilteredData(panel, options = {}) {
     const dxFilter = diagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
     const wkFilter = weekSelect.value || 'ALL';
     const dtFilter = dateSelect.value || 'ALL'; // ISO yyyy-mm-dd (from dropdown)
+    const weekMode = options.weekMode || 'exact';
+    const includeDate = options.includeDate !== false;
 
     return (panel.rawData || []).filter(row => {
       if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return false;
@@ -3250,11 +3333,16 @@ function getStateLatest(stateDisplay) {
       if (wkFilter !== 'ALL') {
         const wk = wkKey ? row[wkKey] : null;
         const wkNum = parseInt(wk, 10);
-        matchWk = !isNaN(wkNum) && wkNum === parseInt(wkFilter, 10);
+        const targetWeek = parseInt(wkFilter, 10);
+        if (weekMode === 'cumulative') {
+          matchWk = !isNaN(wkNum) && wkNum <= targetWeek;
+        } else {
+          matchWk = !isNaN(wkNum) && wkNum === targetWeek;
+        }
       }
 
       let matchDt = true;
-      if (dtFilter !== 'ALL') {
+      if (includeDate && dtFilter !== 'ALL') {
         const dt = dtKey ? row[dtKey] : null;
         const dtIso = toISODate(dt);
         matchDt = dtIso != null && dtIso === dtFilter;
@@ -3268,9 +3356,11 @@ function getStateLatest(stateDisplay) {
     if (enotisState.mode === 'compare') {
       updatePanel(enotisState.compare.a);
       updatePanel(enotisState.compare.b);
+      updateDemographyFilters();
       return;
     }
     updatePanel(enotisState.single);
+    updateDemographyFilters();
   }
 
   function updatePanel(panel) {
@@ -3283,8 +3373,11 @@ function getStateLatest(stateDisplay) {
     const filtered = getFilteredData(panel);
     updateKpis(panel, filtered);
     updateDiagnosisTable(panel, filtered);
-    updateWeeklyChart(panel, filtered);
-    updateDemographyCharts(panel, filtered);
+    updateWeeklyChart(panel);
+    const demographyData = demographyCumulative
+      ? getFilteredData(panel, { weekMode: 'cumulative', includeDate: false })
+      : filtered;
+    updateDemographyCharts(panel, demographyData);
     updatePanelMessage(panel);
   }
 
@@ -3310,13 +3403,8 @@ function getStateLatest(stateDisplay) {
     panel.tableBody.innerHTML = '';
 
     const dxKey = panel.columnMap.diagnosis;
-    const isSingleDiagnosisTable = enotisState.mode === 'single' && panel === enotisState.single;
     if (!dxKey) {
-      if (isSingleDiagnosisTable) {
-        panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td><td class="delta-disabled">—</td></tr>';
-      } else {
-        panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td></tr>';
-      }
+      panel.tableBody.innerHTML = '<tr><td>No diagnosis column found</td><td>0</td><td></td><td class="delta-disabled">—</td></tr>';
       return;
     }
 
@@ -3330,36 +3418,16 @@ function getStateLatest(stateDisplay) {
       countsMap.set(dx, (countsMap.get(dx) || 0) + 1);
     });
 
-    if (!isSingleDiagnosisTable) {
-      const entries = Array.from(countsMap.entries())
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-
-      if (!entries.length) {
-        panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td></tr>';
-        return;
-      }
-
-      entries.forEach(([dx, count]) => {
-        const tr = document.createElement('tr');
-        const tdDx = document.createElement('td');
-        const tdCt = document.createElement('td');
-        tdDx.textContent = dx;
-        tdCt.textContent = count;
-        tr.appendChild(tdDx);
-        tr.appendChild(tdCt);
-        panel.tableBody.appendChild(tr);
-      });
-      return;
-    }
-
     const wkFilter = weekSelect.value || 'ALL';
     const prevCounts = new Map();
     const wkKey = panel.columnMap.week;
     const dxFilter = diagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
+    const cumulativeCounts = new Map();
 
     if (wkFilter !== 'ALL') {
-      const prevWeek = parseInt(wkFilter, 10) - 1;
+      const targetWeek = parseInt(wkFilter, 10);
+      const prevWeek = targetWeek - 1;
       if (prevWeek >= 1 && wkKey) {
         (panel.rawData || []).forEach(row => {
           if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
@@ -3373,25 +3441,48 @@ function getStateLatest(stateDisplay) {
           prevCounts.set(dx, (prevCounts.get(dx) || 0) + 1);
         });
       }
+
+      if (wkKey) {
+        (panel.rawData || []).forEach(row => {
+          if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+          const wk = row[wkKey];
+          const wkNum = parseInt(wk, 10);
+          if (isNaN(wkNum) || wkNum > targetWeek) return;
+          let dx = row[dxKey];
+          if (dx == null) return;
+          dx = String(dx).trim();
+          if (!dx) return;
+          cumulativeCounts.set(dx, (cumulativeCounts.get(dx) || 0) + 1);
+        });
+      }
     }
 
-    const diagnoses = new Set([...countsMap.keys(), ...prevCounts.keys()]);
+    const diagnoses = new Set([...countsMap.keys(), ...prevCounts.keys(), ...cumulativeCounts.keys()]);
     const entries = Array.from(diagnoses)
-      .map(dx => [dx, countsMap.get(dx) || 0, prevCounts.get(dx) || 0])
+      .map(dx => [dx, countsMap.get(dx) || 0, cumulativeCounts.get(dx) || 0, prevCounts.get(dx) || 0])
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
     if (!entries.length) {
-      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td><td class="delta-disabled">—</td></tr>';
+      panel.tableBody.innerHTML = '<tr><td>No data</td><td>0</td><td></td><td class="delta-disabled">—</td></tr>';
       return;
     }
 
-    entries.forEach(([dx, count, prevCount]) => {
+    entries.forEach(([dx, count, cumulativeCount, prevCount]) => {
       const tr = document.createElement('tr');
       const tdDx = document.createElement('td');
       const tdCt = document.createElement('td');
+      const tdCum = document.createElement('td');
       const tdDelta = document.createElement('td');
       tdDx.textContent = dx;
       tdCt.textContent = count;
+
+      if (wkFilter === 'ALL') {
+        tdCum.textContent = '';
+        tdCum.classList.add('delta-disabled');
+        tdCum.setAttribute('aria-label', 'Cumulative disabled for All weeks');
+      } else {
+        tdCum.textContent = cumulativeCount;
+      }
 
       if (wkFilter === 'ALL') {
         tdDelta.textContent = '—';
@@ -3416,12 +3507,13 @@ function getStateLatest(stateDisplay) {
 
       tr.appendChild(tdDx);
       tr.appendChild(tdCt);
+      tr.appendChild(tdCum);
       tr.appendChild(tdDelta);
       panel.tableBody.appendChild(tr);
     });
   }
 
-  function updateWeeklyChart(panel, data) {
+  function updateWeeklyChart(panel) {
     const wkKey = panel.columnMap.week;
     if (!wkKey || !panel.rawData || panel.rawData.length === 0) {
       if (panel.charts.weekly) {
@@ -3431,8 +3523,9 @@ function getStateLatest(stateDisplay) {
       return;
     }
 
+    const trendData = getFilteredData(panel, { weekMode: 'cumulative', includeDate: false });
     let maxWeek = 0;
-    panel.rawData.forEach(row => {
+    trendData.forEach(row => {
       let wk = row[wkKey];
       if (wk == null || wk === '') return;
       wk = parseInt(wk, 10);
@@ -3449,7 +3542,7 @@ function getStateLatest(stateDisplay) {
     }
 
     const weekCounts = {};
-    data.forEach(row => {
+    trendData.forEach(row => {
       let wk = row[wkKey];
       if (wk == null || wk === '') return;
       wk = parseInt(wk, 10);
@@ -3650,6 +3743,14 @@ function getStateLatest(stateDisplay) {
   });
 
   dateSelect.addEventListener('change', updateDashboard);
+
+  [demographyToggle, demographyToggleA, demographyToggleB].forEach(btn => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      demographyCumulative = !demographyCumulative;
+      updateDashboard();
+    });
+  });
 
   if (singleToggle) {
     singleToggle.addEventListener('click', () => {
