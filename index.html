@@ -3031,8 +3031,14 @@ function getStateLatest(stateDisplay) {
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const arrayBuffer = e.target.result;
+        let workbook;
+        try {
+          workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        } catch (readError) {
+          const data = new Uint8Array(arrayBuffer);
+          workbook = XLSX.read(data, { type: 'array' });
+        }
         const sheetNames = workbook.SheetNames || [];
         if (!sheetNames.length) {
           throw new Error('No sheets found.');
@@ -3082,9 +3088,9 @@ function getStateLatest(stateDisplay) {
         console.error(error);
         panel.rawData = [];
         panel.columnMap = createEmptyColumnMap();
-        panel.errorMessage = 'Error reading file.';
+        panel.errorMessage = `Error reading file: ${error.message || error}`;
         if (panel.fileInfo) {
-          panel.fileInfo.textContent = `Error loading ${file.name}.`;
+          panel.fileInfo.textContent = `Error loading ${file.name}: ${error.message || error}`;
         }
         updatePanelHeader(panel);
         resetPanelOutputs(panel);
@@ -3093,9 +3099,21 @@ function getStateLatest(stateDisplay) {
         updateDashboard();
       }
     };
+    reader.onerror = function() {
+      panel.rawData = [];
+      panel.columnMap = createEmptyColumnMap();
+      panel.errorMessage = 'Failed to read the selected file.';
+      if (panel.fileInfo) {
+        panel.fileInfo.textContent = `Error loading ${file.name}: failed to read file.`;
+      }
+      updatePanelHeader(panel);
+      resetPanelOutputs(panel);
+      updatePanelMessage(panel);
+      rebuildAllFilters();
+      updateDashboard();
+    };
     reader.readAsArrayBuffer(file);
   }
-
   function setSelectOptions(select, values, options) {
     const prev = select.value || 'ALL';
     const allLabel = options?.allLabel || 'All';
@@ -3493,6 +3511,75 @@ function getStateLatest(stateDisplay) {
     });
   }
 
+  function getCanvasContext(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    return canvas ? canvas.getContext('2d') : null;
+  }
+
+  const ENOTIS_AGE_GROUP_ORDER = ['0 - 6', '7 - 12', '13 - 17', '18 - 25', '26 - 44', '45 - 60', '>60'];
+  const ENOTIS_AGE_GROUP_COLORS = {
+    '0 - 6': '#0ea5e9',
+    '7 - 12': '#22c55e',
+    '13 - 17': '#a855f7',
+    '18 - 25': '#f97316',
+    '26 - 44': '#eab308',
+    '45 - 60': '#6366f1',
+    '>60': '#ef4444'
+  };
+
+  function enotisAgeGroupFromValue(value) {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string') {
+      const normalized = value.trim();
+      if (ENOTIS_AGE_GROUP_COLORS[normalized]) return normalized;
+      const compact = normalized.replace(/\s+/g, '');
+      const compactMap = {
+        '0-6': '0 - 6',
+        '7-12': '7 - 12',
+        '13-17': '13 - 17',
+        '18-25': '18 - 25',
+        '26-44': '26 - 44',
+        '45-60': '45 - 60',
+        '>60': '>60'
+      };
+      if (compactMap[compact]) return compactMap[compact];
+    }
+    const age = Number.parseFloat(String(value).replace(',', '.'));
+    if (!Number.isFinite(age)) return null;
+    if (age <= 6) return '0 - 6';
+    if (age <= 12) return '7 - 12';
+    if (age <= 17) return '13 - 17';
+    if (age <= 25) return '18 - 25';
+    if (age <= 44) return '26 - 44';
+    if (age <= 60) return '45 - 60';
+    return '>60';
+  }
+
+  function buildEnotisAgeBuckets(data, ageKey) {
+    if (!ageKey) {
+      return { labels: ['No data'], values: [1], colors: ['#94a3b8'] };
+    }
+
+    const ageCounts = new Map();
+    data.forEach(row => {
+      const label = enotisAgeGroupFromValue(row[ageKey]);
+      if (!label) return;
+      ageCounts.set(label, (ageCounts.get(label) || 0) + 1);
+    });
+
+    const ageEntries = ENOTIS_AGE_GROUP_ORDER.map(label => [label, ageCounts.get(label) || 0]);
+    const total = ageEntries.reduce((sum, entry) => sum + entry[1], 0);
+    if (!total) {
+      return { labels: ['No data'], values: [1], colors: ['#94a3b8'] };
+    }
+
+    return {
+      labels: ageEntries.map(entry => entry[0]),
+      values: ageEntries.map(entry => entry[1]),
+      colors: ageEntries.map(entry => ENOTIS_AGE_GROUP_COLORS[entry[0]] || '#94a3b8')
+    };
+  }
+
   function updateWeeklyChart(panel) {
     const wkKey = panel.columnMap.week;
     if (!wkKey || !panel.rawData || panel.rawData.length === 0) {
@@ -3538,7 +3625,14 @@ function getStateLatest(stateDisplay) {
       counts.push(weekCounts[w] || 0);
     }
 
-    const ctx = document.getElementById(panel.canvasIds.weekly).getContext('2d');
+    const ctx = getCanvasContext(panel.canvasIds.weekly);
+    if (!ctx) {
+      if (panel.charts.weekly) {
+        panel.charts.weekly.destroy();
+        panel.charts.weekly = null;
+      }
+      return;
+    }
 
     if (panel.charts.weekly) {
       panel.charts.weekly.destroy();
@@ -3608,7 +3702,13 @@ function getStateLatest(stateDisplay) {
   }
 
   function createOrUpdatePie(chartRef, canvasId, labels, counts) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    const ctx = getCanvasContext(canvasId);
+    if (!ctx) {
+      if (chartRef && chartRef.destroy) {
+        chartRef.destroy();
+      }
+      return null;
+    }
 
     const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
     const bgColors = labels.map((_, i) => palette[i % palette.length]);
@@ -3649,15 +3749,14 @@ function getStateLatest(stateDisplay) {
       genderLabels.length ? genderValues : [1]
     );
 
-    const ageCounts = buildCategoryCounts(data, panel.columnMap.age);
-    const ageLabels = Array.from(ageCounts.keys());
-    const ageValues = Array.from(ageCounts.values());
+    const ageBuckets = buildEnotisAgeBuckets(data, panel.columnMap.age);
 
     panel.charts.age = createOrUpdatePie(
       panel.charts.age,
       panel.canvasIds.age,
-      ageLabels.length ? ageLabels : ['No data'],
-      ageLabels.length ? ageValues : [1]
+      ageBuckets.labels,
+      ageBuckets.values,
+      ageBuckets.colors
     );
 
     const citizenCounts = buildCategoryCounts(data, panel.columnMap.citizen);
