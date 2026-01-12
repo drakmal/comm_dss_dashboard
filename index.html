@@ -97,36 +97,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px;
-      border-radius: 999px;
-      border: 1px solid #c7d2fe;
-      background: #eef2ff;
-    }
-
-    .enotis-toggle-btn {
-      border: 1px solid transparent;
-      background: transparent;
-      color: #4338ca;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: baseline;
-      gap: 2px;
-      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .enotis-toggle-btn.is-active {
-      background: #4338ca;
-      color: #ffffff;
-      border-color: #4338ca;
-      box-shadow: 0 1px 2px rgba(67, 56, 202, 0.2);
-    }
-
-    .enotis-toggle-btn:focus-visible {
-      outline: 2px solid #6366f1;
-      outline-offset: 2px;
     }
 
     .enotis-compare-badge {
@@ -862,9 +832,8 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           </div>
         </div>
       </div>
-      <div class="enotis-mode-toggle" role="tablist" aria-label="Enotis upload mode">
-        <button class="enotis-toggle-btn is-active" type="button" id="toggleSingle_enotis" role="tab" aria-selected="true">Single</button>
-        <button class="enotis-toggle-btn" type="button" id="toggleCompare_enotis" role="tab" aria-selected="false">Compare</button>
+      <div class="enotis-mode-toggle">
+        <button class="demography-toggle" type="button" id="toggleCompare_enotis" aria-pressed="false">Compare</button>
       </div>
       <div class="muted enotis-single-only" id="fileInfo_enotis"></div>
     </div>
@@ -2721,7 +2690,6 @@ function getStateLatest(stateDisplay) {
 
 <script>
   const enotisTab = document.getElementById('tab-enotis');
-  const singleToggle = document.getElementById('toggleSingle_enotis');
   const compareToggle = document.getElementById('toggleCompare_enotis');
 
   const fileInput_enotis = document.getElementById('fileInput_enotis');
@@ -3030,10 +2998,6 @@ function getStateLatest(stateDisplay) {
   function setCompareMode(enabled) {
     enotisState.mode = enabled ? 'compare' : 'single';
     enotisTab.classList.toggle('compare-mode', enabled);
-    if (singleToggle) {
-      singleToggle.classList.toggle('is-active', !enabled);
-      singleToggle.setAttribute('aria-selected', String(!enabled));
-    }
     if (compareToggle) {
       compareToggle.classList.toggle('is-active', enabled);
       compareToggle.setAttribute('aria-selected', String(enabled));
@@ -3069,21 +3033,37 @@ function getStateLatest(stateDisplay) {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        if (!firstSheetName) {
+        const sheetNames = workbook.SheetNames || [];
+        if (!sheetNames.length) {
           throw new Error('No sheets found.');
         }
-        const worksheet = workbook.Sheets[firstSheetName];
-        panel.rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+        let selectedSheetName = '';
+        let selectedRows = [];
+        sheetNames.forEach(name => {
+          if (selectedRows.length) return;
+          const worksheet = workbook.Sheets[name];
+          if (!worksheet) return;
+          const rows = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+          if (rows.length) {
+            selectedSheetName = name;
+            selectedRows = rows;
+          } else if (!selectedSheetName) {
+            selectedSheetName = name;
+            selectedRows = rows;
+          }
+        });
+
+        panel.rawData = selectedRows;
 
         if (panel.fileInfo) {
-          panel.fileInfo.textContent = `Loaded ${file.name} with ${panel.rawData.length} rows.`;
+          const sheetLabel = selectedSheetName ? ` (${selectedSheetName})` : '';
+          panel.fileInfo.textContent = `Loaded ${file.name}${sheetLabel} with ${panel.rawData.length} rows.`;
         }
-
         panel.columnMap = createEmptyColumnMap();
 
         if (!panel.rawData || panel.rawData.length === 0) {
-          panel.errorMessage = 'No rows found in the first sheet.';
+          panel.errorMessage = 'No rows found in the workbook.';
           updatePanelHeader(panel);
           resetPanelOutputs(panel);
           updatePanelMessage(panel);
@@ -3752,22 +3732,11 @@ function getStateLatest(stateDisplay) {
     });
   });
 
-  if (singleToggle) {
-    singleToggle.addEventListener('click', () => {
-      if (enotisState.mode !== 'single') {
-        setCompareMode(false);
-      }
-    });
-  }
-
   if (compareToggle) {
     compareToggle.addEventListener('click', () => {
-      if (enotisState.mode !== 'compare') {
-        setCompareMode(true);
-      }
+      setCompareMode(enotisState.mode !== 'compare');
     });
   }
-
   updatePanelHeader(enotisState.compare.a);
   updatePanelHeader(enotisState.compare.b);
   updatePanelMessage(enotisState.compare.a);
