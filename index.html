@@ -546,6 +546,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       padding: 5px 12px 2px;
     }
 
+    #tab-enotis.compare-mode .enotis-filters-header {
+      position: static;
+      top: auto;
+      z-index: auto;
+    }
+
     /* reduce space between a header and the next card */
     .dash-section > h2 + .card{
       margin-top: 6px;
@@ -820,7 +826,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       Compare mode lets you upload two Excel files (e.g., 2025 vs 2026) and view results side-by-side. Filters apply to both panels.
     </div>
   </div>
-  <h2>2. Filters and key numbers</h2>
+  <h2 class="enotis-filters-header">2. Filters and key numbers</h2>
   <div class="card">
     <div class="filters-row">
       <div>
@@ -992,10 +998,8 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
   </div>
 
-  <div class="enotis-single-only" id="enotisSingleResults">
-    <h2>3. Diagnosis breakdown</h2>
-    <div class="card">
-      <p class="muted">
+  <h2 class="enotis-single-only">3. Diagnosis breakdown</h2>
+  <div class="card enotis-single-only">      <p class="muted">
         Counts of each diagnosis after applying the filters above.
       </p>
       <table>
@@ -1014,17 +1018,15 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </table>
     </div>
 
-    <h2>4. Weekly trend</h2>
-    <div class="card">
-      <p class="muted">
+  <h2 class="enotis-single-only">4. Weekly trend</h2>
+  <div class="card enotis-single-only">      <p class="muted">
         Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
       </p>
       <canvas id="weeklyChart_enotis"></canvas>
     </div>
 
-    <h2>5. Demography</h2>
-    <div class="card">
-      <p class="muted">
+  <h2 class="enotis-single-only">5. Demography</h2>
+  <div class="card enotis-single-only">      <p class="muted">
         Distribution of cases by gender, age, nationality, and ethnicity after applying the filters above.
       </p>
       <div class="demography-grid">
@@ -1046,7 +1048,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         </div>
       </div>
     </div>
-  </div>
+  
 </section>
 <section class="tab-panel" data-tab="tb" id="tab-tb">
 
