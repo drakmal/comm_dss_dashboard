@@ -764,9 +764,8 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       <div class="enotis-mode-toggle" role="tablist" aria-label="Enotis upload mode">
         <button class="enotis-toggle-btn is-active" type="button" id="toggleSingle_enotis" role="tab" aria-selected="true">Single</button>
         <button class="enotis-toggle-btn" type="button" id="toggleCompare_enotis" role="tab" aria-selected="false">Compare</button>
-        <span class="enotis-compare-badge" aria-live="polite">Compare mode (ON)</span>
       </div>
-      <div class="muted enotis-single-only" id="fileInfo_enotis">No file loaded yet.</div>
+      <div class="muted enotis-single-only" id="fileInfo_enotis"></div>
     </div>
     <div class="enotis-upload-helper">
       Compare mode lets you upload two Excel files (e.g., 2025 vs 2026) and view results side-by-side. Filters apply to both panels.
@@ -776,12 +775,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div>
           <label for="fileInput_enotis_A"><strong>File A (.xls / .xlsx):</strong></label>
           <input type="file" id="fileInput_enotis_A" accept=".xls,.xlsx" />
-          <div class="muted" id="fileInfo_enotis_A">No file loaded yet.</div>
+          <div class="muted" id="fileInfo_enotis_A"></div>
         </div>
         <div>
           <label for="fileInput_enotis_B"><strong>File B (.xls / .xlsx):</strong></label>
           <input type="file" id="fileInput_enotis_B" accept=".xls,.xlsx" />
-          <div class="muted" id="fileInfo_enotis_B">No file loaded yet.</div>
+          <div class="muted" id="fileInfo_enotis_B"></div>
         </div>
       </div>
     </div>
@@ -839,7 +838,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="enotis-compare-panel-grid">
       <div class="enotis-compare-panel">
         <div class="enotis-panel-header" id="enotisPanelHeaderA">File A (Year: Unknown)</div>
-        <div class="muted enotis-panel-message" id="enotisPanelMessageA">No file loaded yet.</div>
+        <div class="muted enotis-panel-message" id="enotisPanelMessageA"></div>
         <div class="kpi-grid">
           <div class="kpi-box">
             <div class="kpi-title">Total notifications</div>
@@ -898,7 +897,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
       <div class="enotis-compare-panel">
         <div class="enotis-panel-header" id="enotisPanelHeaderB">File B (Year: Unknown)</div>
-        <div class="muted enotis-panel-message" id="enotisPanelMessageB">No file loaded yet.</div>
+        <div class="muted enotis-panel-message" id="enotisPanelMessageB"></div>
         <div class="kpi-grid">
           <div class="kpi-box">
             <div class="kpi-title">Total notifications</div>
@@ -1024,7 +1023,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <label for="tb_fileInput"><strong>Excel file (.xls / .xlsx):</strong></label>
         <input type="file" id="tb_fileInput" accept=".xls,.xlsx" />
       </div>
-      <div class="muted" id="tb_fileInfo">No file loaded yet.</div>
+      <div class="muted" id="tb_fileInfo"></div>
     </div>
   </div>
 
@@ -1323,7 +1322,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="upload-row">
       <label><b>Excel file (.xls / .xlsx):</b></label>
       <input type="file" id="fileInput_measles" accept=".xls,.xlsx">
-      <div id="fileStatus_measles" style="color:#666;">No file loaded yet.</div>
+      <div id="fileStatus_measles" style="color:#666;"></div>
     </div>
   </div>
 
@@ -1531,7 +1530,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="upload-row">
       <label for="fileInput_hiv"><b>Load HIV Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_hiv" accept=".xls,.xlsx">
-      <div id="hiv_file_status" class="muted">No file loaded.</div>
+      <div id="hiv_file_status" class="muted"></div>
     </div>
     <div id="hiv_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
@@ -1724,7 +1723,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="upload-row">
       <label for="fileInput_hepc"><b>Load Hep C Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_hepc" accept=".xls,.xlsx">
-      <div id="hepc_file_status" class="muted">No file loaded.</div>
+      <div id="hepc_file_status" class="muted"></div>
     </div>
     <div id="hepc_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
@@ -1866,7 +1865,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="upload-row">
       <label for="fileInput_dengue"><b>Load Dengue Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_dengue" accept=".xls,.xlsx">
-      <div id="dengue_file_status" class="muted">No file loaded yet.</div>
+      <div id="dengue_file_status" class="muted"></div>
     </div>
     <div id="dengue_error" class="error-text" role="alert" style="display:none;"></div>
   </div>
@@ -2755,7 +2754,7 @@ function getStateLatest(stateDisplay) {
         fileInfo: fileInfo_enotis_A,
         headerEl: document.getElementById('enotisPanelHeaderA'),
         messageEl: document.getElementById('enotisPanelMessageA'),
-        defaultMessage: 'No file loaded yet.',
+        defaultMessage: '',
         kpiTotalEl: document.getElementById('kpiTotal_enotis_A'),
         kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_A'),
         tableBody: document.getElementById('diagnosisTableBody_enotis_A'),
@@ -2773,7 +2772,7 @@ function getStateLatest(stateDisplay) {
         fileInfo: fileInfo_enotis_B,
         headerEl: document.getElementById('enotisPanelHeaderB'),
         messageEl: document.getElementById('enotisPanelMessageB'),
-        defaultMessage: 'No file loaded yet.',
+        defaultMessage: '',
         kpiTotalEl: document.getElementById('kpiTotal_enotis_B'),
         kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_B'),
         tableBody: document.getElementById('diagnosisTableBody_enotis_B'),
@@ -5726,13 +5725,13 @@ window.renderAll = renderAll;
         renderFiltered();
       } catch (err) {
         console.error(err);
-        showStatus('No file loaded.');
+        showStatus('');
         showError(`Failed to parse HIV Excel file: ${err.message || err}`);
       }
     };
 
     reader.onerror = function () {
-      showStatus('No file loaded.');
+      showStatus('');
       showError('Failed to read the selected file.');
     };
 
@@ -6726,13 +6725,13 @@ window.renderAll = renderAll;
         renderFiltered();
       } catch (err) {
         console.error(err);
-        showStatus('No file loaded.');
+        showStatus('');
         showError(`Failed to parse Hep C Excel file: ${err.message || err}`);
       }
     };
 
     reader.onerror = function () {
-      showStatus('No file loaded.');
+      showStatus('');
       showError('Failed to read the selected file.');
     };
 
@@ -8366,13 +8365,13 @@ window.renderAll = renderAll;
         renderAll();
       } catch (err) {
         console.error(err);
-        setStatus('No file loaded yet.');
+        setStatus('');
         if (fileError) fileError.textContent = `Failed to parse dengue Excel file: ${err.message || err}`;
         if (fileError) fileError.style.display = 'block';
       }
     };
     reader.onerror = function () {
-      setStatus('No file loaded yet.');
+      setStatus('');
       if (fileError) fileError.textContent = 'Failed to read the selected file.';
       if (fileError) fileError.style.display = 'block';
     };
