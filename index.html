@@ -69,7 +69,28 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     }
 
     .enotis-upload-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto minmax(120px, 1fr);
       align-items: center;
+      gap: 16px;
+    }
+
+    .enotis-upload-row .enotis-single-only {
+      grid-column: 1;
+    }
+
+    .enotis-upload-row > .enotis-compare-uploads {
+      grid-column: 1;
+    }
+
+    .enotis-upload-row .enotis-mode-toggle {
+      grid-column: 2;
+      justify-self: center;
+    }
+
+    .enotis-upload-row .muted {
+      grid-column: 3;
+      justify-self: end;
     }
 
     .enotis-mode-toggle {
@@ -198,6 +219,20 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       .enotis-compare-upload-grid,
       .enotis-compare-panel-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .enotis-upload-row {
+        grid-template-columns: 1fr;
+      }
+
+      .enotis-upload-row > .enotis-single-only,
+      .enotis-upload-row > .enotis-compare-uploads,
+      .enotis-upload-row > .enotis-mode-toggle,
+      .enotis-upload-row > .muted {
+        grid-column: auto;
+        justify-self: start;
       }
     }
 
@@ -761,6 +796,20 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <label for="fileInput_enotis"><strong>Excel file (.xls / .xlsx):</strong></label>
         <input type="file" id="fileInput_enotis" accept=".xls,.xlsx" />
       </div>
+      <div class="enotis-compare-only enotis-compare-uploads" id="enotisCompareUploads">
+        <div class="enotis-compare-upload-grid">
+          <div>
+            <label for="fileInput_enotis_A"><strong>File A (.xls / .xlsx):</strong></label>
+            <input type="file" id="fileInput_enotis_A" accept=".xls,.xlsx" />
+            <div class="muted" id="fileInfo_enotis_A"></div>
+          </div>
+          <div>
+            <label for="fileInput_enotis_B"><strong>File B (.xls / .xlsx):</strong></label>
+            <input type="file" id="fileInput_enotis_B" accept=".xls,.xlsx" />
+            <div class="muted" id="fileInfo_enotis_B"></div>
+          </div>
+        </div>
+      </div>
       <div class="enotis-mode-toggle" role="tablist" aria-label="Enotis upload mode">
         <button class="enotis-toggle-btn is-active" type="button" id="toggleSingle_enotis" role="tab" aria-selected="true">Single</button>
         <button class="enotis-toggle-btn" type="button" id="toggleCompare_enotis" role="tab" aria-selected="false">Compare</button>
@@ -769,20 +818,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
     <div class="enotis-upload-helper">
       Compare mode lets you upload two Excel files (e.g., 2025 vs 2026) and view results side-by-side. Filters apply to both panels.
-    </div>
-    <div class="upload-row enotis-compare-only enotis-compare-uploads" id="enotisCompareUploads">
-      <div class="enotis-compare-upload-grid">
-        <div>
-          <label for="fileInput_enotis_A"><strong>File A (.xls / .xlsx):</strong></label>
-          <input type="file" id="fileInput_enotis_A" accept=".xls,.xlsx" />
-          <div class="muted" id="fileInfo_enotis_A"></div>
-        </div>
-        <div>
-          <label for="fileInput_enotis_B"><strong>File B (.xls / .xlsx):</strong></label>
-          <input type="file" id="fileInput_enotis_B" accept=".xls,.xlsx" />
-          <div class="muted" id="fileInfo_enotis_B"></div>
-        </div>
-      </div>
     </div>
   </div>
   <h2>2. Filters and key numbers</h2>
