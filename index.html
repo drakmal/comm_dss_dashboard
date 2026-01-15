@@ -195,6 +195,10 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
+    .enotis-compare-panel.enotis-compare-panel--full {
+      grid-column: 1 / -1;
+    }
+
     .enotis-panel-header {
       display: flex;
       align-items: center;
@@ -899,6 +903,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
   <div class="enotis-compare-only" id="enotisCompareResults">
     <div class="enotis-compare-panel-grid">
+      <div class="enotis-compare-panel enotis-compare-panel--full">
+        <div class="enotis-panel-section">
+          <h4>Weekly trend</h4>
+          <canvas id="weeklyChart_enotis_compare"></canvas>
+        </div>
+      </div>
       <div class="enotis-compare-panel">
         <div class="enotis-panel-header" id="enotisPanelHeaderA">File A (Year: Unknown)</div>
         <div class="muted enotis-panel-message" id="enotisPanelMessageA"></div>
@@ -935,10 +945,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
               </tr>
             </tbody>
           </table>
-        </div>
-        <div class="enotis-panel-section">
-          <h4>Weekly trend</h4>
-          <canvas id="weeklyChart_enotis_A"></canvas>
         </div>
         <div class="enotis-panel-section">
           <h4>Demography</h4>
@@ -1004,10 +1010,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
               </tr>
             </tbody>
           </table>
-        </div>
-        <div class="enotis-panel-section">
-          <h4>Weekly trend</h4>
-          <canvas id="weeklyChart_enotis_B"></canvas>
         </div>
         <div class="enotis-panel-section">
           <h4>Demography</h4>
@@ -2811,6 +2813,7 @@ function getStateLatest(stateDisplay) {
         citizen: null,
         ethnicity: null
       },
+      fileName: '',
       fileInput: options.fileInput || null,
       fileInfo: options.fileInfo || null,
       headerEl: options.headerEl || null,
@@ -2854,7 +2857,6 @@ function getStateLatest(stateDisplay) {
         kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_A'),
         tableBody: document.getElementById('diagnosisTableBody_enotis_A'),
         canvasIds: {
-          weekly: 'weeklyChart_enotis_A',
           gender: 'genderChart_enotis_A',
           age: 'ageChart_enotis_A',
           citizen: 'citizenChart_enotis_A',
@@ -2862,8 +2864,7 @@ function getStateLatest(stateDisplay) {
         }
       }),
       b: createPanelState({
-        label: 'File B',
-        fileInput: fileInput_enotis_B,
+        label: 'File B',        fileInput: fileInput_enotis_B,
         fileInfo: fileInfo_enotis_B,
         headerEl: document.getElementById('enotisPanelHeaderB'),
         messageEl: document.getElementById('enotisPanelMessageB'),
@@ -2872,13 +2873,13 @@ function getStateLatest(stateDisplay) {
         kpiDiseasesEl: document.getElementById('kpiDiseases_enotis_B'),
         tableBody: document.getElementById('diagnosisTableBody_enotis_B'),
         canvasIds: {
-          weekly: 'weeklyChart_enotis_B',
           gender: 'genderChart_enotis_B',
           age: 'ageChart_enotis_B',
           citizen: 'citizenChart_enotis_B',
           ethnicity: 'ethnicityChart_enotis_B'
         }
-      })
+      }),
+      weeklyChart: null
     }
   };
 
@@ -2987,6 +2988,13 @@ function getStateLatest(stateDisplay) {
     };
   }
 
+  function destroyCompareWeeklyChart() {
+    if (enotisState.compare.weeklyChart) {
+      enotisState.compare.weeklyChart.destroy();
+      enotisState.compare.weeklyChart = null;
+    }
+  }
+
   function resetPanelOutputs(panel) {
     if (panel.kpiTotalEl) panel.kpiTotalEl.textContent = '0';
     if (panel.kpiDiseasesEl) panel.kpiDiseasesEl.textContent = '0';
@@ -3002,12 +3010,14 @@ function getStateLatest(stateDisplay) {
       panel.columnMap = createEmptyColumnMap();
       panel.hasFile = false;
       panel.errorMessage = '';
+      panel.fileName = '';
       if (panel.fileInput) panel.fileInput.value = '';
       if (panel.fileInfo) panel.fileInfo.textContent = panel.defaultMessage;
       updatePanelHeader(panel);
       resetPanelOutputs(panel);
       updatePanelMessage(panel);
     });
+    destroyCompareWeeklyChart();
   }
 
   function setCompareMode(enabled) {
@@ -3043,6 +3053,7 @@ function getStateLatest(stateDisplay) {
     if (panel.fileInfo) panel.fileInfo.textContent = `Loading ${file.name} ...`;
     panel.hasFile = true;
     panel.errorMessage = '';
+    panel.fileName = file.name;
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -3417,8 +3428,9 @@ function getStateLatest(stateDisplay) {
 
   function updateDashboard() {
     if (enotisState.mode === 'compare') {
-      updatePanel(enotisState.compare.a);
-      updatePanel(enotisState.compare.b);
+      updatePanel(enotisState.compare.a, { skipWeekly: true });
+      updatePanel(enotisState.compare.b, { skipWeekly: true });
+      updateCompareWeeklyChart();
       updateDemographyFilters();
       return;
     }
@@ -3426,7 +3438,7 @@ function getStateLatest(stateDisplay) {
     updateDemographyFilters();
   }
 
-  function updatePanel(panel) {
+  function updatePanel(panel, options = {}) {
     if (!panel.rawData || panel.rawData.length === 0) {
       resetPanelOutputs(panel);
       updatePanelMessage(panel);
@@ -3436,7 +3448,7 @@ function getStateLatest(stateDisplay) {
     const filtered = getFilteredData(panel);
     updateKpis(panel, filtered);
     updateDiagnosisTable(panel, filtered);
-    updateWeeklyChart(panel);
+    if (!options.skipWeekly) updateWeeklyChart(panel);
     const demographyData = demographyCumulative
       ? getFilteredData(panel, { weekMode: 'cumulative', includeDate: false })
       : filtered;
@@ -3646,26 +3658,29 @@ function getStateLatest(stateDisplay) {
     };
   }
 
-  function updateWeeklyChart(panel) {
+  function getWeeklyCounts(panel) {
     const wkKey = panel.columnMap.week;
     if (!wkKey || !panel.rawData || panel.rawData.length === 0) {
-      if (panel.charts.weekly) {
-        panel.charts.weekly.destroy();
-        panel.charts.weekly = null;
-      }
-      return;
+      return { counts: new Map(), maxWeek: 0 };
     }
 
     const trendData = getFilteredData(panel, { weekMode: 'cumulative', includeDate: false });
     let maxWeek = 0;
+    const weekCounts = new Map();
     trendData.forEach(row => {
       let wk = row[wkKey];
       if (wk == null || wk === '') return;
       wk = parseInt(wk, 10);
       if (isNaN(wk)) return;
-      if (wk > maxWeek) maxWeek = wk;
+      maxWeek = Math.max(maxWeek, wk);
+      weekCounts.set(wk, (weekCounts.get(wk) || 0) + 1);
     });
 
+    return { counts: weekCounts, maxWeek };
+  }
+
+  function updateWeeklyChart(panel) {
+    const { counts: weekCounts, maxWeek } = getWeeklyCounts(panel);
     if (!maxWeek || maxWeek < 1) {
       if (panel.charts.weekly) {
         panel.charts.weekly.destroy();
@@ -3674,21 +3689,11 @@ function getStateLatest(stateDisplay) {
       return;
     }
 
-    const weekCounts = {};
-    trendData.forEach(row => {
-      let wk = row[wkKey];
-      if (wk == null || wk === '') return;
-      wk = parseInt(wk, 10);
-      if (isNaN(wk)) return;
-      if (!weekCounts[wk]) weekCounts[wk] = 0;
-      weekCounts[wk] += 1;
-    });
-
     const weeks = [];
     const counts = [];
     for (let w = 1; w <= maxWeek; w++) {
       weeks.push(w);
-      counts.push(weekCounts[w] || 0);
+      counts.push(weekCounts.get(w) || 0);
     }
 
     const ctx = getCanvasContext(panel.canvasIds.weekly);
@@ -3743,6 +3748,107 @@ function getStateLatest(stateDisplay) {
             callbacks: {
               label: function(context) {
                 return `Week ${context.label}: ${context.raw} notifications`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function buildCompareDatasetLabel(panel, fallbackLabel) {
+    const baseLabel = panel.fileName ? `${fallbackLabel}: ${panel.fileName}` : fallbackLabel;
+    const yearLabel = detectYearLabel(panel);
+    if (!yearLabel || yearLabel === 'Year: Unknown') return baseLabel;
+    const normalized = yearLabel
+      .replace('Detected year: ', '')
+      .replace('Multiple years: ', '');
+    return normalized ? `${baseLabel} (${normalized})` : baseLabel;
+  }
+
+  function updateCompareWeeklyChart() {
+    const leftPanel = enotisState.compare.a;
+    const rightPanel = enotisState.compare.b;
+    const { counts: leftCounts, maxWeek: leftMaxWeek } = getWeeklyCounts(leftPanel);
+    const { counts: rightCounts, maxWeek: rightMaxWeek } = getWeeklyCounts(rightPanel);
+    const maxWeek = Math.max(leftMaxWeek, rightMaxWeek);
+
+    if (!maxWeek || maxWeek < 1) {
+      destroyCompareWeeklyChart();
+      return;
+    }
+
+    const ctx = getCanvasContext('weeklyChart_enotis_compare');
+    if (!ctx) {
+      destroyCompareWeeklyChart();
+      return;
+    }
+
+    const weeks = [];
+    const leftData = [];
+    const rightData = [];
+    for (let w = 1; w <= maxWeek; w++) {
+      weeks.push(w);
+      leftData.push(leftCounts.get(w) || 0);
+      rightData.push(rightCounts.get(w) || 0);
+    }
+
+    destroyCompareWeeklyChart();
+    enotisState.compare.weeklyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: weeks,
+        datasets: [
+          {
+            label: buildCompareDatasetLabel(leftPanel, 'Dataset A (Left)'),
+            data: leftData,
+            tension: 0.2,
+            pointRadius: 3,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.18)'
+          },
+          {
+            label: buildCompareDatasetLabel(rightPanel, 'Dataset B (Right)'),
+            data: rightData,
+            tension: 0.2,
+            pointRadius: 3,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.18)'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Epid week (Tkh Input Notifikasi)'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Count'
+            },
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.raw}`;
               }
             }
           }
