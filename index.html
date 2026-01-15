@@ -851,6 +851,13 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         </select>
       </div>
 
+      <div id="filterSubDiagnosisWrapper" class="is-hidden">
+        <label for="filterSubDiagnosis_enotis">Sub Diagnosis:</label>
+        <select id="filterSubDiagnosis_enotis" disabled>
+          <option value="ALL">All sub diagnosis</option>
+        </select>
+      </div>
+
       <div>
         <label for="filterStatus_enotis">Notifikasi Status:</label>
         <select id="filterStatus_enotis" disabled>
@@ -886,7 +893,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
 
     <div class="note enotis-single-only">
-      All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
+      All values change based on the filters selected.
     </div>
   </div>
 
@@ -906,7 +913,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           </div>
         </div>
         <div class="note">
-          All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
+          All values change based on the filters selected.
         </div>
         <div class="enotis-panel-section">
           <h4>Diagnosis breakdown</h4>
@@ -975,7 +982,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           </div>
         </div>
         <div class="note">
-          All numbers change based on the chosen diagnosis, Notifikasi Status, and Epid Week, and Date.
+          All values change based on the filters selected.
         </div>
         <div class="enotis-panel-section">
           <h4>Diagnosis breakdown</h4>
@@ -1058,7 +1065,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
   <h2 class="enotis-single-only">4. Weekly trend</h2>
   <div class="card enotis-single-only">      <p class="muted">
-        Notifications by epidemiological week of input date, filtered by diagnosis, Notifikasi Status, and Epid Week.
+        Notifications by epidemiological week of input date, based on the filters selected.
       </p>
       <canvas id="weeklyChart_enotis"></canvas>
     </div>
@@ -1074,6 +1081,10 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="demo-card">
           <div class="demo-block-title">Jantina</div>
           <canvas id="genderChart_enotis"></canvas>
+        </div>
+        <div class="demo-card">
+          <div class="demo-block-title">Umur</div>
+          <canvas id="ageChart_enotis"></canvas>
         </div>
         <div class="demo-card">
           <div class="demo-block-title">Status Kewarganegaraan</div>
@@ -2700,6 +2711,8 @@ function getStateLatest(stateDisplay) {
   const fileInfo_enotis_B = document.getElementById('fileInfo_enotis_B');
 
   const diagnosisSelect = document.getElementById('filterDiagnosis_enotis');
+  const subDiagnosisWrapper = document.getElementById('filterSubDiagnosisWrapper');
+  const subDiagnosisSelect = document.getElementById('filterSubDiagnosis_enotis');
   const statusSelect = document.getElementById('filterStatus_enotis');
   const weekSelect = document.getElementById('filterWeek_enotis');
   const dateSelect = document.getElementById('filterDate_enotis');
@@ -2775,6 +2788,7 @@ function getStateLatest(stateDisplay) {
   function createEmptyColumnMap() {
     return {
       diagnosis: null,
+      subDiagnosis: null,
       status: null,
       week: null,
       date: null,
@@ -2914,6 +2928,7 @@ function getStateLatest(stateDisplay) {
     const keys = Object.keys(firstRow || {});
 
     panel.columnMap.diagnosis = findColumnKey(keys, ['Diagnosis', 'DX']);
+    panel.columnMap.subDiagnosis = findColumnKey(keys, ['Sub Diagnosis', 'SubDiagnosis']);
     panel.columnMap.status = findColumnKey(keys, ['Notifikasi Status', 'Status Notifikasi', 'BR']);
     panel.columnMap.week = findColumnKey(keys, ['Epid Minggu (Tkh Input Notifikasi)']);
     panel.columnMap.date = findColumnKey(keys, ['Tkh Notifikasi']);
@@ -3005,6 +3020,7 @@ function getStateLatest(stateDisplay) {
 
     if (enabled) {
       diagnosisSelect.value = 'ALL';
+      subDiagnosisSelect.value = 'ALL';
       statusSelect.value = 'ALL';
       weekSelect.value = 'ALL';
       dateSelect.value = 'ALL';
@@ -3155,10 +3171,13 @@ function getStateLatest(stateDisplay) {
     const panels = getPanelsForMode();
     if (!hasAnyData(panels)) {
       setSelectOptions(diagnosisSelect, [], { allLabel: 'All diagnosis' });
+      setSelectOptions(subDiagnosisSelect, [], { allLabel: 'All sub diagnosis' });
       setSelectOptions(statusSelect, [], { allLabel: 'All status' });
       setSelectOptions(weekSelect, [], { allLabel: 'All weeks' });
       setSelectOptions(dateSelect, [], { allLabel: 'All dates' });
       diagnosisSelect.disabled = true;
+      subDiagnosisSelect.disabled = true;
+      if (subDiagnosisWrapper) subDiagnosisWrapper.classList.add('is-hidden');
       statusSelect.disabled = true;
       weekSelect.disabled = true;
       dateSelect.disabled = true;
@@ -3188,6 +3207,43 @@ function getStateLatest(stateDisplay) {
     return true;
   }
 
+  function rebuildSubDiagnosisOptions() {
+    const panels = getPanelsForMode();
+    const dxFilter = diagnosisSelect.value || 'ALL';
+
+    if (!hasAnyData(panels) || dxFilter === 'ALL') {
+      setSelectOptions(subDiagnosisSelect, [], { allLabel: 'All sub diagnosis' });
+      subDiagnosisSelect.disabled = true;
+      if (subDiagnosisWrapper) subDiagnosisWrapper.classList.add('is-hidden');
+      return;
+    }
+
+    const subSet = new Set();
+    panels.forEach(panel => {
+      if (!panel.rawData || !panel.rawData.length) return;
+      const dxKey = panel.columnMap.diagnosis;
+      const subKey = panel.columnMap.subDiagnosis;
+      if (!subKey) return;
+      panel.rawData.forEach(row => {
+        const dx = dxKey ? row[dxKey] : null;
+        if (dx == null || String(dx).trim() !== dxFilter) return;
+        const sub = row[subKey];
+        if (sub != null && String(sub).trim() !== '') subSet.add(String(sub).trim());
+      });
+    });
+
+    if (!subSet.size) {
+      setSelectOptions(subDiagnosisSelect, [], { allLabel: 'All sub diagnosis' });
+      subDiagnosisSelect.disabled = true;
+      if (subDiagnosisWrapper) subDiagnosisWrapper.classList.add('is-hidden');
+      return;
+    }
+
+    setSelectOptions(subDiagnosisSelect, Array.from(subSet).sort(), { allLabel: 'All sub diagnosis' });
+    subDiagnosisSelect.disabled = false;
+    if (subDiagnosisWrapper) subDiagnosisWrapper.classList.remove('is-hidden');
+  }
+
   function rebuildWeekOptions() {
     const panels = getPanelsForMode();
     if (!hasAnyData(panels)) {
@@ -3198,6 +3254,7 @@ function getStateLatest(stateDisplay) {
 
     const applyFilters = enotisState.mode === 'compare';
     const dxFilter = applyFilters ? (diagnosisSelect.value || 'ALL') : 'ALL';
+    const subFilter = applyFilters ? (subDiagnosisSelect.value || 'ALL') : 'ALL';
     const stFilter = applyFilters ? (statusSelect.value || 'ALL') : 'ALL';
     const weekSet = new Set();
 
@@ -3206,7 +3263,7 @@ function getStateLatest(stateDisplay) {
       const wkKey = panel.columnMap.week;
       if (!wkKey) return;
       panel.rawData.forEach(row => {
-        if (applyFilters && !matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+        if (applyFilters && !matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter)) return;
         const wk = parseInt(row[wkKey], 10);
         if (!isNaN(wk)) weekSet.add(wk);
       });
@@ -3235,6 +3292,7 @@ function getStateLatest(stateDisplay) {
 
     const panels = getPanelsForMode();
     const dxFilter = diagnosisSelect.value || 'ALL';
+    const subFilter = subDiagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
     const dateSet = new Set();
 
@@ -3245,7 +3303,7 @@ function getStateLatest(stateDisplay) {
       if (!dateKey || !wkKey) return;
 
       panel.rawData.forEach(row => {
-        if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+        if (!matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter)) return;
         const wkNum = parseInt(row[wkKey], 10);
         if (isNaN(wkNum) || wkNum !== parseInt(wkFilter, 10)) return;
         const iso = toISODate(row[dateKey]);
@@ -3278,18 +3336,21 @@ function getStateLatest(stateDisplay) {
   function rebuildAllFilters() {
     const hasData = rebuildDiagnosisStatusOptions();
     if (!hasData) return;
+    rebuildSubDiagnosisOptions();
     rebuildWeekOptions();
     rebuildDateOptions();
   }
 
   function updateDemographyFilters() {
     const dx = diagnosisSelect.value || 'ALL';
+    const sub = subDiagnosisSelect.value || 'ALL';
     const st = statusSelect.value || 'ALL';
     const wk = weekSelect.value || 'ALL';
     const dxLabel = dx === 'ALL' ? 'All' : dx;
+    const subLabel = sub === 'ALL' ? 'All' : sub;
     const stLabel = st === 'ALL' ? 'All' : st;
     const wkLabel = wk === 'ALL' ? 'All' : `Week ${wk}`;
-    const text = `Filters on: Diagnosis: ${dxLabel} • Notifikasi Status: ${stLabel} • Epid Week (Tkh Input Notifikasi): ${wkLabel}`;
+    const text = `Filters on: Diagnosis: ${dxLabel} • Sub Diagnosis: ${subLabel} • Notifikasi Status: ${stLabel} • Epid Week (Tkh Input Notifikasi): ${wkLabel}`;
 
     [demographyFilters, demographyFiltersA, demographyFiltersB].forEach(el => {
       if (el) el.textContent = text;
@@ -3302,19 +3363,23 @@ function getStateLatest(stateDisplay) {
     });
   }
 
-  function matchesDiagnosisStatus(row, panel, dxFilter, stFilter) {
+  function matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter) {
     const dxKey = panel.columnMap.diagnosis;
     const stKey = panel.columnMap.status;
+    const subKey = panel.columnMap.subDiagnosis;
     const dx = dxKey ? row[dxKey] : null;
     const st = stKey ? row[stKey] : null;
+    const sub = subKey ? row[subKey] : null;
 
     const matchDx = dxFilter === 'ALL' || (dx != null && String(dx).trim() === dxFilter);
+    const matchSub = subFilter === 'ALL' || (sub != null && String(sub).trim() === subFilter);
     const matchSt = stFilter === 'ALL' || (st != null && String(st).trim() === stFilter);
-    return matchDx && matchSt;
+    return matchDx && matchSub && matchSt;
   }
 
   function getFilteredData(panel, options = {}) {
     const dxFilter = diagnosisSelect.value || 'ALL';
+    const subFilter = subDiagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
     const wkFilter = weekSelect.value || 'ALL';
     const dtFilter = dateSelect.value || 'ALL'; // ISO yyyy-mm-dd (from dropdown)
@@ -3322,7 +3387,7 @@ function getStateLatest(stateDisplay) {
     const includeDate = options.includeDate !== false;
 
     return (panel.rawData || []).filter(row => {
-      if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return false;
+      if (!matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter)) return false;
 
       const wkKey = panel.columnMap.week;
       const dtKey = panel.columnMap.date;
@@ -3420,6 +3485,7 @@ function getStateLatest(stateDisplay) {
     const prevCounts = new Map();
     const wkKey = panel.columnMap.week;
     const dxFilter = diagnosisSelect.value || 'ALL';
+    const subFilter = subDiagnosisSelect.value || 'ALL';
     const stFilter = statusSelect.value || 'ALL';
     const cumulativeCounts = new Map();
 
@@ -3428,7 +3494,7 @@ function getStateLatest(stateDisplay) {
       const prevWeek = targetWeek - 1;
       if (prevWeek >= 1 && wkKey) {
         (panel.rawData || []).forEach(row => {
-          if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+          if (!matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter)) return;
           const wk = row[wkKey];
           const wkNum = parseInt(wk, 10);
           if (isNaN(wkNum) || wkNum !== prevWeek) return;
@@ -3442,7 +3508,7 @@ function getStateLatest(stateDisplay) {
 
       if (wkKey) {
         (panel.rawData || []).forEach(row => {
-          if (!matchesDiagnosisStatus(row, panel, dxFilter, stFilter)) return;
+          if (!matchesDiagnosisStatus(row, panel, dxFilter, subFilter, stFilter)) return;
           const wk = row[wkKey];
           const wkNum = parseInt(wk, 10);
           if (isNaN(wkNum) || wkNum > targetWeek) return;
@@ -3803,7 +3869,15 @@ function getStateLatest(stateDisplay) {
     });
   }
 
-  diagnosisSelect.addEventListener('change', () => {
+    diagnosisSelect.addEventListener('change', () => {
+    subDiagnosisSelect.value = 'ALL';
+    rebuildSubDiagnosisOptions();
+    rebuildWeekOptions();
+    rebuildDateOptions();
+    updateDashboard();
+  });
+
+  subDiagnosisSelect.addEventListener('change', () => {
     rebuildWeekOptions();
     rebuildDateOptions();
     updateDashboard();
@@ -8730,4 +8804,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
