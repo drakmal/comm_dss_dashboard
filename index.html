@@ -187,6 +187,21 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       outline-offset: 2px;
     }
 
+    .tb-kpi-drtb-wrap {
+      position: relative;
+      display: flex;
+    }
+
+    .tb-kpi-drtb-wrap .kpi-box {
+      flex: 1;
+    }
+
+    .tb-cumulative-toggle {
+      position: absolute;
+      top: -26px;
+      right: 8px;
+    }
+
     .enotis-compare-panel {
       background: #ffffff;
       border: 1px solid #e5e7eb;
@@ -1191,9 +1206,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="kpi-value" id="tb_kpi_ptb">0</div>
       </div>
 
-      <div class="kpi-box">
-        <div class="kpi-title">DRTB cases</div>
-        <div class="kpi-value" id="tb_kpi_drtb">0</div>
+      <div class="tb-kpi-drtb-wrap">
+        <button class="demography-toggle tb-cumulative-toggle" type="button" id="tb_cumulative_toggle" aria-pressed="false">Cumulative</button>
+        <div class="kpi-box">
+          <div class="kpi-title">DRTB cases</div>
+          <div class="kpi-value" id="tb_kpi_drtb">0</div>
+        </div>
       </div>
 
       <div class="kpi-box">
@@ -4049,12 +4067,12 @@ function getStateLatest(stateDisplay) {
     kpiDeath: document.getElementById('tb_kpi_death'),
     kpiDeathTb: document.getElementById('tb_kpi_death_tb'),
 
+    cumulativeToggle: document.getElementById('tb_cumulative_toggle'),
 
     facilityTable: document.getElementById('tb_facility_table'),
     facilityTbody: document.getElementById('tb_facility_tbody'),
 trendCanvasId: 'tb_trendChart'
   };
-
 
 
   // ----------- Pusat Rawatan table (sortable) -----------
@@ -4157,6 +4175,7 @@ trendCanvasId: 'tb_trendChart'
   let raw = [];
   let col = {};
   let trendChart = null;
+  let tbCumulative = false;
 
   // store pie chart instances by canvas id
   const pieCharts = {};
@@ -4426,7 +4445,7 @@ outcomeFH:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']) || keyFromExcelL
     tb.detect.disabled = tb.outcome.disabled = tb.category.disabled = tb.site.disabled = tb.confirm.disabled = false;
   }
 
-  function filteredData() {
+  function filteredData({ weekMode = tbCumulative ? 'upto' : 'exact' } = {}) {
     const m = tb.month.value;
     const w = tb.week.value;
     const d = tb.detect.value;
@@ -4440,7 +4459,15 @@ outcomeFH:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']) || keyFromExcelL
       const rw = toInt(val(r, col.notifWeek));
 
       if (m !== 'ALL' && rm !== String(m)) return false;
-      if (w !== 'ALL' && (rw == null || String(rw) !== String(w))) return false;
+
+      if (w !== 'ALL') {
+        if (rw == null) return false;
+        if (weekMode === 'upto') {
+          if (rw > Number(w)) return false;
+        } else if (String(rw) !== String(w)) {
+          return false;
+        }
+      }
 
       if (d !== 'ALL' && val(r, col.detect) !== d) return false;
       if (out !== 'ALL' && val(r, col.outcome) !== out) return false;
@@ -4575,16 +4602,24 @@ outcomeFH:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']) || keyFromExcelL
     pieYesNoFromColumn(data, 'tb_rf_exposure', col.rfExpose);
   }
 
+  function updateTbCumulativeToggle() {
+    if (!tb.cumulativeToggle) return;
+    tb.cumulativeToggle.classList.toggle('is-active', tbCumulative);
+    tb.cumulativeToggle.setAttribute('aria-pressed', String(tbCumulative));
+  }
+
 async function renderAll() {
   // If Excel not loaded yet, do nothing
   const hasData = Array.isArray(raw) && raw.length && col;
 
   const data = hasData ? filteredData() : [];
+  const trendData = hasData ? filteredData() : [];
   lastFilteredForFacility = data;
 
   if (hasData) {
+    updateTbCumulativeToggle();
     calcKPIs(data);
-    updateTrend(data);
+    updateTrend(trendData);
     updateAllPies(data);
   }
 
@@ -4618,6 +4653,7 @@ window.renderAll = renderAll;
 
   // Events
   tb.month.addEventListener('change', renderAll);
+  tb.month.addEventListener('change', renderAll);
   tb.week.addEventListener('change', renderAll);
   tb.detect.addEventListener('change', renderAll);
 
@@ -4625,6 +4661,13 @@ window.renderAll = renderAll;
   tb.category.addEventListener('change', renderAll);
   tb.site.addEventListener('change', renderAll);
   tb.confirm.addEventListener('change', renderAll);
+
+  if (tb.cumulativeToggle) {
+    tb.cumulativeToggle.addEventListener('click', () => {
+      tbCumulative = !tbCumulative;
+      renderAll();
+    });
+  }
 
 })();
 
