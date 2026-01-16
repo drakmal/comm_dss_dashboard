@@ -4091,7 +4091,7 @@ trendCanvasId: 'tb_trendChart'
     const kOutcome = col?.outcomeFH;
 
     if (!kFacility || !kName) {
-      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted"></td></tr>';
+      tb.facilityTbody.innerHTML = '<tr><td colspan="4" class="muted">No data.</td></tr>';
       return;
     }
 
@@ -4100,14 +4100,18 @@ trendCanvasId: 'tb_trendChart'
       const fac = String(val(r, kFacility) ?? '').trim();
       if (!fac) return;
 
-      const name = String(val(r, kName) ?? '').trim();
-      const out = String(val(r, kOutcome) ?? '').trim();
+      const name = kName ? String(val(r, kName) ?? '').trim() : '';
+      const out = kOutcome ? String(val(r, kOutcome) ?? '').trim() : '';
 
       const cur = m.get(fac) || { facility: fac, patients: 0, incomplete: 0 };
-      if (name) cur.patients += 1;
+      if (kName) {
+        if (name) cur.patients += 1;
+      } else {
+        cur.patients += 1;
+      }
 
       // "Hasil Rawatan Tidak Lengkap" = blank outcome (FH)
-      if (!out) cur.incomplete += 1;
+      if (kOutcome && !out) cur.incomplete += 1;
 
       m.set(fac, cur);
     });
@@ -4231,10 +4235,17 @@ trendCanvasId: 'tb_trendChart'
     return m;
   }
 
+  function yesNoColorForLabel(lbl) {
+    const n = norm(lbl);
+    if (n === 'ya' || n === 'yes' || n === '1') return '#ef4444';      // red
+    if (n === 'tidak' || n === 'no' || n === '0' || n === 't') return '#06b6d4'; // teal-blue
+    if (n.includes('tidak pasti') || n.includes('unknown')) return '#9ca3af';
+    return '#9ca3af';
+  }
+
   function createOrUpdatePie(canvasId, labels, values, mode = 'default') {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
 
     if (pieCharts[canvasId] && pieCharts[canvasId].destroy) {
@@ -4308,12 +4319,14 @@ trendCanvasId: 'tb_trendChart'
     createOrUpdatePie(canvasId, labels, values, 'yesno');
   }
 
-
   function inferColumns() {
     const keys = Object.keys(raw[0] || {});
     col = {
       notifMonth: findColumnKey(keys, ['Bulan Epid (Tarikh Notifikasi)', 'Bulan (Tarikh Notifikasi)', 'Bulan Epid']),
       notifWeek:  findColumnKey(keys, ['Minggu Epid (Tarikh Notifikasi)', 'Epid Week', 'Minggu Epid']),
+      patientNameI: findColumnKey(keys, ['Nama Pesakit', 'Nama']) || keyFromExcelLetter(keys, 'I'),
+facilityCP:   findColumnKey(keys, ['Nama Pusat Rawatan yang menyambung rawatan', 'Nama Pusat Rawatan', 'Pusat Rawatan']) || keyFromExcelLetter(keys, 'CP'),
+outcomeFH:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']) || keyFromExcelLetter(keys, 'FH'),
 
       detect:     findColumnKey(keys, ['Cara Pengesanan', 'Cara Pengesanan Kes', 'Kaedah Pengesanan']),
       category:   findColumnKey(keys, ['(Recode) Kategori Kes Tibi', 'Kategori Kes Tibi']),
@@ -4354,16 +4367,17 @@ trendCanvasId: 'tb_trendChart'
     };
 
     // Pusat Rawatan table (by Excel column letter fallback)
-    col.facilityCP = findColumnKey(keys, ['Pusat Rawatan', 'Pusat_Rawatan', 'PusatRawatan', 'Fasiliti Rawatan', 'Fasiliti_Rawatan', 'Health Facility', 'Treatment Centre'])
+    col.facilityCP = findColumnKey(keys, ['Nama Pusat Rawatan yang menyambung rawatan'])
       || keyFromExcelLetter(keys, 'CP');
 
-    col.patientNameI = findColumnKey(keys, ['Nama Pesakit', 'Nama_Pesakit', 'Patient Name', 'Nama'])
+    col.patientNameI = findColumnKey(keys, ['Nama'])
       || keyFromExcelLetter(keys, 'I');
 
     // Prefer FH (as requested) but fall back to the detected outcome column
     col.outcomeFH = keyFromExcelLetter(keys, 'FH') || col.outcome;
 
     console.log('TB detected columns:', col);
+    window.__tb_col = col;
   }
 
   function setOptions(select, items, firstLabel, firstValue = 'ALL') {
