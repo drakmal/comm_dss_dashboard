@@ -6059,7 +6059,7 @@ window.renderAll = renderAll;
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'complete') record.complete = true;
+        if (normStatus === 'complete' || normStatus === 'on art treatment') record.complete = true;
         if (normStatus === 'still on treatment') record.stillOnTreatment = true;
         if (normStatus === 'incomplete') record.incomplete = true;
         if (normStatus === 'missing') record.missing = true;
@@ -7066,7 +7066,7 @@ window.renderAll = renderAll;
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'complete') record.complete = true;
+        if (normStatus === 'complete' || normStatus === 'on art treatment') record.complete = true;
         if (normStatus === 'still on treatment') record.stillOnTreatment = true;
         if (normStatus === 'incomplete') record.incomplete = true;
         if (normStatus === 'missing') record.missing = true;
