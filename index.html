@@ -6059,10 +6059,10 @@ window.renderAll = renderAll;
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'complete' || normStatus === 'on art treatment') record.complete = true;
-        if (normStatus === 'still on treatment') record.stillOnTreatment = true;
-        if (normStatus === 'incomplete') record.incomplete = true;
-        if (normStatus === 'missing') record.missing = true;
+        if (normStatus === 'on art treatment') record.complete = true;
+        if (normStatus === 'transfer out') record.stillOnTreatment = true;
+        if (normStatus === 'died') record.incomplete = true;
+        if (normStatus === 'loss to follow-up' || normStatus === 'ltfu') record.missing = true;
       }
 
       if (hasSuppression && isExactLabel(suppressionVal, 'Yes (<1000 copies/mL)')) {
@@ -7066,10 +7066,10 @@ window.renderAll = renderAll;
 
       if (hasStatus) {
         const normStatus = normalizeLabel(statusVal);
-        if (normStatus === 'complete' || normStatus === 'on art treatment') record.complete = true;
-        if (normStatus === 'still on treatment') record.stillOnTreatment = true;
-        if (normStatus === 'incomplete') record.incomplete = true;
-        if (normStatus === 'missing') record.missing = true;
+        if (normStatus === 'on art treatment') record.complete = true;
+        if (normStatus === 'transfer out') record.stillOnTreatment = true;
+        if (normStatus === 'died') record.incomplete = true;
+        if (normStatus === 'loss to follow-up' || normStatus === 'ltfu') record.missing = true;
       }
 
       if (hasSuppression && isExactLabel(suppressionVal, 'Not detected / Effective')) {
