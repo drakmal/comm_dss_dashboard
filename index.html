@@ -9085,21 +9085,39 @@ document.addEventListener('DOMContentLoaded', syncStickyOffsets);
 document.addEventListener('DOMContentLoaded', () => {
   // Wrap each H2 + following elements into a section container
   document.querySelectorAll('.tab-panel').forEach(panel => {
-    const kids = Array.from(panel.children);
-    let current = null;
+    const h2Elements = Array.from(panel.querySelectorAll('h2'));
 
-    kids.forEach(el => {
-      if (el.tagName === 'H2') {
-        // Create new section
-        current = document.createElement('section');
-        current.className = 'dash-section';
-        // Insert section before the H2's current position
-        panel.insertBefore(current, el);
-        // Move H2 into the section
-        current.appendChild(el);
-      } else if (current && el.parentNode === panel) {
-        // Move following elements into the current section
-        current.appendChild(el);
+    h2Elements.forEach(h2 => {
+      // Skip if already wrapped
+      if (h2.parentElement.classList.contains('dash-section')) {
+        return;
+      }
+
+      // Create wrapper section
+      const section = document.createElement('section');
+      section.className = 'dash-section';
+
+      // Insert section before H2
+      h2.parentNode.insertBefore(section, h2);
+
+      // Move H2 into section
+      section.appendChild(h2);
+
+      // Move all following siblings until next H2 or download-section
+      let nextSibling = section.nextSibling;
+      while (nextSibling) {
+        // Stop if we hit another H2 or download section
+        if (nextSibling.tagName === 'H2' ||
+            (nextSibling.classList && nextSibling.classList.contains('download-section'))) {
+          break;
+        }
+
+        // Save reference to next sibling before moving current one
+        const siblingToMove = nextSibling;
+        nextSibling = nextSibling.nextSibling;
+
+        // Move the sibling into the section
+        section.appendChild(siblingToMove);
       }
     });
   });
