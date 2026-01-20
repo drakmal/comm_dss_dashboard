@@ -9153,11 +9153,38 @@ async function downloadDashboard(dashboardType) {
     yPosition += 8;
 
     const summary = generatePublicHealthSummary(dashboardType);
+
+    // Split summary into parts (main summary and AI insights)
+    const summaryParts = summary.split('\n\nAI-Generated Insights: ');
+
+    // Main summary
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    const summaryLines = pdf.splitTextToSize(summary, contentWidth);
+    const summaryLines = pdf.splitTextToSize(summaryParts[0], contentWidth);
     pdf.text(summaryLines, margin, yPosition);
     yPosition += summaryLines.length * 5 + 10;
+
+    // AI Insights section (if exists)
+    if (summaryParts.length > 1 && summaryParts[1].trim()) {
+      // Check if we need a new page
+      if (yPosition > pageHeight - 80) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(102, 126, 234); // Purple color for AI section
+      pdf.text('AI-Generated Insights', margin, yPosition);
+      yPosition += 7;
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+      const insightLines = pdf.splitTextToSize(summaryParts[1], contentWidth);
+      pdf.text(insightLines, margin, yPosition);
+      yPosition += insightLines.length * 5 + 10;
+    }
 
     // Check if we need a new page
     if (yPosition > pageHeight - 60) {
@@ -9321,6 +9348,12 @@ function generatePublicHealthSummary(dashboardType) {
     summary += '. ';
   }
 
+  // Generate AI-powered insights
+  const aiInsights = generateAIInsights(dashboardType, panel, metrics);
+  if (aiInsights) {
+    summary += '\n\nAI-Generated Insights: ' + aiInsights + ' ';
+  }
+
   // Add context and recommendations
   const recommendations = {
     'enotis': 'Healthcare providers should monitor disease trends, investigate unusual patterns, implement timely interventions, and ensure proper case reporting. Early detection enables rapid response to prevent disease transmission in the community.',
@@ -9339,6 +9372,255 @@ function generatePublicHealthSummary(dashboardType) {
   summary += recommendations[dashboardType] || 'This data supports evidence-based public health decision-making and disease control efforts.';
 
   return summary;
+}
+
+// AI Insights Generation Function (Rule-Based)
+function generateAIInsights(dashboardType, panel, metrics) {
+  const insights = [];
+
+  try {
+    // Extract demographic data from pie charts
+    const demographics = extractDemographicInsights(panel);
+    if (demographics.length > 0) {
+      insights.push(...demographics);
+    }
+
+    // Extract trend insights from line charts
+    const trends = extractTrendInsights(panel, dashboardType);
+    if (trends.length > 0) {
+      insights.push(...trends);
+    }
+
+    // Extract metric-based insights
+    const metricInsights = extractMetricInsights(metrics, dashboardType);
+    if (metricInsights.length > 0) {
+      insights.push(...metricInsights);
+    }
+
+    // Return top 3-4 insights
+    return insights.slice(0, 4).join(' ');
+
+  } catch (error) {
+    console.warn('Error generating AI insights:', error);
+    return '';
+  }
+}
+
+// Extract demographic insights from pie charts
+function extractDemographicInsights(panel) {
+  const insights = [];
+  let insightCount = 0;
+  const maxInsights = 3; // Limit demographic insights
+
+  // Find all canvas pie charts
+  const canvases = panel.querySelectorAll('canvas');
+
+  canvases.forEach(canvas => {
+    if (insightCount >= maxInsights) return;
+
+    const chartId = canvas.id;
+    let chart;
+
+    // Try to get chart instance safely
+    try {
+      chart = Chart.getChart(canvas);
+    } catch (e) {
+      return;
+    }
+
+    if (!chart || !chart.data || !chart.data.datasets || chart.data.datasets.length === 0) {
+      return;
+    }
+
+    const labels = chart.data.labels || [];
+    const data = chart.data.datasets[0].data || [];
+    const total = data.reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+
+    if (total === 0 || data.length === 0) return;
+
+    // Find dominant category (>40% of total)
+    let foundDominant = false;
+    for (let index = 0; index < data.length && insightCount < maxInsights; index++) {
+      const value = data[index];
+      const percentage = (value / total) * 100;
+      if (percentage >= 40 && labels[index]) {
+        const chartTitle = canvas.previousElementSibling?.textContent || chartId;
+        insights.push(`${labels[index]} accounts for ${percentage.toFixed(0)}% of cases (${chartTitle.toLowerCase()}).`);
+        insightCount++;
+        foundDominant = true;
+        break;
+      }
+    }
+
+    // Find highest category if no dominant one and we still need insights
+    if (!foundDominant && insightCount < maxInsights && data.length > 0) {
+      const maxValue = Math.max(...data.filter(v => v !== null && v !== undefined));
+      const maxIndex = data.indexOf(maxValue);
+      const percentage = (maxValue / total) * 100;
+      if (percentage >= 20 && labels[maxIndex]) {
+        const chartTitle = canvas.previousElementSibling?.textContent || chartId;
+        insights.push(`Most affected group: ${labels[maxIndex]} (${percentage.toFixed(0)}% of cases).`);
+        insightCount++;
+      }
+    }
+  });
+
+  return insights;
+}
+
+// Extract trend insights from line/bar charts
+function extractTrendInsights(panel, dashboardType) {
+  const insights = [];
+
+  // Find trend chart based on dashboard type
+  const trendCanvasIds = {
+    'enotis': 'trendChart_enotis',
+    'tb': 'tb_trendChart',
+    'measles': 'measles_trendChart',
+    'hiv': 'hiv_yearChart',
+    'hepc': 'hepc_yearChart',
+    'dengue': 'dengue_trendChart'
+  };
+
+  const trendId = trendCanvasIds[dashboardType];
+  if (!trendId) return insights;
+
+  const trendCanvas = document.getElementById(trendId);
+  if (!trendCanvas) return insights;
+
+  let chart;
+  try {
+    chart = Chart.getChart(trendCanvas);
+  } catch (e) {
+    return insights;
+  }
+
+  if (!chart || !chart.data || !chart.data.datasets || chart.data.datasets.length === 0) return insights;
+
+  const dataset = chart.data.datasets[0];
+  if (!dataset || !dataset.data || dataset.data.length < 2) return insights;
+
+  const data = dataset.data.filter(val => val !== null && val !== undefined && !isNaN(val)).map(v => parseFloat(v));
+  if (data.length < 4) return insights; // Need at least 4 data points for meaningful analysis
+
+  // Calculate trend (compare recent vs earlier periods)
+  const recentPeriod = data.slice(-4); // Last 4 data points
+  const earlierPeriod = data.length >= 8 ? data.slice(-8, -4) : data.slice(0, 4); // Previous 4 data points
+
+  if (recentPeriod.length >= 2 && earlierPeriod.length >= 2) {
+    const recentAvg = recentPeriod.reduce((sum, val) => sum + val, 0) / recentPeriod.length;
+    const earlierAvg = earlierPeriod.reduce((sum, val) => sum + val, 0) / earlierPeriod.length;
+
+    if (earlierAvg > 0) {
+      const change = ((recentAvg - earlierAvg) / earlierAvg) * 100;
+
+      if (change >= 20) {
+        insights.push(`Trend analysis shows cases increasing by ${change.toFixed(0)}% in recent period - enhanced surveillance recommended.`);
+      } else if (change <= -20) {
+        insights.push(`Positive trend: Cases decreasing by ${Math.abs(change).toFixed(0)}% in recent period.`);
+      } else if (Math.abs(change) < 10) {
+        insights.push(`Cases remain stable with minimal fluctuation.`);
+      }
+    }
+  }
+
+  // Check for recent peaks
+  if (data.length >= 4) {
+    const maxValue = Math.max(...data);
+    const maxIndex = data.lastIndexOf(maxValue);
+    const isRecentPeak = maxIndex >= data.length - 4;
+
+    if (isRecentPeak && maxValue > recentPeriod.reduce((sum, val) => sum + val, 0) / recentPeriod.length * 1.3) {
+      insights.push(`Recent spike detected - immediate investigation advised.`);
+    }
+  }
+
+  return insights.slice(0, 2); // Limit to 2 trend insights
+}
+
+// Extract insights from KPI metrics
+function extractMetricInsights(metrics, dashboardType) {
+  const insights = [];
+  let insightCount = 0;
+  const maxInsights = 2;
+
+  metrics.forEach(metric => {
+    if (insightCount >= maxInsights) return;
+
+    const title = metric.title.toLowerCase();
+    const value = metric.value;
+    const numValue = parseInt(value.replace(/[^0-9.-]/g, ''));
+
+    // TB-specific insights
+    if (dashboardType === 'tb') {
+      if ((title.includes('drug resistant') || title.includes('drtb')) && numValue > 0) {
+        insights.push(`${numValue} drug-resistant TB case(s) detected - specialized treatment and monitoring required.`);
+        insightCount++;
+      } else if (title.includes('death due to tb') && numValue > 0) {
+        insights.push(`${numValue} TB-related death(s) - review case management and treatment protocols.`);
+        insightCount++;
+      } else if (title.includes('new cases') && numValue >= 10) {
+        insights.push(`${numValue} new TB cases - maintain active case finding and contact tracing.`);
+        insightCount++;
+      }
+    }
+
+    // Dengue-specific insights
+    if (dashboardType === 'dengue' && insightCount < maxInsights) {
+      if ((title.includes('cluster') || title.includes('outbreak')) && numValue > 0) {
+        insights.push(`${numValue} active cluster(s) - intensify vector control in affected localities.`);
+        insightCount++;
+      } else if (title.includes('severe') && numValue > 0) {
+        insights.push(`${numValue} severe dengue case(s) - ensure early detection and proper case management.`);
+        insightCount++;
+      }
+    }
+
+    // Measles-specific insights
+    if (dashboardType === 'measles' && insightCount < maxInsights) {
+      if (title.includes('outbreak') && numValue > 0) {
+        insights.push(`${numValue} outbreak case(s) - urgent contact tracing and vaccination ring strategy needed.`);
+        insightCount++;
+      } else if (title.includes('unvaccinated') && numValue > 0) {
+        insights.push(`${numValue} unvaccinated case(s) - strengthen routine immunization coverage.`);
+        insightCount++;
+      }
+    }
+
+    // HIV/HepC cascade insights
+    if ((dashboardType === 'hiv' || dashboardType === 'hepc') && insightCount < maxInsights) {
+      if (title.includes('on treatment') || title.includes('receiving')) {
+        const percentage = value.match(/(\d+)%/);
+        if (percentage && parseInt(percentage[1]) < 80) {
+          insights.push(`Treatment coverage at ${percentage[1]}% - strengthen linkage to care services.`);
+          insightCount++;
+        }
+      }
+      if (title.includes('viral suppression') || title.includes('cured')) {
+        const percentage = value.match(/(\d+)%/);
+        if (percentage && parseInt(percentage[1]) >= 80) {
+          insights.push(`Good treatment outcomes: ${percentage[1]}% achieving viral suppression/cure.`);
+          insightCount++;
+        }
+      }
+    }
+
+    // Rate-based insights (CDR, etc.)
+    if (title.includes('rate') && insightCount < maxInsights) {
+      const rate = parseFloat(value.replace(/[^0-9.]/g, ''));
+      if (!isNaN(rate) && rate > 0) {
+        if (rate > 100) {
+          insights.push(`Elevated ${title} (${rate.toFixed(1)} per 100,000) - comprehensive control measures needed.`);
+          insightCount++;
+        } else if (rate > 50) {
+          insights.push(`Moderate ${title} (${rate.toFixed(1)} per 100,000) - continue surveillance and prevention efforts.`);
+          insightCount++;
+        }
+      }
+    }
+  });
+
+  return insights;
 }
 </script>
 
