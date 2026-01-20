@@ -69,10 +69,18 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       margin-bottom: 8px;
     }
 
-    p.subtitle {
+    .header-box p.subtitle {
       margin: 0;
       color: rgba(255, 255, 255, 0.95);
       font-size: 0.95rem;
+    }
+
+    .tab-panel p.subtitle {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #777;
+      font-size: 0.85rem;
+      line-height: 1.4;
     }
 
     .card {
@@ -4752,7 +4760,8 @@ async function renderAll() {
   const hasData = Array.isArray(raw) && raw.length && col;
 
   const data = hasData ? filteredData() : [];
-  const trendData = hasData ? filteredData() : [];
+  // For trend chart, always show cumulative data up to selected week
+  const trendData = hasData ? filteredData({ weekMode: 'upto' }) : [];
   lastFilteredForFacility = data;
 
   if (hasData) {
@@ -9226,10 +9235,36 @@ async function downloadDashboard(dashboardType) {
       throw new Error('Dashboard panel not found');
     }
 
-    // Get all sections within the panel (excluding download section)
-    const sections = Array.from(panel.querySelectorAll('.dash-section')).filter(section => {
-      return !section.querySelector('.download-section');
-    });
+    // Ensure sections are wrapped (in case DOMContentLoaded hasn't fired yet)
+    let sections = Array.from(panel.querySelectorAll('.dash-section'));
+    if (sections.length === 0) {
+      console.log('No dash-sections found, wrapping content now...');
+      // Wrap content manually
+      const h2Elements = Array.from(panel.querySelectorAll('h2'));
+      h2Elements.forEach(h2 => {
+        if (h2.parentElement.classList.contains('dash-section')) return;
+
+        const section = document.createElement('section');
+        section.className = 'dash-section';
+        h2.parentNode.insertBefore(section, h2);
+        section.appendChild(h2);
+
+        let nextSibling = section.nextSibling;
+        while (nextSibling) {
+          if (nextSibling.tagName === 'H2' ||
+              (nextSibling.classList && nextSibling.classList.contains('download-section'))) {
+            break;
+          }
+          const siblingToMove = nextSibling;
+          nextSibling = nextSibling.nextSibling;
+          section.appendChild(siblingToMove);
+        }
+      });
+      sections = Array.from(panel.querySelectorAll('.dash-section'));
+    }
+
+    // Filter out download section
+    sections = sections.filter(section => !section.querySelector('.download-section'));
 
     // Capture each section
     for (let i = 0; i < sections.length; i++) {
