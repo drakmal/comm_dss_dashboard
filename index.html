@@ -9605,27 +9605,66 @@ async function downloadDashboard(dashboardType) {
             // CRITICAL FIX: Process custom panes where markers are actually rendered
             // Case markers now use casePane (zIndex 650)
             // Meteorology hexagons use meteoHexPane (zIndex 400)
+            // Try multiple possible class name formats
             const customPaneSelectors = [
-              { className: 'leaflet-casePane-pane', description: 'case markers' },
-              { className: 'leaflet-meteoHexPane-pane', description: 'meteorology hexagons' }
+              { classNames: ['leaflet-casePane-pane', 'leaflet-casepane-pane'], description: 'case markers' },
+              { classNames: ['leaflet-meteoHexPane-pane', 'leaflet-meteohexpane-pane'], description: 'meteorology hexagons' }
             ];
 
-            customPaneSelectors.forEach(({ className, description }) => {
-              const originalCustomPane = originalMapContainer.querySelector(`.${className}`);
-              const clonedCustomPane = clonedMapContainer.querySelector(`.${className}`);
+            customPaneSelectors.forEach(({ classNames, description }) => {
+              let originalCustomPane = null;
+              let clonedCustomPane = null;
+              let foundClassName = null;
 
-              console.log(`[PDF] Looking for ${className}:`, {
-                foundInOriginal: !!originalCustomPane,
-                foundInCloned: !!clonedCustomPane
-              });
+              // Try each possible class name
+              for (const className of classNames) {
+                originalCustomPane = originalMapContainer.querySelector(`.${className}`);
+                clonedCustomPane = clonedMapContainer.querySelector(`.${className}`);
+
+                console.log(`[PDF] Looking for ${className}:`, {
+                  foundInOriginal: !!originalCustomPane,
+                  foundInCloned: !!clonedCustomPane
+                });
+
+                if (originalCustomPane && clonedCustomPane) {
+                  foundClassName = className;
+                  break;
+                }
+              }
 
               if (originalCustomPane && clonedCustomPane) {
                 const svgCount = originalCustomPane.querySelectorAll('svg').length;
                 const pathCount = originalCustomPane.querySelectorAll('path').length;
-                console.log(`[PDF] Processing ${description} pane (.${className}): ${svgCount} SVG elements, ${pathCount} paths`);
+                const circleCount = originalCustomPane.querySelectorAll('circle').length;
+                console.log(`[PDF] Processing ${description} pane (.${foundClassName}): ${svgCount} SVG elements, ${pathCount} paths, ${circleCount} circles`);
                 processPaneSvgs(originalCustomPane, clonedCustomPane);
               } else {
-                console.log(`[PDF] Custom pane .${className} not found (${description}) - may not be in use`);
+                console.log(`[PDF] Custom pane for ${description} not found - tried: ${classNames.join(', ')}`);
+              }
+            });
+
+            // FALLBACK: Search all panes for ones with significant marker content
+            // This catches markers that might be in unexpectedly named panes
+            const allLeafletPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
+            console.log(`[PDF] Scanning all ${allLeafletPanes.length} panes for marker content...`);
+
+            allLeafletPanes.forEach((originalPane) => {
+              const paneName = originalPane.className;
+              const pathCount = originalPane.querySelectorAll('path').length;
+              const circleCount = originalPane.querySelectorAll('circle').length;
+
+              // If this pane has significant path/circle content (likely markers)
+              // and it's not one we've already processed
+              if ((pathCount > 10 || circleCount > 10) &&
+                  !paneName.includes('overlay-pane') &&
+                  !paneName.includes('casePane') &&
+                  !paneName.includes('meteoHexPane')) {
+                console.log(`[PDF] Found unprocessed pane with markers: ${paneName} (${pathCount} paths, ${circleCount} circles)`);
+
+                const clonedPane = clonedMapContainer.querySelector(`.${paneName.split(' ').join('.')}`);
+                if (clonedPane) {
+                  processPaneSvgs(originalPane, clonedPane);
+                }
               }
             });
 
