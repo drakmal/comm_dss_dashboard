@@ -9083,18 +9083,22 @@ document.addEventListener('DOMContentLoaded', syncStickyOffsets);
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // 1) Wrap each H2 + following elements into a section container
+  // Wrap each H2 + following elements into a section container
   document.querySelectorAll('.tab-panel').forEach(panel => {
-    const kids = Array.from(panel.children); // snapshot before we move nodes
+    const kids = Array.from(panel.children);
     let current = null;
 
     kids.forEach(el => {
       if (el.tagName === 'H2') {
+        // Create new section
         current = document.createElement('section');
         current.className = 'dash-section';
-        panel.appendChild(current);
+        // Insert section before the H2's current position
+        panel.insertBefore(current, el);
+        // Move H2 into the section
         current.appendChild(el);
-      } else if (current) {
+      } else if (current && el.parentNode === panel) {
+        // Move following elements into the current section
         current.appendChild(el);
       }
     });
