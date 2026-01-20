@@ -9486,8 +9486,23 @@ async function downloadDashboard(dashboardType) {
                   if (value) clonedSvg.style[prop] = value;
                 });
 
+                // CRITICAL: Ensure overflow is visible for markers to render
+                // Leaflet markers may be positioned outside SVG bounds
+                if (clonedSvg.style.overflow === 'hidden') {
+                  clonedSvg.style.overflow = 'visible';
+                }
+
                 // CRITICAL: Ensure SVG has proper namespace - required for html2canvas
                 clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+                // CRITICAL: Ensure SVG has explicit width and height for html2canvas
+                // If not set as attributes, html2canvas may not render the SVG
+                if (!clonedSvg.getAttribute('width') && computedStyle.width && computedStyle.width !== 'auto') {
+                  clonedSvg.setAttribute('width', computedStyle.width);
+                }
+                if (!clonedSvg.getAttribute('height') && computedStyle.height && computedStyle.height !== 'auto') {
+                  clonedSvg.setAttribute('height', computedStyle.height);
+                }
 
                 // Preserve important SVG attributes
                 ['viewBox', 'preserveAspectRatio'].forEach(attr => {
@@ -9553,6 +9568,17 @@ async function downloadDashboard(dashboardType) {
                 if (strokeWidth && strokeWidth !== '0px') {
                   clonedPath.setAttribute('stroke-width', strokeWidth);
                 }
+
+                // CRITICAL: Copy transform from original path to cloned path
+                // Leaflet may use transforms to position markers
+                const transform = computedStyle.transform;
+                if (transform && transform !== 'none') {
+                  clonedPath.style.transform = transform;
+                }
+
+                // CRITICAL: Reset pointer-events for html2canvas compatibility
+                // html2canvas may skip elements with certain pointer-events values
+                clonedPath.style.pointerEvents = 'auto';
 
                 // Ensure the path has a d attribute (for path elements)
                 if (clonedPath.tagName.toLowerCase() === 'path') {
@@ -9684,7 +9710,63 @@ async function downloadDashboard(dashboardType) {
               // Only process panes that have SVG content
               if (svgCount > 0 || pathCount > 0 || circleCount > 0) {
                 console.log(`[PDF] Processing pane "${originalPane.className}": ${svgCount} SVG, ${pathCount} paths, ${circleCount} circles`);
+
+                // Extra debugging for case-pane
+                if (originalPane.className.includes('case-pane')) {
+                  console.log('[PDF] CASE-PANE DETECTED - Debugging structure:');
+                  const originalSvg = originalPane.querySelector('svg');
+                  const clonedSvg = clonedPane.querySelector('svg');
+                  if (originalSvg && clonedSvg) {
+                    const originalPaths = Array.from(originalSvg.querySelectorAll('path'));
+                    const clonedPaths = Array.from(clonedSvg.querySelectorAll('path'));
+                    console.log('[PDF] Original SVG:', {
+                      width: originalSvg.style.width || originalSvg.getAttribute('width'),
+                      height: originalSvg.style.height || originalSvg.getAttribute('height'),
+                      pathCount: originalPaths.length
+                    });
+                    console.log('[PDF] Cloned SVG (before processing):', {
+                      width: clonedSvg.style.width || clonedSvg.getAttribute('width'),
+                      height: clonedSvg.style.height || clonedSvg.getAttribute('height'),
+                      pathCount: clonedPaths.length
+                    });
+                    if (originalPaths.length > 0) {
+                      const samplePath = originalPaths[0];
+                      const computedStyle = window.getComputedStyle(samplePath);
+                      console.log('[PDF] Sample marker path (original):', {
+                        d: samplePath.getAttribute('d')?.substring(0, 50),
+                        fill: computedStyle.fill,
+                        stroke: computedStyle.stroke,
+                        transform: computedStyle.transform
+                      });
+                    }
+                  }
+                }
+
                 processPaneSvgs(originalPane, clonedPane);
+
+                // Debug case-pane after processing
+                if (originalPane.className.includes('case-pane')) {
+                  const clonedSvg = clonedPane.querySelector('svg');
+                  if (clonedSvg) {
+                    const clonedPaths = Array.from(clonedSvg.querySelectorAll('path'));
+                    console.log('[PDF] Cloned SVG (after processing):', {
+                      xmlns: clonedSvg.getAttribute('xmlns'),
+                      width: clonedSvg.style.width,
+                      height: clonedSvg.style.height,
+                      transform: clonedSvg.style.transform,
+                      pathCount: clonedPaths.length
+                    });
+                    if (clonedPaths.length > 0) {
+                      console.log('[PDF] Sample marker path (cloned after processing):', {
+                        d: clonedPaths[0].getAttribute('d')?.substring(0, 50),
+                        fill: clonedPaths[0].getAttribute('fill'),
+                        stroke: clonedPaths[0].getAttribute('stroke'),
+                        fillOpacity: clonedPaths[0].getAttribute('fill-opacity'),
+                        transform: clonedPaths[0].style.transform
+                      });
+                    }
+                  }
+                }
               }
             });
 
