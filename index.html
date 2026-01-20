@@ -9432,10 +9432,11 @@ async function downloadDashboard(dashboardType) {
 
         // Enhanced SVG copying for Leaflet map markers
         if (hasMap) {
-          const originalMapContainer = originalElements.find(el => el.querySelector('#dengue_case_map'));
-          const clonedMapContainer = tempWrapper.querySelector('#dengue_case_map');
+          // Get the actual map container divs (both should be #dengue_case_map)
+          const originalMapEl = originalElements.find(el => el.querySelector('#dengue_case_map'))?.querySelector('#dengue_case_map');
+          const clonedMapEl = tempWrapper.querySelector('#dengue_case_map');
 
-          if (originalMapContainer && clonedMapContainer) {
+          if (originalMapEl && clonedMapEl) {
             // Helper function to recursively inline all computed styles
             const inlineAllStyles = (originalEl, clonedEl) => {
               const computedStyle = window.getComputedStyle(originalEl);
@@ -9578,8 +9579,8 @@ async function downloadDashboard(dashboardType) {
             };
 
             // Process the overlay pane (default pane where case markers are)
-            const originalOverlayPane = originalMapContainer.querySelector('.leaflet-overlay-pane');
-            const clonedOverlayPane = clonedMapContainer.querySelector('.leaflet-overlay-pane');
+            const originalOverlayPane = originalMapEl.querySelector('.leaflet-overlay-pane');
+            const clonedOverlayPane = clonedMapEl.querySelector('.leaflet-overlay-pane');
 
             if (originalOverlayPane && clonedOverlayPane) {
               const svgCount = originalOverlayPane.querySelectorAll('svg').length;
@@ -9597,8 +9598,8 @@ async function downloadDashboard(dashboardType) {
             }
 
             // Debug: List all panes that exist with their content counts
-            const allOriginalPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
-            const allClonedPanes = Array.from(clonedMapContainer.querySelectorAll('.leaflet-pane'));
+            const allOriginalPanes = Array.from(originalMapEl.querySelectorAll('.leaflet-pane'));
+            let allClonedPanes = Array.from(clonedMapEl.querySelectorAll('.leaflet-pane'));
 
             console.log('[PDF] Original map panes:');
             allOriginalPanes.forEach(pane => {
@@ -9608,7 +9609,7 @@ async function downloadDashboard(dashboardType) {
               console.log(`  ${pane.className}: ${svgCount} SVG, ${pathCount} paths, ${circleCount} circles`);
             });
 
-            console.log('[PDF] Cloned map panes:');
+            console.log('[PDF] Cloned map panes (before ensuring all exist):');
             allClonedPanes.forEach(pane => {
               const svgCount = pane.querySelectorAll('svg').length;
               const pathCount = pane.querySelectorAll('path').length;
@@ -9616,13 +9617,64 @@ async function downloadDashboard(dashboardType) {
               console.log(`  ${pane.className}: ${svgCount} SVG, ${pathCount} paths, ${circleCount} circles`);
             });
 
+            // CRITICAL FIX: Ensure all original panes exist in the clone
+            // Custom panes created by Leaflet may not be cloned by cloneNode(true)
+            const clonedMapPanesContainer = clonedMapEl.querySelector('.leaflet-map-pane')?.parentElement;
+            if (clonedMapPanesContainer) {
+              allOriginalPanes.forEach((originalPane) => {
+                // Check if this pane exists in the clone by matching class names
+                const paneClassNames = originalPane.className;
+                let clonedPane = Array.from(allClonedPanes).find(p => p.className === paneClassNames);
+
+                if (!clonedPane) {
+                  // Pane doesn't exist in clone - create it
+                  console.log(`[PDF] Creating missing pane in clone: ${paneClassNames}`);
+                  clonedPane = document.createElement('div');
+                  clonedPane.className = paneClassNames;
+
+                  // Copy all attributes from original pane
+                  Array.from(originalPane.attributes).forEach(attr => {
+                    if (attr.name !== 'class') {
+                      clonedPane.setAttribute(attr.name, attr.value);
+                    }
+                  });
+
+                  // Copy inline styles
+                  const computedStyle = window.getComputedStyle(originalPane);
+                  clonedPane.style.cssText = originalPane.style.cssText;
+                  clonedPane.style.position = computedStyle.position;
+                  clonedPane.style.zIndex = computedStyle.zIndex;
+                  clonedPane.style.pointerEvents = computedStyle.pointerEvents;
+
+                  // Add to the panes container
+                  clonedMapPanesContainer.appendChild(clonedPane);
+                }
+              });
+
+              // Refresh the cloned panes list after adding missing panes
+              allClonedPanes = Array.from(clonedMapEl.querySelectorAll('.leaflet-pane'));
+
+              console.log('[PDF] Cloned map panes (after ensuring all exist):');
+              allClonedPanes.forEach(pane => {
+                const svgCount = pane.querySelectorAll('svg').length;
+                const pathCount = pane.querySelectorAll('path').length;
+                const circleCount = pane.querySelectorAll('circle').length;
+                console.log(`  ${pane.className}: ${svgCount} SVG, ${pathCount} paths, ${circleCount} circles`);
+              });
+            }
+
             // Process ALL panes with SVG content to ensure we don't miss anything
             console.log(`[PDF] Processing all panes with SVG content...`);
 
-            // Match original and cloned panes by index
-            allOriginalPanes.forEach((originalPane, idx) => {
-              const clonedPane = allClonedPanes[idx];
-              if (!clonedPane) return;
+            // Match original and cloned panes by class name for accurate pairing
+            allOriginalPanes.forEach((originalPane) => {
+              const paneClassNames = originalPane.className;
+              const clonedPane = Array.from(allClonedPanes).find(p => p.className === paneClassNames);
+
+              if (!clonedPane) {
+                console.warn(`[PDF] Could not find cloned pane for: ${paneClassNames}`);
+                return;
+              }
 
               const svgCount = originalPane.querySelectorAll('svg').length;
               const pathCount = originalPane.querySelectorAll('path').length;
@@ -9636,12 +9688,14 @@ async function downloadDashboard(dashboardType) {
             });
 
             // Copy all pane positioning including transforms
-            const originalPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
-            const clonedPanes = Array.from(clonedMapContainer.querySelectorAll('.leaflet-pane'));
+            const originalPanes = Array.from(originalMapEl.querySelectorAll('.leaflet-pane'));
+            const clonedPanes = Array.from(clonedMapEl.querySelectorAll('.leaflet-pane'));
 
-            originalPanes.forEach((originalPane, idx) => {
-              if (clonedPanes[idx]) {
-                const clonedPane = clonedPanes[idx];
+            originalPanes.forEach((originalPane) => {
+              const paneClassNames = originalPane.className;
+              const clonedPane = Array.from(clonedPanes).find(p => p.className === paneClassNames);
+
+              if (clonedPane) {
                 const computedStyle = window.getComputedStyle(originalPane);
 
                 // Copy critical positioning properties
@@ -9657,6 +9711,8 @@ async function downloadDashboard(dashboardType) {
                 clonedPane.style.zIndex = computedStyle.zIndex;
 
                 console.log(`[PDF] Copied pane ${originalPane.className}: transform=${computedStyle.transform}`);
+              } else {
+                console.warn(`[PDF] Could not find cloned pane for positioning: ${paneClassNames}`);
               }
             });
           }
