@@ -9506,8 +9506,14 @@ async function downloadDashboard(dashboardType) {
             if (originalOverlayPane && clonedOverlayPane) {
               const svgCount = originalOverlayPane.querySelectorAll('svg').length;
               const circleCount = originalOverlayPane.querySelectorAll('circle').length;
-              console.log(`[PDF] Processing overlay pane: ${svgCount} SVG elements, ${circleCount} circles (case markers)`);
+              const pathCount = originalOverlayPane.querySelectorAll('path').length;
+              console.log(`[PDF] Processing overlay pane: ${svgCount} SVG elements, ${circleCount} circles, ${pathCount} paths (case markers)`);
               processPaneSvgs(originalOverlayPane, clonedOverlayPane);
+
+              // Verify markers were copied
+              const clonedPathCount = clonedOverlayPane.querySelectorAll('path').length;
+              const clonedCircleCount = clonedOverlayPane.querySelectorAll('circle').length;
+              console.log(`[PDF] After processing, cloned overlay pane has: ${clonedPathCount} paths, ${clonedCircleCount} circles`);
             } else {
               console.warn('[PDF] Overlay pane not found!', { originalOverlayPane, clonedOverlayPane });
             }
@@ -9533,7 +9539,7 @@ async function downloadDashboard(dashboardType) {
               }
             });
 
-            // Copy all pane positioning
+            // Copy all pane positioning including transforms
             const originalPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
             const clonedPanes = Array.from(clonedMapContainer.querySelectorAll('.leaflet-pane'));
 
@@ -9541,8 +9547,20 @@ async function downloadDashboard(dashboardType) {
               if (clonedPanes[idx]) {
                 const clonedPane = clonedPanes[idx];
                 const computedStyle = window.getComputedStyle(originalPane);
-                clonedPane.style.cssText = computedStyle.cssText;
-                clonedPane.style.position = 'absolute';
+
+                // Copy critical positioning properties
+                clonedPane.style.position = computedStyle.position || 'absolute';
+                clonedPane.style.transform = computedStyle.transform;
+                clonedPane.style.transformOrigin = computedStyle.transformOrigin;
+                clonedPane.style.left = computedStyle.left;
+                clonedPane.style.top = computedStyle.top;
+                clonedPane.style.right = computedStyle.right;
+                clonedPane.style.bottom = computedStyle.bottom;
+                clonedPane.style.width = computedStyle.width;
+                clonedPane.style.height = computedStyle.height;
+                clonedPane.style.zIndex = computedStyle.zIndex;
+
+                console.log(`[PDF] Copied pane ${originalPane.className}: transform=${computedStyle.transform}`);
               }
             });
           }
