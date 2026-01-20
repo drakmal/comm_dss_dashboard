@@ -9399,6 +9399,10 @@ async function downloadDashboard(dashboardType) {
         if (hasMap && window.mapState && window.mapState.map) {
           updateDownloadProgress(sectionProgress + 5, 'Rendering map with markers...');
 
+          // Log marker count for debugging
+          const markerCount = window.mapState.markers ? window.mapState.markers.getLayers().length : 0;
+          console.log(`[PDF] Map section detected with ${markerCount} markers`);
+
           // Invalidate map size to ensure proper rendering
           window.mapState.map.invalidateSize();
           // Bring markers to front to ensure they're on top
@@ -9472,40 +9476,61 @@ async function downloadDashboard(dashboardType) {
               });
 
               // Also ensure all path and circle elements have proper fill and stroke
-              const allPaths = clonedPane.querySelectorAll('path, circle');
-              allPaths.forEach(path => {
-                // Ensure marker styles are preserved
-                if (!path.hasAttribute('fill') || path.getAttribute('fill') === 'none') {
-                  const computedFill = window.getComputedStyle(path).fill;
+              const originalPaths = Array.from(originalPane.querySelectorAll('path, circle'));
+              const clonedPaths = Array.from(clonedPane.querySelectorAll('path, circle'));
+
+              clonedPaths.forEach((clonedPath, idx) => {
+                const originalPath = originalPaths[idx];
+                if (!originalPath) return;
+
+                // Ensure marker styles are preserved from original element
+                if (!clonedPath.hasAttribute('fill') || clonedPath.getAttribute('fill') === 'none') {
+                  const computedFill = window.getComputedStyle(originalPath).fill;
                   if (computedFill && computedFill !== 'none') {
-                    path.setAttribute('fill', computedFill);
+                    clonedPath.setAttribute('fill', computedFill);
                   }
                 }
-                if (!path.hasAttribute('stroke')) {
-                  const computedStroke = window.getComputedStyle(path).stroke;
+                if (!clonedPath.hasAttribute('stroke')) {
+                  const computedStroke = window.getComputedStyle(originalPath).stroke;
                   if (computedStroke && computedStroke !== 'none') {
-                    path.setAttribute('stroke', computedStroke);
+                    clonedPath.setAttribute('stroke', computedStroke);
                   }
                 }
               });
             };
 
-            // Process the overlay pane (default pane)
+            // Process the overlay pane (default pane where case markers are)
             const originalOverlayPane = originalMapContainer.querySelector('.leaflet-overlay-pane');
             const clonedOverlayPane = clonedMapContainer.querySelector('.leaflet-overlay-pane');
-            processPaneSvgs(originalOverlayPane, clonedOverlayPane);
+
+            if (originalOverlayPane && clonedOverlayPane) {
+              const svgCount = originalOverlayPane.querySelectorAll('svg').length;
+              const circleCount = originalOverlayPane.querySelectorAll('circle').length;
+              console.log(`[PDF] Processing overlay pane: ${svgCount} SVG elements, ${circleCount} circles (case markers)`);
+              processPaneSvgs(originalOverlayPane, clonedOverlayPane);
+            } else {
+              console.warn('[PDF] Overlay pane not found!', { originalOverlayPane, clonedOverlayPane });
+            }
 
             // CRITICAL FIX: Process custom panes where markers are actually rendered
-            // The casePane is where the red circle markers are rendered (pane: 'casePane')
+            // Note: Case markers use default overlay pane (already processed above)
+            // Meteorology hexagons use meteoHexPane (need to process)
             const customPaneSelectors = [
-              { className: 'casePane', description: 'case markers' },
-              { className: 'meteoHexPane', description: 'meteorology hexagons' }
+              { className: 'leaflet-meteoHexPane-pane', description: 'meteorology hexagons' }
             ];
 
-            customPaneSelectors.forEach(({ className }) => {
+            customPaneSelectors.forEach(({ className, description }) => {
               const originalCustomPane = originalMapContainer.querySelector(`.${className}`);
               const clonedCustomPane = clonedMapContainer.querySelector(`.${className}`);
-              processPaneSvgs(originalCustomPane, clonedCustomPane);
+
+              if (originalCustomPane && clonedCustomPane) {
+                const svgCount = originalCustomPane.querySelectorAll('svg').length;
+                const pathCount = originalCustomPane.querySelectorAll('path').length;
+                console.log(`[PDF] Processing ${description} pane (.${className}): ${svgCount} SVG elements, ${pathCount} paths`);
+                processPaneSvgs(originalCustomPane, clonedCustomPane);
+              } else {
+                console.log(`[PDF] Custom pane .${className} not found (${description}) - may not be in use`);
+              }
             });
 
             // Copy all pane positioning
