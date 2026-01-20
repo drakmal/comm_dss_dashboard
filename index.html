@@ -9480,7 +9480,7 @@ async function downloadDashboard(dashboardType) {
                 const computedStyle = window.getComputedStyle(originalSvg);
 
                 // Copy essential SVG container styles
-                const criticalProps = ['position', 'left', 'top', 'width', 'height', 'overflow'];
+                const criticalProps = ['position', 'left', 'top', 'width', 'height', 'overflow', 'transform'];
                 criticalProps.forEach(prop => {
                   const value = computedStyle.getPropertyValue(prop);
                   if (value) clonedSvg.style[prop] = value;
@@ -9502,7 +9502,8 @@ async function downloadDashboard(dashboardType) {
                     width: clonedSvg.style.width || clonedSvg.getAttribute('width'),
                     height: clonedSvg.style.height || clonedSvg.getAttribute('height'),
                     viewBox: clonedSvg.getAttribute('viewBox'),
-                    position: clonedSvg.style.position
+                    position: clonedSvg.style.position,
+                    transform: clonedSvg.style.transform
                   });
                 }
               });
