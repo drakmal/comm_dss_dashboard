@@ -9235,86 +9235,80 @@ async function downloadDashboard(dashboardType) {
       throw new Error('Dashboard panel not found');
     }
 
-    // Ensure sections are wrapped (in case DOMContentLoaded hasn't fired yet)
-    let sections = Array.from(panel.querySelectorAll('.dash-section'));
-    if (sections.length === 0) {
-      console.log('No dash-sections found, wrapping content now...');
-      // Wrap content manually
-      const h2Elements = Array.from(panel.querySelectorAll('h2'));
-      h2Elements.forEach(h2 => {
-        if (h2.parentElement.classList.contains('dash-section')) return;
-
-        const section = document.createElement('section');
-        section.className = 'dash-section';
-        h2.parentNode.insertBefore(section, h2);
-        section.appendChild(h2);
-
-        let nextSibling = section.nextSibling;
-        while (nextSibling) {
-          if (nextSibling.tagName === 'H2' ||
-              (nextSibling.classList && nextSibling.classList.contains('download-section'))) {
-            break;
-          }
-          const siblingToMove = nextSibling;
-          nextSibling = nextSibling.nextSibling;
-          section.appendChild(siblingToMove);
-        }
-      });
-      sections = Array.from(panel.querySelectorAll('.dash-section'));
+    // Hide download button temporarily
+    const downloadSection = panel.querySelector('.download-section');
+    if (downloadSection) {
+      downloadSection.style.display = 'none';
     }
 
-    // Filter out download section
-    sections = sections.filter(section => !section.querySelector('.download-section'));
+    // Small delay to ensure charts are rendered
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Capture each section
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
+    try {
+      // Capture entire panel at once
+      const canvas = await html2canvas(panel, {
+        scale: 1.2,
+        logging: true,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#f5f5f5',
+        windowWidth: panel.scrollWidth,
+        windowHeight: panel.scrollHeight
+      });
 
-      // Skip hidden sections
-      if (section.classList.contains('is-hidden') ||
-          section.classList.contains('enotis-compare-only') ||
-          getComputedStyle(section).display === 'none') {
-        continue;
-      }
+      console.log('Canvas captured:', canvas.width, 'x', canvas.height);
 
-      try {
-        // Small delay to ensure charts are fully rendered
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Convert to image and add to PDF
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
+      const imgWidth = contentWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        const canvas = await html2canvas(section, {
-          scale: 1.3,
-          logging: false,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          windowWidth: section.scrollWidth,
-          windowHeight: section.scrollHeight,
-          onclone: (clonedDoc) => {
-            // Ensure all canvas elements are visible in the clone
-            const clonedSection = clonedDoc.querySelector(`#${section.id}`) || clonedDoc.body;
-            const charts = clonedSection.querySelectorAll('canvas');
-            charts.forEach(chart => {
-              chart.style.display = 'block';
-              chart.style.visibility = 'visible';
-            });
-          }
-        });
+      // Split into pages if needed
+      let remainingHeight = imgHeight;
+      let sourceY = 0;
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
-        const imgWidth = contentWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      while (remainingHeight > 0) {
+        const availableHeight = pageHeight - yPosition - margin;
+        const heightToUse = Math.min(remainingHeight, availableHeight);
 
-        // Check if image fits on current page
-        if (yPosition + imgHeight > pageHeight - margin) {
+        // Calculate source dimensions for this slice
+        const sourceHeight = (heightToUse / imgWidth) * canvas.width;
+
+        // Create a temporary canvas for this slice
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sourceHeight;
+        const sliceCtx = sliceCanvas.getContext('2d');
+
+        sliceCtx.drawImage(
+          canvas,
+          0, sourceY,                    // source x, y
+          canvas.width, sourceHeight,    // source width, height
+          0, 0,                          // dest x, y
+          canvas.width, sourceHeight     // dest width, height
+        );
+
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+        pdf.addImage(sliceData, 'JPEG', margin, yPosition, imgWidth, heightToUse);
+
+        remainingHeight -= heightToUse;
+        sourceY += sourceHeight;
+
+        if (remainingHeight > 0) {
           pdf.addPage();
           yPosition = 20;
+        } else {
+          yPosition += heightToUse + 10;
         }
+      }
 
-        pdf.addImage(imgData, 'JPEG', margin, yPosition, imgWidth, imgHeight);
-        yPosition += imgHeight + 10;
-
-      } catch (err) {
-        console.warn('Failed to capture section:', err);
+    } catch (err) {
+      console.error('Failed to capture dashboard:', err);
+      throw err;
+    } finally {
+      // Show download button again
+      if (downloadSection) {
+        downloadSection.style.display = '';
       }
     }
 
