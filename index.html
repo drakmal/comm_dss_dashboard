@@ -9264,12 +9264,14 @@ async function downloadDashboard(dashboardType) {
         // Clone H2 and following elements until next H2 or download section
         tempWrapper.appendChild(h2.cloneNode(true));
 
+        const originalElements = []; // Keep track of originals for canvas copying
         let nextElement = h2.nextElementSibling;
         while (nextElement) {
           if (nextElement.tagName === 'H2' ||
               nextElement.classList.contains('download-section')) {
             break;
           }
+          originalElements.push(nextElement);
           tempWrapper.appendChild(nextElement.cloneNode(true));
           nextElement = nextElement.nextElementSibling;
         }
@@ -9279,6 +9281,22 @@ async function downloadDashboard(dashboardType) {
         tempWrapper.style.left = '-9999px';
         tempWrapper.style.width = `${panel.offsetWidth}px`;
         document.body.appendChild(tempWrapper);
+
+        // Copy canvas data from originals to clones
+        const originalCanvases = originalElements.flatMap(el =>
+          Array.from(el.querySelectorAll('canvas'))
+        );
+        const clonedCanvases = Array.from(tempWrapper.querySelectorAll('canvas'));
+
+        clonedCanvases.forEach((clonedCanvas, idx) => {
+          if (originalCanvases[idx]) {
+            const originalCanvas = originalCanvases[idx];
+            clonedCanvas.width = originalCanvas.width;
+            clonedCanvas.height = originalCanvas.height;
+            const clonedCtx = clonedCanvas.getContext('2d');
+            clonedCtx.drawImage(originalCanvas, 0, 0);
+          }
+        });
 
         // Capture this section
         const canvas = await html2canvas(tempWrapper, {
