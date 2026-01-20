@@ -9468,14 +9468,27 @@ async function downloadDashboard(dashboardType) {
               const allOriginalSvgs = Array.from(originalPane.querySelectorAll('svg'));
               const allClonedSvgs = Array.from(clonedPane.querySelectorAll('svg'));
 
-              // Inline all styles for each SVG and its children
+              // For SVG containers, only inline critical positioning styles (not all styles)
               allOriginalSvgs.forEach((originalSvg, idx) => {
-                if (allClonedSvgs[idx]) {
-                  inlineAllStyles(originalSvg, allClonedSvgs[idx]);
-                }
+                const clonedSvg = allClonedSvgs[idx];
+                if (!clonedSvg) return;
+
+                const computedStyle = window.getComputedStyle(originalSvg);
+                // Only copy essential SVG container styles
+                const criticalProps = ['position', 'left', 'top', 'width', 'height', 'overflow'];
+                criticalProps.forEach(prop => {
+                  const value = computedStyle.getPropertyValue(prop);
+                  if (value) clonedSvg.style[prop] = value;
+                });
+
+                // Preserve SVG-specific attributes
+                ['viewBox', 'preserveAspectRatio', 'xmlns'].forEach(attr => {
+                  const value = originalSvg.getAttribute(attr);
+                  if (value) clonedSvg.setAttribute(attr, value);
+                });
               });
 
-              // Also ensure all path and circle elements have proper fill and stroke
+              // Explicitly set fill and stroke attributes on all path and circle elements
               const originalPaths = Array.from(originalPane.querySelectorAll('path, circle'));
               const clonedPaths = Array.from(clonedPane.querySelectorAll('path, circle'));
 
@@ -9483,18 +9496,44 @@ async function downloadDashboard(dashboardType) {
                 const originalPath = originalPaths[idx];
                 if (!originalPath) return;
 
-                // Ensure marker styles are preserved from original element
-                if (!clonedPath.hasAttribute('fill') || clonedPath.getAttribute('fill') === 'none') {
-                  const computedFill = window.getComputedStyle(originalPath).fill;
-                  if (computedFill && computedFill !== 'none') {
-                    clonedPath.setAttribute('fill', computedFill);
-                  }
+                const computedStyle = window.getComputedStyle(originalPath);
+
+                // Always set fill and stroke as attributes (overwrite any existing values)
+                // This ensures html2canvas can properly render the markers
+                const fill = computedStyle.fill;
+                if (fill && fill !== 'none') {
+                  clonedPath.setAttribute('fill', fill);
                 }
-                if (!clonedPath.hasAttribute('stroke')) {
-                  const computedStroke = window.getComputedStyle(originalPath).stroke;
-                  if (computedStroke && computedStroke !== 'none') {
-                    clonedPath.setAttribute('stroke', computedStroke);
-                  }
+
+                const stroke = computedStyle.stroke;
+                if (stroke && stroke !== 'none') {
+                  clonedPath.setAttribute('stroke', stroke);
+                }
+
+                // Also set opacity and stroke-width
+                const fillOpacity = computedStyle.fillOpacity || computedStyle['fill-opacity'];
+                if (fillOpacity) {
+                  clonedPath.setAttribute('fill-opacity', fillOpacity);
+                }
+
+                const strokeOpacity = computedStyle.strokeOpacity || computedStyle['stroke-opacity'];
+                if (strokeOpacity) {
+                  clonedPath.setAttribute('stroke-opacity', strokeOpacity);
+                }
+
+                const strokeWidth = computedStyle.strokeWidth || computedStyle['stroke-width'];
+                if (strokeWidth) {
+                  clonedPath.setAttribute('stroke-width', strokeWidth);
+                }
+
+                // Log marker attributes for debugging
+                if (idx < 3) {
+                  console.log(`[PDF] Marker ${idx} attributes:`, {
+                    fill: clonedPath.getAttribute('fill'),
+                    stroke: clonedPath.getAttribute('stroke'),
+                    fillOpacity: clonedPath.getAttribute('fill-opacity'),
+                    d: clonedPath.getAttribute('d')?.substring(0, 50) + '...'
+                  });
                 }
               });
             };
