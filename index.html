@@ -9188,37 +9188,15 @@ async function downloadDashboard(dashboardType) {
 
     const summary = generatePublicHealthSummary(dashboardType);
 
-    // Split summary into parts (main summary and AI insights)
-    const summaryParts = summary.split('\n\nAI-Generated Insights: ');
+    // Remove the "AI-Generated Insights: " label and combine all content
+    const cleanSummary = summary.replace('\n\nAI-Generated Insights: ', '\n\n');
 
-    // Main summary
+    // Render the combined summary
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    const summaryLines = pdf.splitTextToSize(summaryParts[0], contentWidth);
+    const summaryLines = pdf.splitTextToSize(cleanSummary, contentWidth);
     pdf.text(summaryLines, margin, yPosition);
     yPosition += summaryLines.length * 5 + 10;
-
-    // AI Insights section (if exists)
-    if (summaryParts.length > 1 && summaryParts[1].trim()) {
-      // Check if we need a new page
-      if (yPosition > pageHeight - 80) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, 'bold');
-      pdf.setTextColor(102, 126, 234); // Purple color for AI section
-      pdf.text('AI-Generated Insights', margin, yPosition);
-      yPosition += 7;
-
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, 'normal');
-      pdf.setTextColor(0, 0, 0);
-      const insightLines = pdf.splitTextToSize(summaryParts[1], contentWidth);
-      pdf.text(insightLines, margin, yPosition);
-      yPosition += insightLines.length * 5 + 10;
-    }
 
     // Check if we need a new page
     if (yPosition > pageHeight - 60) {
@@ -9292,8 +9270,12 @@ async function downloadDashboard(dashboardType) {
         if (hasMap && window.mapState && window.mapState.map) {
           // Invalidate map size to ensure proper rendering
           window.mapState.map.invalidateSize();
+          // Bring markers to front to ensure they're on top
+          if (window.mapState.markers) {
+            window.mapState.markers.bringToFront();
+          }
           // Wait for map to re-render tiles and markers
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 800));
         }
 
         // Copy canvas data from originals to clones
@@ -9314,32 +9296,60 @@ async function downloadDashboard(dashboardType) {
 
         // Copy SVG elements (for Leaflet map markers)
         if (hasMap) {
-          const originalSvgs = originalElements.flatMap(el =>
-            Array.from(el.querySelectorAll('svg'))
-          );
-          const clonedSvgs = Array.from(tempWrapper.querySelectorAll('svg'));
+          // Get all SVG elements including those in panes
+          const originalMapContainer = originalElements.find(el => el.querySelector('#dengue_case_map'));
+          const clonedMapContainer = tempWrapper.querySelector('#dengue_case_map');
 
-          clonedSvgs.forEach((clonedSvg, idx) => {
-            if (originalSvgs[idx]) {
-              const originalSvg = originalSvgs[idx];
-              // Copy all SVG attributes
-              Array.from(originalSvg.attributes).forEach(attr => {
-                clonedSvg.setAttribute(attr.name, attr.value);
-              });
-              // Ensure width and height are set
-              if (originalSvg.width && originalSvg.width.baseVal) {
-                clonedSvg.setAttribute('width', originalSvg.width.baseVal.value);
+          if (originalMapContainer && clonedMapContainer) {
+            // Find all SVG elements in the original map (including in panes)
+            const originalSvgs = Array.from(originalMapContainer.querySelectorAll('svg'));
+            const clonedSvgs = Array.from(clonedMapContainer.querySelectorAll('svg'));
+
+            // Copy each SVG with full style and content preservation
+            originalSvgs.forEach((originalSvg, idx) => {
+              if (clonedSvgs[idx]) {
+                const clonedSvg = clonedSvgs[idx];
+
+                // Copy all attributes
+                Array.from(originalSvg.attributes).forEach(attr => {
+                  clonedSvg.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy innerHTML to get all child elements
+                clonedSvg.innerHTML = originalSvg.innerHTML;
+
+                // Inline all computed styles for the SVG and its children
+                const inlineStyles = (original, clone) => {
+                  const computedStyle = window.getComputedStyle(original);
+                  const styleText = Array.from(computedStyle).map(prop =>
+                    `${prop}:${computedStyle.getPropertyValue(prop)}`
+                  ).join(';');
+                  clone.setAttribute('style', styleText);
+
+                  // Process children
+                  Array.from(original.children).forEach((child, childIdx) => {
+                    if (clone.children[childIdx]) {
+                      inlineStyles(child, clone.children[childIdx]);
+                    }
+                  });
+                };
+
+                inlineStyles(originalSvg, clonedSvg);
               }
-              if (originalSvg.height && originalSvg.height.baseVal) {
-                clonedSvg.setAttribute('height', originalSvg.height.baseVal.value);
+            });
+
+            // Also copy all pane divs with their positioning
+            const originalPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
+            const clonedPanes = Array.from(clonedMapContainer.querySelectorAll('.leaflet-pane'));
+
+            originalPanes.forEach((originalPane, idx) => {
+              if (clonedPanes[idx]) {
+                const clonedPane = clonedPanes[idx];
+                const computedStyle = window.getComputedStyle(originalPane);
+                clonedPane.style.cssText = computedStyle.cssText;
               }
-              // Copy the innerHTML to ensure all paths/circles are copied
-              clonedSvg.innerHTML = originalSvg.innerHTML;
-              // Copy computed styles
-              const originalStyle = window.getComputedStyle(originalSvg);
-              clonedSvg.style.cssText = originalStyle.cssText;
-            }
-          });
+            });
+          }
         }
 
         // Capture this section with better SVG handling
