@@ -8533,7 +8533,8 @@ window.renderAll = renderAll;
         color: '#dc2626',
         fillColor: '#dc2626',
         fillOpacity: 0.8,
-        weight: 1
+        weight: 1,
+        pane: 'casePane' // Use custom pane for better PDF rendering
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -9468,29 +9469,48 @@ async function downloadDashboard(dashboardType) {
               const allOriginalSvgs = Array.from(originalPane.querySelectorAll('svg'));
               const allClonedSvgs = Array.from(clonedPane.querySelectorAll('svg'));
 
-              // For SVG containers, only inline critical positioning styles (not all styles)
+              console.log(`[PDF] Processing ${allOriginalSvgs.length} SVG elements in pane`);
+
+              // For SVG containers, inline critical styles and ensure proper attributes
               allOriginalSvgs.forEach((originalSvg, idx) => {
                 const clonedSvg = allClonedSvgs[idx];
                 if (!clonedSvg) return;
 
                 const computedStyle = window.getComputedStyle(originalSvg);
-                // Only copy essential SVG container styles
+
+                // Copy essential SVG container styles
                 const criticalProps = ['position', 'left', 'top', 'width', 'height', 'overflow'];
                 criticalProps.forEach(prop => {
                   const value = computedStyle.getPropertyValue(prop);
                   if (value) clonedSvg.style[prop] = value;
                 });
 
-                // Preserve SVG-specific attributes
-                ['viewBox', 'preserveAspectRatio', 'xmlns'].forEach(attr => {
+                // CRITICAL: Ensure SVG has proper namespace - required for html2canvas
+                clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+                // Preserve important SVG attributes
+                ['viewBox', 'preserveAspectRatio'].forEach(attr => {
                   const value = originalSvg.getAttribute(attr);
                   if (value) clonedSvg.setAttribute(attr, value);
                 });
+
+                // Log SVG container details
+                if (idx === 0) {
+                  console.log(`[PDF] SVG ${idx} details:`, {
+                    xmlns: clonedSvg.getAttribute('xmlns'),
+                    width: clonedSvg.style.width || clonedSvg.getAttribute('width'),
+                    height: clonedSvg.style.height || clonedSvg.getAttribute('height'),
+                    viewBox: clonedSvg.getAttribute('viewBox'),
+                    position: clonedSvg.style.position
+                  });
+                }
               });
 
               // Explicitly set fill and stroke attributes on all path and circle elements
               const originalPaths = Array.from(originalPane.querySelectorAll('path, circle'));
               const clonedPaths = Array.from(clonedPane.querySelectorAll('path, circle'));
+
+              console.log(`[PDF] Processing ${clonedPaths.length} paths/circles`);
 
               clonedPaths.forEach((clonedPath, idx) => {
                 const originalPath = originalPaths[idx];
@@ -9498,41 +9518,60 @@ async function downloadDashboard(dashboardType) {
 
                 const computedStyle = window.getComputedStyle(originalPath);
 
-                // Always set fill and stroke as attributes (overwrite any existing values)
-                // This ensures html2canvas can properly render the markers
+                // Get fill and stroke from computed style
                 const fill = computedStyle.fill;
-                if (fill && fill !== 'none') {
-                  clonedPath.setAttribute('fill', fill);
-                }
-
                 const stroke = computedStyle.stroke;
-                if (stroke && stroke !== 'none') {
-                  clonedPath.setAttribute('stroke', stroke);
+
+                // CRITICAL: Always set fill and stroke as attributes
+                // html2canvas requires these to be attributes, not just styles
+                if (fill && fill !== 'none' && fill !== 'rgba(0, 0, 0, 0)') {
+                  clonedPath.setAttribute('fill', fill);
+                  // Remove any fill style to avoid conflicts
+                  clonedPath.style.fill = '';
                 }
 
-                // Also set opacity and stroke-width
+                if (stroke && stroke !== 'none' && stroke !== 'rgba(0, 0, 0, 0)') {
+                  clonedPath.setAttribute('stroke', stroke);
+                  // Remove any stroke style to avoid conflicts
+                  clonedPath.style.stroke = '';
+                }
+
+                // Set opacity attributes
                 const fillOpacity = computedStyle.fillOpacity || computedStyle['fill-opacity'];
-                if (fillOpacity) {
+                if (fillOpacity && fillOpacity !== '1') {
                   clonedPath.setAttribute('fill-opacity', fillOpacity);
                 }
 
                 const strokeOpacity = computedStyle.strokeOpacity || computedStyle['stroke-opacity'];
-                if (strokeOpacity) {
+                if (strokeOpacity && strokeOpacity !== '1') {
                   clonedPath.setAttribute('stroke-opacity', strokeOpacity);
                 }
 
                 const strokeWidth = computedStyle.strokeWidth || computedStyle['stroke-width'];
-                if (strokeWidth) {
+                if (strokeWidth && strokeWidth !== '0px') {
                   clonedPath.setAttribute('stroke-width', strokeWidth);
                 }
 
-                // Log marker attributes for debugging
+                // Ensure the path has a d attribute (for path elements)
+                if (clonedPath.tagName.toLowerCase() === 'path') {
+                  const d = clonedPath.getAttribute('d');
+                  if (!d) {
+                    console.warn(`[PDF] Path ${idx} missing 'd' attribute!`);
+                  }
+                }
+
+                // Log first 3 marker attributes for debugging
                 if (idx < 3) {
                   console.log(`[PDF] Marker ${idx} attributes:`, {
+                    tag: clonedPath.tagName,
                     fill: clonedPath.getAttribute('fill'),
                     stroke: clonedPath.getAttribute('stroke'),
                     fillOpacity: clonedPath.getAttribute('fill-opacity'),
-                    d: clonedPath.getAttribute('d')?.substring(0, 50) + '...'
+                    strokeWidth: clonedPath.getAttribute('stroke-width'),
+                    d: clonedPath.getAttribute('d')?.substring(0, 50) + '...',
+                    cx: clonedPath.getAttribute('cx'),
+                    cy: clonedPath.getAttribute('cy'),
+                    r: clonedPath.getAttribute('r')
                   });
                 }
               });
@@ -9558,9 +9597,10 @@ async function downloadDashboard(dashboardType) {
             }
 
             // CRITICAL FIX: Process custom panes where markers are actually rendered
-            // Note: Case markers use default overlay pane (already processed above)
-            // Meteorology hexagons use meteoHexPane (need to process)
+            // Case markers now use casePane (zIndex 650)
+            // Meteorology hexagons use meteoHexPane (zIndex 400)
             const customPaneSelectors = [
+              { className: 'leaflet-casePane-pane', description: 'case markers' },
               { className: 'leaflet-meteoHexPane-pane', description: 'meteorology hexagons' }
             ];
 
@@ -9606,14 +9646,16 @@ async function downloadDashboard(dashboardType) {
         }
 
         // Capture this section with better SVG handling
+        console.log('[PDF] Starting html2canvas capture...');
         const canvas = await html2canvas(tempWrapper, {
           scale: 1.5,
-          logging: false,
+          logging: true, // Enable logging to debug SVG rendering
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
           foreignObjectRendering: false
         });
+        console.log('[PDF] html2canvas capture complete');
 
         // Remove temporary wrapper
         document.body.removeChild(tempWrapper);
