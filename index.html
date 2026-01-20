@@ -9432,51 +9432,48 @@ async function downloadDashboard(dashboardType) {
           const clonedMapContainer = tempWrapper.querySelector('#dengue_case_map');
 
           if (originalMapContainer && clonedMapContainer) {
-            // Find the overlay pane specifically (where markers are rendered)
-            const originalOverlayPane = originalMapContainer.querySelector('.leaflet-overlay-pane');
-            const clonedOverlayPane = clonedMapContainer.querySelector('.leaflet-overlay-pane');
+            // Helper function to recursively inline all computed styles
+            const inlineAllStyles = (originalEl, clonedEl) => {
+              const computedStyle = window.getComputedStyle(originalEl);
+              let styleString = '';
+              for (let i = 0; i < computedStyle.length; i++) {
+                const propName = computedStyle[i];
+                styleString += `${propName}:${computedStyle.getPropertyValue(propName)};`;
+              }
+              clonedEl.setAttribute('style', styleString);
 
-            if (originalOverlayPane && clonedOverlayPane) {
-              // Clear the cloned overlay pane and completely copy from original
-              clonedOverlayPane.innerHTML = '';
+              // Process all children
+              for (let i = 0; i < originalEl.children.length; i++) {
+                if (clonedEl.children[i]) {
+                  inlineAllStyles(originalEl.children[i], clonedEl.children[i]);
+                }
+              }
+            };
 
-              // Clone the overlay pane content with deep copy
-              const clonedOverlayContent = originalOverlayPane.cloneNode(true);
-              clonedOverlayPane.appendChild(...clonedOverlayContent.childNodes);
+            // Helper function to process SVG elements in a pane
+            const processPaneSvgs = (originalPane, clonedPane) => {
+              if (!originalPane || !clonedPane) return;
+
+              // Clear the cloned pane and completely copy from original
+              clonedPane.innerHTML = '';
+
+              // Clone the pane content with deep copy
+              const clonedPaneContent = originalPane.cloneNode(true);
+              clonedPane.appendChild(...clonedPaneContent.childNodes);
 
               // Find all SVG elements (including nested ones)
-              const allOriginalSvgs = Array.from(originalOverlayPane.querySelectorAll('svg'));
-              const allClonedSvgs = Array.from(clonedOverlayPane.querySelectorAll('svg'));
+              const allOriginalSvgs = Array.from(originalPane.querySelectorAll('svg'));
+              const allClonedSvgs = Array.from(clonedPane.querySelectorAll('svg'));
 
               // Inline all styles for each SVG and its children
               allOriginalSvgs.forEach((originalSvg, idx) => {
                 if (allClonedSvgs[idx]) {
-                  const clonedSvg = allClonedSvgs[idx];
-
-                  // Recursively inline styles
-                  const inlineAllStyles = (originalEl, clonedEl) => {
-                    const computedStyle = window.getComputedStyle(originalEl);
-                    let styleString = '';
-                    for (let i = 0; i < computedStyle.length; i++) {
-                      const propName = computedStyle[i];
-                      styleString += `${propName}:${computedStyle.getPropertyValue(propName)};`;
-                    }
-                    clonedEl.setAttribute('style', styleString);
-
-                    // Process all children
-                    for (let i = 0; i < originalEl.children.length; i++) {
-                      if (clonedEl.children[i]) {
-                        inlineAllStyles(originalEl.children[i], clonedEl.children[i]);
-                      }
-                    }
-                  };
-
-                  inlineAllStyles(originalSvg, clonedSvg);
+                  inlineAllStyles(originalSvg, allClonedSvgs[idx]);
                 }
               });
 
               // Also ensure all path and circle elements have proper fill and stroke
-              const allPaths = clonedOverlayPane.querySelectorAll('path, circle');
+              const allPaths = clonedPane.querySelectorAll('path, circle');
               allPaths.forEach(path => {
                 // Ensure marker styles are preserved
                 if (!path.hasAttribute('fill') || path.getAttribute('fill') === 'none') {
@@ -9492,7 +9489,25 @@ async function downloadDashboard(dashboardType) {
                   }
                 }
               });
-            }
+            };
+
+            // Process the overlay pane (default pane)
+            const originalOverlayPane = originalMapContainer.querySelector('.leaflet-overlay-pane');
+            const clonedOverlayPane = clonedMapContainer.querySelector('.leaflet-overlay-pane');
+            processPaneSvgs(originalOverlayPane, clonedOverlayPane);
+
+            // CRITICAL FIX: Process custom panes where markers are actually rendered
+            // The casePane is where the red circle markers are rendered (pane: 'casePane')
+            const customPaneSelectors = [
+              { className: 'casePane', description: 'case markers' },
+              { className: 'meteoHexPane', description: 'meteorology hexagons' }
+            ];
+
+            customPaneSelectors.forEach(({ className }) => {
+              const originalCustomPane = originalMapContainer.querySelector(`.${className}`);
+              const clonedCustomPane = clonedMapContainer.querySelector(`.${className}`);
+              processPaneSvgs(originalCustomPane, clonedCustomPane);
+            });
 
             // Copy all pane positioning
             const originalPanes = Array.from(originalMapContainer.querySelectorAll('.leaflet-pane'));
