@@ -9596,6 +9596,12 @@ async function downloadDashboard(dashboardType) {
               console.warn('[PDF] Overlay pane not found!', { originalOverlayPane, clonedOverlayPane });
             }
 
+            // Debug: List all panes that exist
+            const allOriginalPanes = originalMapContainer.querySelectorAll('[class*="leaflet"][class*="pane"]');
+            const allClonedPanes = clonedMapContainer.querySelectorAll('[class*="leaflet"][class*="pane"]');
+            console.log('[PDF] All panes in original map:', Array.from(allOriginalPanes).map(p => p.className));
+            console.log('[PDF] All panes in cloned map:', Array.from(allClonedPanes).map(p => p.className));
+
             // CRITICAL FIX: Process custom panes where markers are actually rendered
             // Case markers now use casePane (zIndex 650)
             // Meteorology hexagons use meteoHexPane (zIndex 400)
@@ -9607,6 +9613,11 @@ async function downloadDashboard(dashboardType) {
             customPaneSelectors.forEach(({ className, description }) => {
               const originalCustomPane = originalMapContainer.querySelector(`.${className}`);
               const clonedCustomPane = clonedMapContainer.querySelector(`.${className}`);
+
+              console.log(`[PDF] Looking for ${className}:`, {
+                foundInOriginal: !!originalCustomPane,
+                foundInCloned: !!clonedCustomPane
+              });
 
               if (originalCustomPane && clonedCustomPane) {
                 const svgCount = originalCustomPane.querySelectorAll('svg').length;
