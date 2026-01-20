@@ -9245,61 +9245,72 @@ async function downloadDashboard(dashboardType) {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
-      // Capture entire panel at once
-      const canvas = await html2canvas(panel, {
-        scale: 1.2,
-        logging: true,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#f5f5f5',
-        windowWidth: panel.scrollWidth,
-        windowHeight: panel.scrollHeight
-      });
+      // Get all H2 headers (each represents a section)
+      const h2Elements = Array.from(panel.querySelectorAll('h2'));
 
-      console.log('Canvas captured:', canvas.width, 'x', canvas.height);
+      // Skip first section (section 1 - Upload)
+      const sectionsToCapture = h2Elements.slice(1);
 
-      // Convert to image and add to PDF
-      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-      const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      console.log(`Found ${h2Elements.length} sections, capturing ${sectionsToCapture.length} (skipping section 1)`);
 
-      // Split into pages if needed
-      let remainingHeight = imgHeight;
-      let sourceY = 0;
+      for (let i = 0; i < sectionsToCapture.length; i++) {
+        const h2 = sectionsToCapture[i];
 
-      while (remainingHeight > 0) {
-        const availableHeight = pageHeight - yPosition - margin;
-        const heightToUse = Math.min(remainingHeight, availableHeight);
+        // Create temporary wrapper for this section
+        const tempWrapper = document.createElement('div');
+        tempWrapper.style.background = '#ffffff';
+        tempWrapper.style.padding = '16px';
 
-        // Calculate source dimensions for this slice
-        const sourceHeight = (heightToUse / imgWidth) * canvas.width;
+        // Clone H2 and following elements until next H2 or download section
+        tempWrapper.appendChild(h2.cloneNode(true));
 
-        // Create a temporary canvas for this slice
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = sourceHeight;
-        const sliceCtx = sliceCanvas.getContext('2d');
+        let nextElement = h2.nextElementSibling;
+        while (nextElement) {
+          if (nextElement.tagName === 'H2' ||
+              nextElement.classList.contains('download-section')) {
+            break;
+          }
+          tempWrapper.appendChild(nextElement.cloneNode(true));
+          nextElement = nextElement.nextElementSibling;
+        }
 
-        sliceCtx.drawImage(
-          canvas,
-          0, sourceY,                    // source x, y
-          canvas.width, sourceHeight,    // source width, height
-          0, 0,                          // dest x, y
-          canvas.width, sourceHeight     // dest width, height
-        );
+        // Temporarily add to document for measurement
+        tempWrapper.style.position = 'absolute';
+        tempWrapper.style.left = '-9999px';
+        tempWrapper.style.width = `${panel.offsetWidth}px`;
+        document.body.appendChild(tempWrapper);
 
-        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
-        pdf.addImage(sliceData, 'JPEG', margin, yPosition, imgWidth, heightToUse);
+        // Capture this section
+        const canvas = await html2canvas(tempWrapper, {
+          scale: 1.2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
 
-        remainingHeight -= heightToUse;
-        sourceY += sourceHeight;
+        // Remove temporary wrapper
+        document.body.removeChild(tempWrapper);
 
-        if (remainingHeight > 0) {
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Check if section fits on current page
+        const spaceNeeded = imgHeight + 10;
+        const spaceAvailable = pageHeight - yPosition - margin;
+
+        if (spaceNeeded > spaceAvailable && yPosition > 50) {
+          // Start new page if section doesn't fit (and we're not at top of page)
           pdf.addPage();
           yPosition = 20;
-        } else {
-          yPosition += heightToUse + 10;
         }
+
+        // Add image to PDF
+        pdf.addImage(imgData, 'JPEG', margin, yPosition, imgWidth, imgHeight);
+        yPosition += imgHeight + 10;
+
+        console.log(`Captured section ${i + 2} (${h2.textContent})`);
       }
 
     } catch (err) {
