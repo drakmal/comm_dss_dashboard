@@ -9282,6 +9282,17 @@ async function downloadDashboard(dashboardType) {
         tempWrapper.style.width = `${panel.offsetWidth}px`;
         document.body.appendChild(tempWrapper);
 
+        // Check if this section contains the map
+        const hasMap = originalElements.some(el => el.querySelector('#dengue_case_map'));
+
+        // If this section has the map, ensure it's fully rendered
+        if (hasMap && mapState.map) {
+          // Invalidate map size to ensure proper rendering
+          mapState.map.invalidateSize();
+          // Wait for map to re-render tiles and markers
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         // Copy canvas data from originals to clones
         const originalCanvases = originalElements.flatMap(el =>
           Array.from(el.querySelectorAll('canvas'))
@@ -9298,13 +9309,44 @@ async function downloadDashboard(dashboardType) {
           }
         });
 
-        // Capture this section
+        // Copy SVG elements (for Leaflet map markers)
+        if (hasMap) {
+          const originalSvgs = originalElements.flatMap(el =>
+            Array.from(el.querySelectorAll('svg'))
+          );
+          const clonedSvgs = Array.from(tempWrapper.querySelectorAll('svg'));
+
+          clonedSvgs.forEach((clonedSvg, idx) => {
+            if (originalSvgs[idx]) {
+              const originalSvg = originalSvgs[idx];
+              // Copy all SVG attributes
+              Array.from(originalSvg.attributes).forEach(attr => {
+                clonedSvg.setAttribute(attr.name, attr.value);
+              });
+              // Ensure width and height are set
+              if (originalSvg.width && originalSvg.width.baseVal) {
+                clonedSvg.setAttribute('width', originalSvg.width.baseVal.value);
+              }
+              if (originalSvg.height && originalSvg.height.baseVal) {
+                clonedSvg.setAttribute('height', originalSvg.height.baseVal.value);
+              }
+              // Copy the innerHTML to ensure all paths/circles are copied
+              clonedSvg.innerHTML = originalSvg.innerHTML;
+              // Copy computed styles
+              const originalStyle = window.getComputedStyle(originalSvg);
+              clonedSvg.style.cssText = originalStyle.cssText;
+            }
+          });
+        }
+
+        // Capture this section with better SVG handling
         const canvas = await html2canvas(tempWrapper, {
           scale: 1.2,
           logging: false,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          foreignObjectRendering: false // Better SVG handling
         });
 
         // Remove temporary wrapper
