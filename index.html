@@ -7471,6 +7471,9 @@ window.renderAll = renderAll;
     selectedDistrictFeature: null,
   };
 
+  // Expose mapState globally for PDF download functionality
+  window.mapState = mapState;
+
   const meteoState = {
     enabled: meteoToggle ? meteoToggle.checked : true,
     variableKey: meteoVariableSelect ? meteoVariableSelect.value : 'rain_mm',
@@ -9286,9 +9289,9 @@ async function downloadDashboard(dashboardType) {
         const hasMap = originalElements.some(el => el.querySelector('#dengue_case_map'));
 
         // If this section has the map, ensure it's fully rendered
-        if (hasMap && mapState.map) {
+        if (hasMap && window.mapState && window.mapState.map) {
           // Invalidate map size to ensure proper rendering
-          mapState.map.invalidateSize();
+          window.mapState.map.invalidateSize();
           // Wait for map to re-render tiles and markers
           await new Promise(resolve => setTimeout(resolve, 500));
         }
