@@ -9455,6 +9455,13 @@ async function downloadDashboard(dashboardType) {
               }
             };
 
+            // Helper function to check if two elements have the same classes
+            const hasSameClasses = (el1, el2) => {
+              const classes1 = Array.from(el1.classList).sort().join(' ');
+              const classes2 = Array.from(el2.classList).sort().join(' ');
+              return classes1 === classes2;
+            };
+
             // Helper function to process SVG elements in a pane
             const processPaneSvgs = (originalPane, clonedPane) => {
               if (!originalPane || !clonedPane) return;
@@ -9651,7 +9658,7 @@ async function downloadDashboard(dashboardType) {
               allOriginalPanes.forEach((originalPane) => {
                 // Check if this pane exists in the clone by matching class names
                 const paneClassNames = originalPane.className;
-                let clonedPane = Array.from(allClonedPanes).find(p => p.className === paneClassNames);
+                let clonedPane = Array.from(allClonedPanes).find(p => hasSameClasses(p, originalPane));
 
                 if (!clonedPane) {
                   // Pane doesn't exist in clone - create it
@@ -9696,7 +9703,7 @@ async function downloadDashboard(dashboardType) {
             // Match original and cloned panes by class name for accurate pairing
             allOriginalPanes.forEach((originalPane) => {
               const paneClassNames = originalPane.className;
-              const clonedPane = Array.from(allClonedPanes).find(p => p.className === paneClassNames);
+              const clonedPane = Array.from(allClonedPanes).find(p => hasSameClasses(p, originalPane));
 
               if (!clonedPane) {
                 console.warn(`[PDF] Could not find cloned pane for: ${paneClassNames}`);
@@ -9776,7 +9783,7 @@ async function downloadDashboard(dashboardType) {
 
             originalPanes.forEach((originalPane) => {
               const paneClassNames = originalPane.className;
-              const clonedPane = Array.from(clonedPanes).find(p => p.className === paneClassNames);
+              const clonedPane = Array.from(clonedPanes).find(p => hasSameClasses(p, originalPane));
 
               if (clonedPane) {
                 const computedStyle = window.getComputedStyle(originalPane);
