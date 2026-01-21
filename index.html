@@ -9391,6 +9391,7 @@ async function downloadDashboard(dashboardType) {
         tempWrapper.style.position = 'absolute';
         tempWrapper.style.left = '-9999px';
         tempWrapper.style.width = `${panel.offsetWidth}px`;
+        tempWrapper.style.overflow = 'visible'; // Ensure content isn't clipped
         document.body.appendChild(tempWrapper);
 
         // Check if this section contains the map
@@ -9437,6 +9438,13 @@ async function downloadDashboard(dashboardType) {
           const clonedMapEl = tempWrapper.querySelector('#dengue_case_map');
 
           if (originalMapEl && clonedMapEl) {
+            // CRITICAL: Ensure cloned map container has visible overflow
+            clonedMapEl.style.overflow = 'visible';
+            // Also ensure parent containers have visible overflow
+            const leafletContainer = clonedMapEl.querySelector('.leaflet-container');
+            if (leafletContainer) {
+              leafletContainer.style.overflow = 'visible';
+            }
             // Helper function to recursively inline all computed styles
             const inlineAllStyles = (originalEl, clonedEl) => {
               const computedStyle = window.getComputedStyle(originalEl);
@@ -9800,6 +9808,13 @@ async function downloadDashboard(dashboardType) {
                 clonedPane.style.width = computedStyle.width;
                 clonedPane.style.height = computedStyle.height;
                 clonedPane.style.zIndex = computedStyle.zIndex;
+
+                // CRITICAL: Ensure overflow is visible so markers aren't clipped
+                clonedPane.style.overflow = 'visible';
+
+                // CRITICAL: Ensure visibility is set for html2canvas
+                clonedPane.style.visibility = computedStyle.visibility || 'visible';
+                clonedPane.style.opacity = computedStyle.opacity || '1';
 
                 console.log(`[PDF] Copied pane ${originalPane.className}: transform=${computedStyle.transform}`);
               } else {
