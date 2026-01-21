@@ -9860,6 +9860,32 @@ async function downloadDashboard(dashboardType) {
               samplePathFill: finalCasePaths[0]?.getAttribute('fill'),
               samplePathD: finalCasePaths[0]?.getAttribute('d')?.substring(0, 30)
             });
+
+            // EXPERIMENTAL: Try to force SVG rendering by ensuring all attributes are inline
+            if (finalCaseSvg && finalCasePaths.length > 0) {
+              console.log('[PDF] Forcing inline attributes on case markers...');
+              finalCasePaths.forEach((path, idx) => {
+                // Ensure critical attributes are present
+                if (!path.getAttribute('fill') || path.getAttribute('fill') === 'none') {
+                  path.setAttribute('fill', '#dc3545'); // Bootstrap red as fallback
+                  console.log(`[PDF] Added fallback fill to marker ${idx}`);
+                }
+                if (!path.getAttribute('fill-opacity')) {
+                  path.setAttribute('fill-opacity', '0.6');
+                }
+                // Log a few for verification
+                if (idx < 3) {
+                  console.log(`[PDF] Marker ${idx} final state:`, {
+                    fill: path.getAttribute('fill'),
+                    fillOpacity: path.getAttribute('fill-opacity'),
+                    stroke: path.getAttribute('stroke'),
+                    d: path.getAttribute('d')?.substring(0, 40),
+                    visibility: path.style.visibility,
+                    display: path.style.display
+                  });
+                }
+              });
+            }
           } else {
             console.warn('[PDF] Case-pane not found in tempWrapper before capture!');
           }
