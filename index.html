@@ -55,6 +55,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       text-align: center;
       padding: 24px;
       margin-bottom: 20px;
+      position: relative;
     }
 
     h1 {
@@ -83,44 +84,91 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       line-height: 1.4;
     }
 
-    .info-box {
-      background: #f0f7ff;
-      border-left: 4px solid #667eea;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-      line-height: 1.6;
+    .info-icon-wrapper {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
     }
 
-    .info-box h3 {
+    .info-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #ffffff;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .info-icon:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: scale(1.1);
+    }
+
+    .info-tooltip {
+      position: absolute;
+      bottom: 45px;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px 18px;
+      width: 380px;
+      max-width: 90vw;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #333;
+      text-align: left;
+      z-index: 1000;
+    }
+
+    .info-icon-wrapper:hover .info-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .info-tooltip h3 {
       margin: 0 0 10px 0;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #667eea;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .info-box p {
+    .info-tooltip p {
       margin: 8px 0;
       color: #444;
     }
 
-    .info-box ul {
+    .info-tooltip ul {
       margin: 8px 0;
-      padding-left: 20px;
+      padding-left: 18px;
       color: #444;
     }
 
-    .info-box li {
-      margin: 4px 0;
+    .info-tooltip li {
+      margin: 3px 0;
+      font-size: 0.82rem;
     }
 
-    .info-box .supported-systems {
+    .info-tooltip .supported-systems {
       margin-top: 10px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #666;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 8px;
     }
 
     .card {
@@ -907,19 +955,22 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       <h1>Communicable Disease Surveillance Dashboards</h1>
       <p class="subtitle">Visualization tool for disease information systems</p>
       <p class="subtitle">Select population → Upload Excel → Analyze trends → Export reports</p>
-    </div>
 
-    <div class="info-box">
-      <h3>💡 About This Tool</h3>
-      <p>Many disease surveillance systems focus on data collection but lack visualization capabilities. This dashboard fills that gap by:</p>
-      <ul>
-        <li>Accepting standardized Excel exports from disease information systems</li>
-        <li>Auto-detecting columns regardless of language (Malay/English)</li>
-        <li>Calculating epidemiological rates using official DOSM population</li>
-        <li>Providing charts, maps, and KPIs not available in source systems</li>
-        <li>Working completely offline for data privacy</li>
-      </ul>
-      <p class="supported-systems"><strong>Supported Systems:</strong> e-Notifikasi, National Tuberculosis Registry, Sistem Maklumat Siasatan Measles, MyHCC, edenguev2</p>
+      <div class="info-icon-wrapper">
+        <div class="info-icon">i</div>
+        <div class="info-tooltip">
+          <h3>💡 About This Tool</h3>
+          <p>This dashboard complements existing disease information systems by:</p>
+          <ul>
+            <li>Visualizing data from systems that focus on data entry</li>
+            <li>Auto-calculating epidemiological rates using official DOSM population</li>
+            <li>Supporting both Malay and English column names</li>
+            <li>Working completely offline for data privacy</li>
+            <li>Exporting publication-ready PDF reports</li>
+          </ul>
+          <p class="supported-systems"><strong>Supported Systems:</strong> e-Notifikasi, National Tuberculosis Registry, Sistem Maklumat Siasatan Measles, MyHCC, edenguev2</p>
+        </div>
+      </div>
     </div>
 
   <div class="tabs">
@@ -9229,37 +9280,13 @@ async function downloadDashboard(dashboardType) {
 
     const summary = generatePublicHealthSummary(dashboardType);
 
-    // Split summary into parts (main summary and AI insights)
-    const summaryParts = summary.split('\n\nAI-Generated Insights: ');
-
-    // Main summary
+    // Render full summary as continuous paragraph
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    const summaryLines = pdf.splitTextToSize(summaryParts[0], contentWidth);
+    pdf.setTextColor(0, 0, 0);
+    const summaryLines = pdf.splitTextToSize(summary, contentWidth);
     pdf.text(summaryLines, margin, yPosition);
     yPosition += summaryLines.length * 5 + 10;
-
-    // AI Insights section (if exists)
-    if (summaryParts.length > 1 && summaryParts[1].trim()) {
-      // Check if we need a new page
-      if (yPosition > pageHeight - 80) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, 'bold');
-      pdf.setTextColor(102, 126, 234); // Purple color for AI section
-      pdf.text('AI-Generated Insights', margin, yPosition);
-      yPosition += 7;
-
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, 'normal');
-      pdf.setTextColor(0, 0, 0);
-      const insightLines = pdf.splitTextToSize(summaryParts[1], contentWidth);
-      pdf.text(insightLines, margin, yPosition);
-      yPosition += insightLines.length * 5 + 10;
-    }
 
     // Check if we need a new page
     if (yPosition > pageHeight - 60) {
@@ -9469,7 +9496,7 @@ function generatePublicHealthSummary(dashboardType) {
   // Generate AI-powered insights
   const aiInsights = generateAIInsights(dashboardType, panel, metrics);
   if (aiInsights) {
-    summary += '\n\nAI-Generated Insights: ' + aiInsights + ' ';
+    summary += ' ' + aiInsights + ' ';
   }
 
   // Add context and recommendations
