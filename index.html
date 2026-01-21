@@ -114,7 +114,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
     .info-tooltip {
       position: absolute;
-      bottom: 45px;
+      top: 45px;
       right: 0;
       background: #ffffff;
       border: 1px solid #e0e0e0;
@@ -131,6 +131,30 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       color: #333;
       text-align: left;
       z-index: 1000;
+    }
+
+    .info-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      right: 8px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid #e0e0e0;
+    }
+
+    .info-tooltip::after {
+      content: '';
+      position: absolute;
+      top: -7px;
+      right: 9px;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 7px solid #ffffff;
     }
 
     .info-icon-wrapper:hover .info-tooltip {
