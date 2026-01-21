@@ -9510,6 +9510,12 @@ async function downloadDashboard(dashboardType) {
                 // CRITICAL: Ensure SVG has proper namespace - required for html2canvas
                 clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
+                // CRITICAL: Remove any clip-path or mask that might hide content
+                clonedSvg.style.clipPath = 'none';
+                clonedSvg.style.mask = 'none';
+                clonedSvg.removeAttribute('clip-path');
+                clonedSvg.removeAttribute('mask');
+
                 // CRITICAL: Ensure SVG has explicit width and height for html2canvas
                 // If not set as attributes, html2canvas may not render the SVG
                 if (!clonedSvg.getAttribute('width') && computedStyle.width && computedStyle.width !== 'auto') {
@@ -9594,6 +9600,14 @@ async function downloadDashboard(dashboardType) {
                 // CRITICAL: Reset pointer-events for html2canvas compatibility
                 // html2canvas may skip elements with certain pointer-events values
                 clonedPath.style.pointerEvents = 'auto';
+
+                // CRITICAL: Ensure visibility and display are set for html2canvas
+                clonedPath.style.visibility = 'visible';
+                clonedPath.style.display = computedStyle.display || '';
+
+                // CRITICAL: Remove any clip-path that might hide the marker
+                clonedPath.style.clipPath = 'none';
+                clonedPath.removeAttribute('clip-path');
 
                 // Ensure the path has a d attribute (for path elements)
                 if (clonedPath.tagName.toLowerCase() === 'path') {
@@ -9821,6 +9835,33 @@ async function downloadDashboard(dashboardType) {
                 console.warn(`[PDF] Could not find cloned pane for positioning: ${paneClassNames}`);
               }
             });
+          }
+        }
+
+        // Final debugging for case-pane
+        if (hasMap) {
+          const finalCasePane = tempWrapper.querySelector('.leaflet-case-pane');
+          if (finalCasePane) {
+            const finalCaseSvg = finalCasePane.querySelector('svg');
+            const finalCasePaths = finalCasePane.querySelectorAll('path, circle');
+            const casePaneStyle = window.getComputedStyle(finalCasePane);
+            console.log('[PDF] Final case-pane state before capture:', {
+              panePosition: finalCasePane.style.position,
+              paneTransform: finalCasePane.style.transform,
+              paneLeft: finalCasePane.style.left,
+              paneTop: finalCasePane.style.top,
+              paneZIndex: finalCasePane.style.zIndex,
+              paneOverflow: finalCasePane.style.overflow,
+              paneVisibility: finalCasePane.style.visibility,
+              svgExists: !!finalCaseSvg,
+              svgWidth: finalCaseSvg?.style.width || finalCaseSvg?.getAttribute('width'),
+              svgHeight: finalCaseSvg?.style.height || finalCaseSvg?.getAttribute('height'),
+              pathCount: finalCasePaths.length,
+              samplePathFill: finalCasePaths[0]?.getAttribute('fill'),
+              samplePathD: finalCasePaths[0]?.getAttribute('d')?.substring(0, 30)
+            });
+          } else {
+            console.warn('[PDF] Case-pane not found in tempWrapper before capture!');
           }
         }
 
