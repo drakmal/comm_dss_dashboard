@@ -9779,11 +9779,12 @@ async function downloadDashboard(dashboardType) {
 
             // Copy all pane positioning including transforms
             const originalPanes = Array.from(originalMapEl.querySelectorAll('.leaflet-pane'));
-            const clonedPanes = Array.from(clonedMapEl.querySelectorAll('.leaflet-pane'));
+            // Reuse allClonedPanes instead of querying again to avoid missing panes
+            // const clonedPanes = Array.from(clonedMapEl.querySelectorAll('.leaflet-pane'));
 
             originalPanes.forEach((originalPane) => {
               const paneClassNames = originalPane.className;
-              const clonedPane = Array.from(clonedPanes).find(p => hasSameClasses(p, originalPane));
+              const clonedPane = Array.from(allClonedPanes).find(p => hasSameClasses(p, originalPane));
 
               if (clonedPane) {
                 const computedStyle = window.getComputedStyle(originalPane);
