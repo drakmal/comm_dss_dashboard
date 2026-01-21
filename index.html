@@ -16,7 +16,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
     gtag('config', 'G-TBTHT4ZH6R');
   </script>
-  <title>District Health Office Communicable Disease Dashboards</title>
+  <title>Communicable Disease Surveillance Dashboards</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
@@ -55,6 +55,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       text-align: center;
       padding: 24px;
       margin-bottom: 20px;
+      position: relative;
     }
 
     h1 {
@@ -81,6 +82,117 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       color: #777;
       font-size: 0.85rem;
       line-height: 1.4;
+    }
+
+    .info-icon-wrapper {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
+    }
+
+    .info-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #ffffff;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .info-icon:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: scale(1.1);
+    }
+
+    .info-tooltip {
+      position: absolute;
+      top: 45px;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px 18px;
+      width: 380px;
+      max-width: 90vw;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #333;
+      text-align: left;
+      z-index: 1000;
+    }
+
+    .info-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      right: 8px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid #e0e0e0;
+    }
+
+    .info-tooltip::after {
+      content: '';
+      position: absolute;
+      top: -7px;
+      right: 9px;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 7px solid #ffffff;
+    }
+
+    .info-icon-wrapper:hover .info-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .info-tooltip h3 {
+      margin: 0 0 10px 0;
+      font-size: 0.95rem;
+      color: #667eea;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-tooltip p {
+      margin: 8px 0;
+      color: #444;
+    }
+
+    .info-tooltip ul {
+      margin: 8px 0;
+      padding-left: 18px;
+      color: #444;
+    }
+
+    .info-tooltip li {
+      margin: 3px 0;
+      font-size: 0.82rem;
+    }
+
+    .info-tooltip .supported-systems {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #666;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 8px;
     }
 
     .card {
@@ -864,8 +976,24 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 <body>
   <div class="page">
     <div class="header-box">
-      <h1>District Health Office Communicable Disease Dashboards</h1>
-      <p class="subtitle">Choose a dashboard tab, then upload the related Excel file</p>
+      <h1>Communicable Disease Surveillance Dashboards</h1>
+      <p class="subtitle">Visualization tool for disease information systems</p>
+      <p class="subtitle">Select population → Upload Excel → Analyze trends → Export reports</p>
+
+      <div class="info-icon-wrapper">
+        <div class="info-icon">i</div>
+        <div class="info-tooltip">
+          <h3>💡 About This Tool</h3>
+          <p>This dashboard complements existing disease information systems by:</p>
+          <ul>
+            <li>Transforming Excel exports into interactive visualizations</li>
+            <li>Automatically calculating rates using official population data</li>
+            <li>Protecting data privacy through offline-only processing</li>
+            <li>Creating professional PDF reports for presentations</li>
+          </ul>
+          <p class="supported-systems"><strong>Supported Systems:</strong> e-Notifikasi, National Tuberculosis Registry, Sistem Maklumat Siasatan Measles, MyHCC, edenguev2</p>
+        </div>
+      </div>
     </div>
 
   <div class="tabs">
@@ -2352,6 +2480,14 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 </div>
 
 <script>
+// ========================================
+// SHARED CONSTANTS AND UTILITIES
+// ========================================
+const SHARED_CHART_PALETTE = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+
+// ========================================
+// POPULATION DATA MODULE (DOSM)
+// ========================================
 (function () {
   const stateSelect = document.getElementById('dosm_state');
   const districtSelect = document.getElementById('dosm_district');
@@ -2389,7 +2525,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     try {
       let loadedCompact = false;
       try {
-        console.info('[DOSM] Loading compact population dataset…', COMPACT_URLS);
         const compactText = await fetchWithFallback(COMPACT_URLS);
         const compactPayload = normalizeJsonPayload(compactText);
         if (!compactPayload.startsWith('{') && !compactPayload.startsWith('[')) {
@@ -2398,13 +2533,11 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         const compactData = JSON.parse(compactPayload);        buildCachesFromCompact(compactData);
         loadedCompact = true;
         setStatus('loading', 'Population data loaded from compact dataset.');
-        console.info('[DOSM] Compact dataset loaded; CSV fallbacks skipped.');
       } catch (err) {
         console.warn('Compact population dataset unavailable, falling back to CSVs.', err);
       }
 
       if (!loadedCompact) {
-        console.info('[DOSM] Compact dataset unavailable; loading CSV sources.');
         const districtText = await fetchWithFallback(DISTRICT_URLS);        const districtRows = parseCsv(districtText);
         buildDistrictCaches(districtRows);
         setStatus('loading', 'District populations loaded, fetching Malaysia totals…');
@@ -2439,7 +2572,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
       setStatus('done', 'Population data loaded.');
     } catch (err) {
-      console.error('Failed to initialise DOSM dropdowns', err);
       populationEl.textContent = '-';
       yearEl.textContent = '-';
       setStatus('error', 'Unable to load population data.');
@@ -2848,10 +2980,8 @@ function getStateLatest(stateDisplay) {
     ];
     checks.forEach(test => {
       const res = getDistrictLatest(test.state, test.district);
-      if (res) {
-        console.log(`[DOSM self-test] ${test.state} > ${test.district}:`, res);
-      } else {
-        console.warn(`[DOSM self-test] Missing data for ${test.state} > ${test.district}`);
+      if (!res) {
+        // Missing data for district
       }
     });
   }
@@ -3103,8 +3233,6 @@ function getStateLatest(stateDisplay) {
     panel.columnMap.age = findColumnKey(keys, ['Umur', 'Age', 'Umur Pesakit']);
     panel.columnMap.citizen = findColumnKey(keys, ['Status Kewarganegaraan', 'Kewarganegaraan', 'Citizenship']);
     panel.columnMap.ethnicity = findColumnKey(keys, ['Bangsa', 'Keturunan', 'Etnik', 'Ethnicity']);
-
-    console.log(`Detected columns for ${panel.label}:`, panel.columnMap);
   }
 
   function detectYearLabel(panel) {
@@ -3277,7 +3405,6 @@ function getStateLatest(stateDisplay) {
         rebuildDateOptions();
         updateDashboard();
       } catch (error) {
-        console.error(error);
         panel.rawData = [];
         panel.columnMap = createEmptyColumnMap();
         panel.errorMessage = `Error reading file: ${error.message || error}`;
@@ -4047,8 +4174,7 @@ function getStateLatest(stateDisplay) {
       return null;
     }
 
-    const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-    const bgColors = labels.map((_, i) => palette[i % palette.length]);
+    const bgColors = labels.map((_, i) => SHARED_CHART_PALETTE[i % SHARED_CHART_PALETTE.length]);
 
     if (chartRef && chartRef.destroy) {
       chartRef.destroy();
@@ -4422,8 +4548,7 @@ trendCanvasId: 'tb_trendChart'
     if (mode === 'yesno') {
       bg = labels.map(l => yesNoColorForLabel(l));
   } else {
-      const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-    bg = labels.map((_, i) => palette[i % palette.length]);
+    bg = labels.map((_, i) => SHARED_CHART_PALETTE[i % SHARED_CHART_PALETTE.length]);
     }
 
     pieCharts[canvasId] = new Chart(ctx, {
@@ -4542,7 +4667,6 @@ outcomeFH:    findColumnKey(keys, ['Hasil Rawatan', 'Outcome']) || keyFromExcelL
     // Prefer FH (as requested) but fall back to the detected outcome column
     col.outcomeFH = keyFromExcelLetter(keys, 'FH') || col.outcome;
 
-    console.log('TB detected columns:', col);
     window.__tb_col = col;
   }
 
@@ -4961,8 +5085,7 @@ window.renderAll = renderAll;
     if (mode === 'yesno') {
       bg = labels.map(l => yesNoColorForLabel(l));
     } else {
-      const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-      bg = labels.map((_, i) => palette[i % palette.length]);
+      bg = labels.map((_, i) => SHARED_CHART_PALETTE[i % SHARED_CHART_PALETTE.length]);
     }
 
     pieCharts[canvasId] = new Chart(ctx, {
@@ -5339,7 +5462,6 @@ window.renderAll = renderAll;
       updateAll();
 
     } catch (err) {
-      console.error(err);
       fileStatus.textContent = `Error reading file: ${err.message || err}`;
     }
   });
@@ -5649,7 +5771,7 @@ window.renderAll = renderAll;
     return String(raw).trim();
   }
 
-  const HIV_PIE_PALETTE = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+  const HIV_PIE_PALETTE = SHARED_CHART_PALETTE;
   const HIV_NO_DATA_COLOR = '#9ca3af';
 
   function getHivPieColorMap(canvasId) {
@@ -6406,7 +6528,6 @@ window.renderAll = renderAll;
         buildFilters();
         renderFiltered();
       } catch (err) {
-        console.error(err);
         showStatus('');
         showError(`Failed to parse HIV Excel file: ${err.message || err}`);
       }
@@ -6734,7 +6855,7 @@ window.renderAll = renderAll;
     return String(raw).trim();
   }
 
-  const HEPC_PIE_PALETTE = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
+  const HEPC_PIE_PALETTE = SHARED_CHART_PALETTE;
   const HEPC_NO_DATA_COLOR = '#9ca3af';
 
   function getHepcPieColorMap(canvasId) {
@@ -7406,7 +7527,6 @@ window.renderAll = renderAll;
         buildFilters();
         renderFiltered();
       } catch (err) {
-        console.error(err);
         showStatus('');
         showError(`Failed to parse Hep C Excel file: ${err.message || err}`);
       }
@@ -8114,23 +8234,23 @@ window.renderAll = renderAll;
 
   function ageGroupFromYears(age) {
     if (!Number.isFinite(age)) return null;
-    if (age <= 6) return '0-6';
-    if (age <= 12) return '7-12';
-    if (age <= 17) return '13-17';
-    if (age <= 25) return '18-25';
-    if (age <= 44) return '26-44';
-    if (age <= 60) return '45-60';
+    if (age <= 6) return '0 - 6';
+    if (age <= 12) return '7 - 12';
+    if (age <= 17) return '13 - 17';
+    if (age <= 25) return '18 - 25';
+    if (age <= 44) return '26 - 44';
+    if (age <= 60) return '45 - 60';
     return '>60';
   }
 
-  const AGE_GROUP_ORDER = ['0-6', '7-12', '13-17', '18-25', '26-44', '45-60', '>60'];
+  const AGE_GROUP_ORDER = ['0 - 6', '7 - 12', '13 - 17', '18 - 25', '26 - 44', '45 - 60', '>60'];
   const AGE_GROUP_COLORS = {
-    '0-6': '#0ea5e9',
-    '7-12': '#22c55e',
-    '13-17': '#a855f7',
-    '18-25': '#f97316',
-    '26-44': '#eab308',
-    '45-60': '#6366f1',
+    '0 - 6': '#0ea5e9',
+    '7 - 12': '#22c55e',
+    '13 - 17': '#a855f7',
+    '18 - 25': '#f97316',
+    '26 - 44': '#eab308',
+    '45 - 60': '#6366f1',
     '>60': '#ef4444',
   };
 
@@ -8627,8 +8747,7 @@ window.renderAll = renderAll;
       labels = ['No data'];
       values = [1];
     }
-    const palette = ['#ef4444','#06b6d4','#22c55e','#f59e0b','#6366f1','#a855f7','#14b8a6','#f97316','#f97373','#4ade80'];
-    const backgroundColors = colors && colors.length ? colors : labels.map((_, i) => palette[i % palette.length]);
+    const backgroundColors = colors && colors.length ? colors : labels.map((_, i) => SHARED_CHART_PALETTE[i % SHARED_CHART_PALETTE.length]);
     return new Chart(ctx, {
       type: 'pie',
       data: {
@@ -9046,7 +9165,6 @@ window.renderAll = renderAll;
         setStatus(`Dengue records loaded: ${enriched.length} (${sheetLabel})`);
         renderAll();
       } catch (err) {
-        console.error(err);
         setStatus('');
         if (fileError) fileError.textContent = `Failed to parse dengue Excel file: ${err.message || err}`;
         if (fileError) fileError.style.display = 'block';
@@ -9171,7 +9289,7 @@ async function downloadDashboard(dashboardType) {
     pdf.text(dashboardTitles[dashboardType] || 'Dashboard Report', pageWidth / 2, 20, { align: 'center' });
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    pdf.text('District Health Office Communicable Disease Dashboards', pageWidth / 2, 28, { align: 'center' });
+    pdf.text('Communicable Disease Surveillance Dashboards', pageWidth / 2, 28, { align: 'center' });
     pdf.text(`Generated: ${new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}`, pageWidth / 2, 34, { align: 'center' });
 
     let yPosition = 50;
@@ -9185,37 +9303,13 @@ async function downloadDashboard(dashboardType) {
 
     const summary = generatePublicHealthSummary(dashboardType);
 
-    // Split summary into parts (main summary and AI insights)
-    const summaryParts = summary.split('\n\nAI-Generated Insights: ');
-
-    // Main summary
+    // Render full summary as continuous paragraph
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    const summaryLines = pdf.splitTextToSize(summaryParts[0], contentWidth);
+    pdf.setTextColor(0, 0, 0);
+    const summaryLines = pdf.splitTextToSize(summary, contentWidth);
     pdf.text(summaryLines, margin, yPosition);
     yPosition += summaryLines.length * 5 + 10;
-
-    // AI Insights section (if exists)
-    if (summaryParts.length > 1 && summaryParts[1].trim()) {
-      // Check if we need a new page
-      if (yPosition > pageHeight - 80) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, 'bold');
-      pdf.setTextColor(102, 126, 234); // Purple color for AI section
-      pdf.text('AI-Generated Insights', margin, yPosition);
-      yPosition += 7;
-
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, 'normal');
-      pdf.setTextColor(0, 0, 0);
-      const insightLines = pdf.splitTextToSize(summaryParts[1], contentWidth);
-      pdf.text(insightLines, margin, yPosition);
-      yPosition += insightLines.length * 5 + 10;
-    }
 
     // Check if we need a new page
     if (yPosition > pageHeight - 60) {
@@ -9250,8 +9344,6 @@ async function downloadDashboard(dashboardType) {
 
       // Skip first section (section 1 - Upload)
       const sectionsToCapture = h2Elements.slice(1);
-
-      console.log(`Found ${h2Elements.length} sections, capturing ${sectionsToCapture.length} (skipping section 1)`);
 
       for (let i = 0; i < sectionsToCapture.length; i++) {
         const h2 = sectionsToCapture[i];
@@ -9327,12 +9419,9 @@ async function downloadDashboard(dashboardType) {
         // Add image to PDF
         pdf.addImage(imgData, 'JPEG', margin, yPosition, imgWidth, imgHeight);
         yPosition += imgHeight + 10;
-
-        console.log(`Captured section ${i + 2} (${h2.textContent})`);
       }
 
     } catch (err) {
-      console.error('Failed to capture dashboard:', err);
       throw err;
     } finally {
       // Show download button again
@@ -9362,7 +9451,6 @@ async function downloadDashboard(dashboardType) {
     }, 3000);
 
   } catch (error) {
-    console.error('Error generating PDF:', error);
     button.disabled = false;
     button.innerHTML = '<span class="download-icon">❌</span> Error - Try Again';
     setTimeout(() => {
@@ -9431,7 +9519,7 @@ function generatePublicHealthSummary(dashboardType) {
   // Generate AI-powered insights
   const aiInsights = generateAIInsights(dashboardType, panel, metrics);
   if (aiInsights) {
-    summary += '\n\nAI-Generated Insights: ' + aiInsights + ' ';
+    summary += ' ' + aiInsights + ' ';
   }
 
   // Add context and recommendations
