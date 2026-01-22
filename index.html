@@ -17,6 +17,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     gtag('config', 'G-TBTHT4ZH6R');
   </script>
   <title>Communicable Disease Surveillance Dashboards</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🏥</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
@@ -2525,9 +2526,44 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="kpi-subtitle" id="malaria_kpi_deaths_pct">-%</div>
       </div>
       <div class="kpi-box">
+        <div class="kpi-title">Case Fatality Rate</div>
+        <div class="kpi-value" id="malaria_kpi_cfr">-%</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Indigenous Cases</div>
+        <div class="kpi-value" id="malaria_kpi_indigenous">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_indigenous_pct">-%</div>
+      </div>
+      <div class="kpi-box">
         <div class="kpi-title">Imported Cases</div>
         <div class="kpi-value" id="malaria_kpi_imported">-</div>
         <div class="kpi-subtitle" id="malaria_kpi_imported_pct">-%</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">P. knowlesi</div>
+        <div class="kpi-value" id="malaria_kpi_knowlesi">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_knowlesi_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">P. vivax</div>
+        <div class="kpi-value" id="malaria_kpi_vivax">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_vivax_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">P. falciparum</div>
+        <div class="kpi-value" id="malaria_kpi_falciparum">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_falciparum_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Other Species</div>
+        <div class="kpi-value" id="malaria_kpi_other">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_other_pct">-%</div>
       </div>
     </div>
 
