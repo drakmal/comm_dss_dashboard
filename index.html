@@ -2484,7 +2484,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
 <section class="tab-panel" data-tab="malaria" id="tab-malaria">
   <h2>1. Upload Malaria Excel file</h2>
-  <p class="subtitle">Upload the BORANG SIASATAN KES MALARIA Excel file (.xlsx) containing malaria case investigation data.</p>
+  <p class="subtitle">Upload malaria Excel file obtained from JKN. This dashboard will be updated automatically once the VekPro system is online.</p>
   <div class="card">
     <div class="upload-row">
       <label for="fileInput_malaria"><b>Load Malaria Excel (.xls/.xlsx)</b></label>
@@ -2518,6 +2518,11 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       <div class="kpi-box">
         <div class="kpi-title">Incidence (per 100k)</div>
         <div class="kpi-value" id="malaria_kpi_incidence">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Deaths</div>
+        <div class="kpi-value" id="malaria_kpi_deaths">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_deaths_pct">-%</div>
       </div>
       <div class="kpi-box">
         <div class="kpi-title">Indigenous Cases</div>
@@ -2625,97 +2630,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="note">All numbers update based on filters above.</div>
   </div>
 
-  <h2>4. Lab profiles</h2>
-    <div class="demography-grid">
-      <div class="demo-card">
-        <div class="demo-block-title">Parasite Species</div>
-        <canvas id="malaria_chart_species"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Case Classification</div>
-        <canvas id="malaria_chart_classification"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Severity</div>
-        <canvas id="malaria_chart_severity"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Detection Method</div>
-        <canvas id="malaria_chart_detection"></canvas>
-      </div>
-    </div>
-
-  <h2>5. Demography</h2>
-  <div class="card">
-    <div class="demography-grid">
-      <div class="demo-card">
-        <div class="demo-block-title">Gender</div>
-        <canvas id="malaria_demo_gender"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Age Group</div>
-        <canvas id="malaria_demo_age"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Citizenship</div>
-        <canvas id="malaria_demo_citizenship"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Ethnicity</div>
-        <canvas id="malaria_demo_ethnicity"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">District</div>
-        <canvas id="malaria_demo_district"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Occupation</div>
-        <canvas id="malaria_demo_occupation"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <h2>6. Risk & Treatment</h2>
-  <div class="card">
-    <div class="demography-grid">
-      <div class="demo-card">
-        <div class="demo-block-title">Risk Activity</div>
-        <canvas id="malaria_chart_risk"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Treatment Status</div>
-        <canvas id="malaria_chart_treatment"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Patient Outcome</div>
-        <canvas id="malaria_chart_outcome"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Stratification Color</div>
-        <canvas id="malaria_chart_stratification"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <h2>7. Timeliness</h2>
-  <div class="card">
-    <div class="demography-grid">
-      <div class="demo-card">
-        <div class="demo-block-title">Onset → Notification (days)</div>
-        <canvas id="malaria_timeline_onset_notif"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Notification → Investigation (days)</div>
-        <canvas id="malaria_timeline_notif_invest"></canvas>
-      </div>
-      <div class="demo-card">
-        <div class="demo-block-title">Diagnosis → Admission (days)</div>
-        <canvas id="malaria_timeline_diag_admit"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <h2>8. Case distribution map</h2>
+  <h2>4. Case distribution map</h2>
     <div class="card">
       <div id="malaria_case_map" style="width:100%; height:600px; border-radius:8px; margin-bottom:12px;"></div>
 
@@ -2751,7 +2666,57 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
     </div>
 
-  <h2>9. Top 10</h2>
+  <h2>5. Lab profiles</h2>
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Parasite Species</div>
+        <canvas id="malaria_chart_species"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Case Classification</div>
+        <canvas id="malaria_chart_classification"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Severity</div>
+        <canvas id="malaria_chart_severity"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Detection Method</div>
+        <canvas id="malaria_chart_detection"></canvas>
+      </div>
+    </div>
+
+  <h2>6. Demography</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Gender</div>
+        <canvas id="malaria_demo_gender"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Age Group</div>
+        <canvas id="malaria_demo_age"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Citizenship</div>
+        <canvas id="malaria_demo_citizenship"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Ethnicity</div>
+        <canvas id="malaria_demo_ethnicity"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">District</div>
+        <canvas id="malaria_demo_district"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Occupation</div>
+        <canvas id="malaria_demo_occupation"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>7. Top 10</h2>
   <div class="card">
     <h3 style="margin-top:0;">Top Localities</h3>
     <div class="table-container">
@@ -2783,6 +2748,46 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+  </div>
+
+  <h2>8. Outbreak clusters</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Risk Activity</div>
+        <canvas id="malaria_chart_risk"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Treatment Status</div>
+        <canvas id="malaria_chart_treatment"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Patient Outcome</div>
+        <canvas id="malaria_chart_outcome"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Stratification Color</div>
+        <canvas id="malaria_chart_stratification"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>9. Timeliness</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Onset → Notification (days)</div>
+        <canvas id="malaria_timeline_onset_notif"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Notification → Investigation (days)</div>
+        <canvas id="malaria_timeline_notif_invest"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Diagnosis → Admission (days)</div>
+        <canvas id="malaria_timeline_diag_admit"></canvas>
+      </div>
     </div>
   </div>
 
@@ -9938,6 +9943,19 @@ window.renderAll = renderAll;
     return filtered;
   }
 
+  // Helper to show/hide KPI box based on value
+  function toggleKpiBox(valueElementId, value) {
+    const valueElement = document.getElementById(valueElementId);
+    if (valueElement) {
+      const kpiBox = valueElement.closest('.kpi-box');
+      if (kpiBox) {
+        // Hide if value is 0 or '0' or '0.00' etc
+        const numValue = typeof value === 'number' ? value : parseFloat(value);
+        kpiBox.style.display = (numValue === 0 || isNaN(numValue)) ? 'none' : '';
+      }
+    }
+  }
+
   // Render KPIs
   function renderMalariaKpis(rows) {
     const total = rows.length;
@@ -9998,29 +10016,42 @@ window.renderAll = renderAll;
     document.getElementById('malaria_kpi_total').textContent = formatNumber(total);
     document.getElementById('malaria_kpi_incidence').textContent = incidence;
 
+    // Deaths KPI (with fraction and percentage)
+    document.getElementById('malaria_kpi_deaths').textContent = formatNumber(deaths);
+    document.getElementById('malaria_kpi_deaths_pct').textContent = deaths + '/' + total + ' (' + cfr + '%)';
+    toggleKpiBox('malaria_kpi_deaths', deaths);
+
     document.getElementById('malaria_kpi_indigenous').textContent = formatNumber(indigenous);
     document.getElementById('malaria_kpi_indigenous_pct').textContent = total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_indigenous', indigenous);
 
     document.getElementById('malaria_kpi_imported').textContent = formatNumber(imported);
     document.getElementById('malaria_kpi_imported_pct').textContent = total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_imported', imported);
 
     document.getElementById('malaria_kpi_knowlesi').textContent = formatNumber(knowlesi);
     document.getElementById('malaria_kpi_knowlesi_pct').textContent = total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_knowlesi', knowlesi);
 
     document.getElementById('malaria_kpi_vivax').textContent = formatNumber(vivax);
     document.getElementById('malaria_kpi_vivax_pct').textContent = total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_vivax', vivax);
 
     document.getElementById('malaria_kpi_falciparum').textContent = formatNumber(falciparum);
     document.getElementById('malaria_kpi_falciparum_pct').textContent = total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_falciparum', falciparum);
 
     document.getElementById('malaria_kpi_other').textContent = formatNumber(otherSpecies);
     document.getElementById('malaria_kpi_other_pct').textContent = total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_other', otherSpecies);
 
     document.getElementById('malaria_kpi_severe').textContent = formatNumber(severe);
     document.getElementById('malaria_kpi_severe_pct').textContent = total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_severe', severe);
 
     document.getElementById('malaria_kpi_uncomplicated').textContent = formatNumber(uncomplicated);
     document.getElementById('malaria_kpi_uncomplicated_pct').textContent = total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_uncomplicated', uncomplicated);
 
     document.getElementById('malaria_kpi_treatment_rate').textContent = completionRate + '%';
     document.getElementById('malaria_kpi_cfr').textContent = cfr + '%';
@@ -10075,8 +10106,8 @@ window.renderAll = renderAll;
           datasets: [{
             label: 'Cases',
             data: counts,
-            borderColor: '#dc2626',
-            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
             tension: 0.3,
             fill: true
           }]
@@ -10729,16 +10760,7 @@ window.renderAll = renderAll;
           });
 
           console.log('Sheet selector populated with', districtSheets.length, 'sheets');
-
-          // Auto-select MUALLIM if it exists
-          const muallimSheet = districtSheets.find(name => name.toUpperCase().includes('MUALLIM'));
-          if (muallimSheet) {
-            console.log('Auto-selecting MUALLIM sheet:', muallimSheet);
-            sheetSelector.value = muallimSheet;
-            loadMalariaSheet(muallimSheet);
-          } else {
-            console.log('MUALLIM sheet not found, user must select manually');
-          }
+          console.log('User must select a district sheet to load data');
         } else {
           console.error('Sheet selector element not found!');
         }
