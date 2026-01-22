@@ -659,8 +659,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       display: flex;
       gap: 10px;
       margin: 14px 0 0;
-      flex-wrap: wrap;
-      
+      flex-wrap: nowrap;
+      overflow-x: auto;
+
       /* make ONLY the tabs bar stick */
       position: sticky;
       top: 0;
@@ -686,6 +687,8 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       border-radius: 10px;
       cursor: pointer;
       font-size: 0.9rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .tab-btn.active {
@@ -9581,6 +9584,69 @@ window.renderAll = renderAll;
     activeMeteo: null,
     activeYear: null
   };
+
+  // Helper functions (local to malaria module)
+  function parseDateAny(v) {
+    if (!v) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // Try DD/MM/YYYY
+    const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    let m = s.match(ddmmyyyy);
+    if (m) {
+      const day = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const year = parseInt(m[3], 10);
+      return new Date(year, month, day);
+    }
+
+    // Try YYYY-MM-DD
+    const yyyymmdd = /^(\d{4})-(\d{1,2})-(\d{1,2})/;
+    m = s.match(yyyymmdd);
+    if (m) {
+      const year = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const day = parseInt(m[3], 10);
+      return new Date(year, month, day);
+    }
+
+    // Try Excel serial number
+    const num = parseFloat(s);
+    if (!isNaN(num) && num > 1000) {
+      const epoch = new Date(1899, 11, 30);
+      const days = Math.floor(num);
+      return new Date(epoch.getTime() + days * 86400000);
+    }
+
+    // Try native parse as last resort
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isoWeek(d) {
+    if (!d) return 0;
+    const date = new Date(d.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
+
+  function ageGroupFromYears(age) {
+    if (age < 0) return 'Unknown';
+    if (age <= 5) return '0-5';
+    if (age <= 15) return '6-15';
+    if (age <= 30) return '16-30';
+    if (age <= 45) return '31-45';
+    if (age <= 60) return '46-60';
+    return '>60';
+  }
+
+  function formatNumber(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    return num.toLocaleString();
+  }
 
   // Column inference
   function inferMalariaColumns(headers) {
