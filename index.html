@@ -2525,37 +2525,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="kpi-subtitle" id="malaria_kpi_deaths_pct">-%</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-title">Indigenous Cases</div>
-        <div class="kpi-value" id="malaria_kpi_indigenous">-</div>
-        <div class="kpi-subtitle" id="malaria_kpi_indigenous_pct">-%</div>
-      </div>
-      <div class="kpi-box">
         <div class="kpi-title">Imported Cases</div>
         <div class="kpi-value" id="malaria_kpi_imported">-</div>
         <div class="kpi-subtitle" id="malaria_kpi_imported_pct">-%</div>
-      </div>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-box">
-        <div class="kpi-title">P. knowlesi</div>
-        <div class="kpi-value" id="malaria_kpi_knowlesi">-</div>
-        <div class="kpi-subtitle" id="malaria_kpi_knowlesi_pct">-%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">P. vivax</div>
-        <div class="kpi-value" id="malaria_kpi_vivax">-</div>
-        <div class="kpi-subtitle" id="malaria_kpi_vivax_pct">-%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">P. falciparum</div>
-        <div class="kpi-value" id="malaria_kpi_falciparum">-</div>
-        <div class="kpi-subtitle" id="malaria_kpi_falciparum_pct">-%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">Other Species</div>
-        <div class="kpi-value" id="malaria_kpi_other">-</div>
-        <div class="kpi-subtitle" id="malaria_kpi_other_pct">-%</div>
       </div>
     </div>
 
@@ -2573,10 +2545,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       <div class="kpi-box">
         <div class="kpi-title">Treatment Completion</div>
         <div class="kpi-value" id="malaria_kpi_treatment_rate">-%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-title">Case Fatality Rate</div>
-        <div class="kpi-value" id="malaria_kpi_cfr">-%</div>
       </div>
     </div>
 
@@ -2631,42 +2599,30 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
   </div>
 
   <h2>4. Case distribution map</h2>
-    <div class="card">
-      <div id="malaria_case_map" style="width:100%; height:600px; border-radius:8px; margin-bottom:12px;"></div>
-
-      <div class="map-controls">
-        <div class="map-control-group">
-          <label>
-            <input type="checkbox" id="malaria_map_show_all" checked />
-            Show all cases
-          </label>
-          <label>
-            <input type="checkbox" id="malaria_map_delay" />
-            ±7 day delay mode
-          </label>
-        </div>
-
-        <div class="map-control-group">
-          <label for="malaria_map_slider">Timeline:</label>
-          <input type="range" id="malaria_map_slider" style="width:200px;" />
-          <span id="malaria_map_slider_label" style="margin-left:8px;">-</span>
-        </div>
-
-        <div class="map-control-group">
-          <label>
-            <input type="checkbox" id="malaria_meteo_toggle" />
-            Show Meteorological Data
-          </label>
-          <select id="malaria_meteo_variable">
-            <option value="rain_mm">Rainfall (mm)</option>
-            <option value="temp_c">Temperature (°C)</option>
-            <option value="rh_pct">Relative Humidity (%)</option>
-          </select>
-        </div>
+  <div class="card">
+    <div class="note">Date slider follows the Section 2 epid week filter.</div>
+    <div id="malaria_case_map" class="map-container"></div>
+    <div class="slider-row">
+      <span class="muted">Date</span>
+      <div class="slider-field">
+        <input type="range" id="malaria_map_slider" min="0" max="0" step="1" value="0" disabled>
+        <span id="malaria_map_date_hover" class="slider-hover" aria-hidden="true"></span>
       </div>
+      <span id="malaria_map_date_label" class="muted">-</span>
     </div>
+    <div class="map-checkboxes">
+      <label class="checkbox-field" for="malaria_map_show_all">
+        <input type="checkbox" id="malaria_map_show_all">
+        Show all cases
+      </label>
+      <label class="checkbox-field" for="malaria_map_delay">
+        <input type="checkbox" id="malaria_map_delay">
+        7-days delay
+      </label>
+    </div>
+  </div>
 
-  <h2>5. Lab profiles</h2>
+  <h2>5. Case profiles</h2>
     <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Parasite Species</div>
@@ -2706,10 +2662,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <canvas id="malaria_demo_ethnicity"></canvas>
       </div>
       <div class="demo-card">
-        <div class="demo-block-title">District</div>
-        <canvas id="malaria_demo_district"></canvas>
-      </div>
-      <div class="demo-card">
         <div class="demo-block-title">Occupation</div>
         <canvas id="malaria_demo_occupation"></canvas>
       </div>
@@ -2718,36 +2670,41 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 
   <h2>7. Top 10</h2>
   <div class="card">
-    <h3 style="margin-top:0;">Top Localities</h3>
-    <div class="table-container">
-      <table id="malaria_top_locality_table">
-        <thead>
-          <tr>
-            <th>Locality</th>
-            <th>Cases</th>
-            <th>Indigenous</th>
-            <th>Imported</th>
-            <th>Dominant Species</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <h3 style="margin-top:24px;">Top Sub-districts (Mukim)</h3>
-    <div class="table-container">
-      <table id="malaria_top_mukim_table">
-        <thead>
-          <tr>
-            <th>Sub-district</th>
-            <th>Cases</th>
-            <th>Indigenous</th>
-            <th>Imported</th>
-            <th>Dominant Species</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div>
+        <h3 style="margin-top:0;">Top Localities</h3>
+        <div class="table-container">
+          <table id="malaria_top_locality_table">
+            <thead>
+              <tr>
+                <th>Locality</th>
+                <th>Cases</th>
+                <th>Indigenous</th>
+                <th class="imported-col">Imported</th>
+                <th>Species Found</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-top:0;">Top Sub-districts (Mukim)</h3>
+        <div class="table-container">
+          <table id="malaria_top_mukim_table">
+            <thead>
+              <tr>
+                <th>Sub-district</th>
+                <th>Cases</th>
+                <th>Indigenous</th>
+                <th class="imported-col">Imported</th>
+                <th>Species Found</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -10158,17 +10115,10 @@ window.renderAll = renderAll;
       speciesCounts.set(species, (speciesCounts.get(species) || 0) + 1);
     });
     const speciesEntries = Array.from(speciesCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const speciesColors = speciesEntries.map(([sp]) => {
-      if (sp === 'P. falciparum') return '#dc2626';
-      if (sp === 'P. knowlesi') return '#f97316';
-      if (sp === 'P. vivax') return '#fbbf24';
-      return '#6b7280';
-    });
     if (charts.species) charts.species.destroy();
     charts.species = createPie('malaria_chart_species',
       speciesEntries.map(e => e[0]),
-      speciesEntries.map(e => e[1]),
-      speciesColors
+      speciesEntries.map(e => e[1])
     );
 
     // Case classification
@@ -10178,8 +10128,7 @@ window.renderAll = renderAll;
     if (charts.classification) charts.classification.destroy();
     charts.classification = createPie('malaria_chart_classification',
       ['Indigenous', 'Imported', 'Other'],
-      [indigenousCount, importedCount, otherClassification],
-      ['#22c55e', '#ef4444', '#94a3b8']
+      [indigenousCount, importedCount, otherClassification]
     );
 
     // Severity
@@ -10189,8 +10138,7 @@ window.renderAll = renderAll;
     if (charts.severity) charts.severity.destroy();
     charts.severity = createPie('malaria_chart_severity',
       ['Severe', 'Uncomplicated', 'Unknown'],
-      [severeCount, uncomplicatedCount, unknownSeverity],
-      ['#dc2626', '#22c55e', '#94a3b8']
+      [severeCount, uncomplicatedCount, unknownSeverity]
     );
 
     // Detection method
@@ -10324,20 +10272,11 @@ window.renderAll = renderAll;
     if (charts.demo.gender) charts.demo.gender.destroy();
     charts.demo.gender = createPie('malaria_demo_gender',
       genderCounts.map(e => e[0]),
-      genderCounts.map(e => e[1]),
-      ['#3b82f6', '#ec4899', '#94a3b8']
+      genderCounts.map(e => e[1])
     );
 
     // Age groups
     const AGE_GROUP_ORDER = ['0-5', '6-15', '16-30', '31-45', '46-60', '>60'];
-    const AGE_GROUP_COLORS = {
-      '0-5': '#fef3c7',
-      '6-15': '#fed7aa',
-      '16-30': '#fdba74',
-      '31-45': '#fb923c',
-      '46-60': '#f97316',
-      '>60': '#ea580c'
-    };
     const ageCounts = new Map();
     rows.forEach(r => {
       const group = r._ageGroup;
@@ -10349,8 +10288,7 @@ window.renderAll = renderAll;
     if (charts.demo.age) charts.demo.age.destroy();
     charts.demo.age = createPie('malaria_demo_age',
       ageEntries.map(e => e[0]),
-      ageEntries.map(e => e[1]),
-      ageEntries.map(e => AGE_GROUP_COLORS[e[0]] || '#94a3b8')
+      ageEntries.map(e => e[1])
     );
 
     // Citizenship
@@ -10367,14 +10305,6 @@ window.renderAll = renderAll;
     charts.demo.ethnicity = createPie('malaria_demo_ethnicity',
       ethnicityCounts.map(e => e[0]),
       ethnicityCounts.map(e => e[1])
-    );
-
-    // District
-    const districtCounts = countBy('_district');
-    if (charts.demo.district) charts.demo.district.destroy();
-    charts.demo.district = createPie('malaria_demo_district',
-      districtCounts.map(e => e[0]),
-      districtCounts.map(e => e[1])
     );
 
     // Occupation
@@ -10485,22 +10415,38 @@ window.renderAll = renderAll;
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
 
+    // Check if any locality has imported cases
+    let hasImportedLocalities = false;
+    topLocalities.forEach(([name]) => {
+      const details = localityDetails.get(name);
+      if (details.imported > 0) hasImportedLocalities = true;
+    });
+
     if (tables.topLocality) {
       tables.topLocality.innerHTML = '';
       topLocalities.forEach(([name, count]) => {
         const details = localityDetails.get(name);
-        const dominantSpecies = Array.from(details.species.entries())
-          .sort((a, b) => b[1] - a[1])[0];
+        // List all species found
+        const speciesList = Array.from(details.species.keys())
+          .filter(s => s && s !== 'Unknown')
+          .join(', ') || '-';
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${name}</td>
           <td>${formatNumber(count)}</td>
           <td>${formatNumber(details.indigenous)}</td>
-          <td>${formatNumber(details.imported)}</td>
-          <td>${dominantSpecies ? dominantSpecies[0] : '-'}</td>
+          ${hasImportedLocalities ? `<td class="imported-col">${formatNumber(details.imported)}</td>` : ''}
+          <td>${speciesList}</td>
         `;
         tables.topLocality.appendChild(tr);
       });
+    }
+
+    // Hide imported column header if no imported cases
+    const localityTable = document.getElementById('malaria_top_locality_table');
+    if (localityTable) {
+      const importedHeaders = localityTable.querySelectorAll('th.imported-col');
+      importedHeaders.forEach(th => th.style.display = hasImportedLocalities ? '' : 'none');
     }
 
     // Top mukims
@@ -10525,22 +10471,38 @@ window.renderAll = renderAll;
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
 
+    // Check if any mukim has imported cases
+    let hasImportedMukims = false;
+    topMukims.forEach(([name]) => {
+      const details = mukimDetails.get(name);
+      if (details.imported > 0) hasImportedMukims = true;
+    });
+
     if (tables.topMukim) {
       tables.topMukim.innerHTML = '';
       topMukims.forEach(([name, count]) => {
         const details = mukimDetails.get(name);
-        const dominantSpecies = Array.from(details.species.entries())
-          .sort((a, b) => b[1] - a[1])[0];
+        // List all species found
+        const speciesList = Array.from(details.species.keys())
+          .filter(s => s && s !== 'Unknown')
+          .join(', ') || '-';
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${name}</td>
           <td>${formatNumber(count)}</td>
           <td>${formatNumber(details.indigenous)}</td>
-          <td>${formatNumber(details.imported)}</td>
-          <td>${dominantSpecies ? dominantSpecies[0] : '-'}</td>
+          ${hasImportedMukims ? `<td class="imported-col">${formatNumber(details.imported)}</td>` : ''}
+          <td>${speciesList}</td>
         `;
         tables.topMukim.appendChild(tr);
       });
+    }
+
+    // Hide imported column header if no imported cases
+    const mukimTable = document.getElementById('malaria_top_mukim_table');
+    if (mukimTable) {
+      const importedHeaders = mukimTable.querySelectorAll('th.imported-col');
+      importedHeaders.forEach(th => th.style.display = hasImportedMukims ? '' : 'none');
     }
   }
 
@@ -10582,22 +10544,13 @@ window.renderAll = renderAll;
     const validRows = rows.filter(r => r._coords);
 
     validRows.forEach(r => {
-      let color = '#6b7280'; // default gray
-      if (r._parasite === 'P. falciparum') color = '#dc2626'; // red
-      else if (r._parasite === 'P. knowlesi') color = '#f97316'; // orange
-      else if (r._parasite === 'P. vivax') color = '#fbbf24'; // yellow
-      else if (r._parasite === 'P. malariae' || r._parasite === 'P. ovale') color = '#3b82f6'; // blue
-      else if (r._parasite === 'Mixed') color = '#a855f7'; // purple
-
-      const radius = r._isSevere ? 8 : 5;
-
       const marker = L.circleMarker([r._lat, r._lng], {
-        radius: radius,
-        fillColor: color,
+        radius: 5,
+        fillColor: '#dc2626',
+        fillOpacity: 0.8,
         color: '#000',
         weight: 1,
-        opacity: 0.8,
-        fillOpacity: 0.6
+        opacity: 0.8
       });
 
       const cols = malariaState.columns;
