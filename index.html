@@ -683,12 +683,13 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     .tab-btn {
       border: 1px solid #d0d0d0;
       background: #fff;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       white-space: nowrap;
-      flex-shrink: 0;
+      flex-shrink: 1;
+      min-width: fit-content;
     }
 
     .tab-btn.active {
@@ -2489,11 +2490,32 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       <label for="fileInput_malaria"><b>Load Malaria Excel (.xls/.xlsx)</b></label>
       <input type="file" id="fileInput_malaria" accept=".xls,.xlsx" />
     </div>
+    <div style="margin-top:12px;">
+      <label for="malaria_sheet_selector"><strong>Select district sheet:</strong></label>
+      <select id="malaria_sheet_selector" style="margin-left:8px; padding:6px 12px;">
+        <option value="">- Select after file upload -</option>
+      </select>
+    </div>
   </div>
 
-  <div class="card" id="malaria_content" style="display:none;">
-
-    <h2>2. Overview</h2>
+  <h2>2. Filters and key numbers</h2>
+  <div class="card">
+    <div class="filters-row" style="margin-bottom: 12px;">
+      <div class="filter-field">
+        <label for="malaria_filter_week_from"><strong>From Week</strong></label>
+        <input type="number" id="malaria_filter_week_from" min="1" max="53" value="1" style="width:80px;" />
+      </div>
+      <div class="filter-field">
+        <label for="malaria_filter_week_to"><strong>to</strong></label>
+        <input type="number" id="malaria_filter_week_to" min="1" max="53" value="53" style="width:80px;" />
+      </div>
+      <div class="filter-field">
+        <label for="malaria_filter_district"><strong>District</strong></label>
+        <select id="malaria_filter_district">
+          <option value="">All Districts</option>
+        </select>
+      </div>
+    </div>
     <div class="kpi-grid">
       <div class="kpi-box">
         <div class="kpi-title">Total Cases</div>
@@ -2590,40 +2612,27 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="kpi-subtitle" id="malaria_kpi_top_mukim_count">-</div>
       </div>
     </div>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
 
-    <h2>3. Filters</h2>
-    <div class="filter-row">
-      <div class="filter-item">
-        <label for="malaria_filter_week_from">From Week</label>
-        <input type="number" id="malaria_filter_week_from" min="1" max="53" value="1" />
-      </div>
-      <div class="filter-item">
-        <label for="malaria_filter_week_to">To Week</label>
-        <input type="number" id="malaria_filter_week_to" min="1" max="53" value="53" />
-      </div>
-      <div class="filter-item">
-        <label for="malaria_filter_district">District</label>
-        <select id="malaria_filter_district">
-          <option value="">All Districts</option>
-        </select>
-      </div>
-    </div>
-
-    <h2>4. Weekly Trend</h2>
-    <div class="chart-container">
-      <div style="margin-bottom:8px;">
-        <label for="malaria_trend_date_mode">Date type for trend:</label>
+  <h2>3. Weekly trend</h2>
+  <div class="card">
+    <div class="filters-row" style="margin-bottom:8px;">
+      <div class="filter-field">
+        <label for="malaria_trend_date_mode"><strong>Trend Date</strong></label>
         <select id="malaria_trend_date_mode">
           <option value="onset">Onset Week</option>
           <option value="notif">Notification Week</option>
           <option value="diagnosis">Diagnosis Week</option>
         </select>
       </div>
-      <canvas id="malaria_weekly_trend"></canvas>
     </div>
+    <canvas id="malaria_weekly_trend"></canvas>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
 
-    <h2>5. Parasite Species & Case Classification</h2>
-    <div class="demo-grid">
+  <h2>4. Lab profiles</h2>
+    <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Parasite Species</div>
         <canvas id="malaria_chart_species"></canvas>
@@ -2642,8 +2651,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
     </div>
 
-    <h2>6. Demographics</h2>
-    <div class="demo-grid">
+  <h2>5. Demography</h2>
+  <div class="card">
+    <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Gender</div>
         <canvas id="malaria_demo_gender"></canvas>
@@ -2669,9 +2679,11 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <canvas id="malaria_demo_occupation"></canvas>
       </div>
     </div>
+  </div>
 
-    <h2>7. Risk Activity & Treatment</h2>
-    <div class="demo-grid">
+  <h2>6. Risk & Treatment</h2>
+  <div class="card">
+    <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Risk Activity</div>
         <canvas id="malaria_chart_risk"></canvas>
@@ -2689,9 +2701,11 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <canvas id="malaria_chart_stratification"></canvas>
       </div>
     </div>
+  </div>
 
-    <h2>8. Timeliness</h2>
-    <div class="demo-grid">
+  <h2>7. Timeliness</h2>
+  <div class="card">
+    <div class="demography-grid">
       <div class="demo-card">
         <div class="demo-block-title">Onset → Notification (days)</div>
         <canvas id="malaria_timeline_onset_notif"></canvas>
@@ -2705,8 +2719,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <canvas id="malaria_timeline_diag_admit"></canvas>
       </div>
     </div>
+  </div>
 
-    <h2>9. Interactive Case Map</h2>
+  <h2>8. Case distribution map</h2>
     <div class="card">
       <div id="malaria_case_map" style="width:100%; height:600px; border-radius:8px; margin-bottom:12px;"></div>
 
@@ -2742,7 +2757,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </div>
     </div>
 
-    <h2>10. Top Localities</h2>
+  <h2>9. Top 10</h2>
+  <div class="card">
+    <h3 style="margin-top:0;">Top Localities</h3>
     <div class="table-container">
       <table id="malaria_top_locality_table">
         <thead>
@@ -2758,7 +2775,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       </table>
     </div>
 
-    <h2>11. Top Sub-districts (Mukim)</h2>
+    <h3 style="margin-top:24px;">Top Sub-districts (Mukim)</h3>
     <div class="table-container">
       <table id="malaria_top_mukim_table">
         <thead>
@@ -2773,8 +2790,10 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <tbody></tbody>
       </table>
     </div>
+  </div>
 
-    <h2>12. Contact Tracing Summary</h2>
+  <h2>10. Contact Tracing</h2>
+  <div class="card">
     <div class="kpi-grid">
       <div class="kpi-box">
         <div class="kpi-title">Total Contacts</div>
@@ -2793,7 +2812,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <div class="kpi-value" id="malaria_contact_positivity">-%</div>
       </div>
     </div>
-
   </div>
 
   <div class="download-section">
@@ -10553,6 +10571,64 @@ window.renderAll = renderAll;
     updateMalariaMapMarkers(rows);
   }
 
+  // Store workbook for sheet selection
+  let currentWorkbook = null;
+
+  // Function to load data from selected sheet
+  function loadMalariaSheet(sheetName) {
+    if (!currentWorkbook) return;
+
+    try {
+      const worksheet = currentWorkbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+
+      if (jsonData.length === 0) {
+        alert('No data found in sheet: ' + sheetName);
+        return;
+      }
+
+      const headers = Object.keys(jsonData[0]);
+      malariaState.columns = inferMalariaColumns(headers);
+      malariaState.rows = preprocessMalariaRows(jsonData);
+
+      // Populate district filter
+      const districts = new Set();
+      malariaState.rows.forEach(r => {
+        if (r._district && r._district !== 'Unknown') {
+          districts.add(r._district);
+        }
+      });
+
+      if (districtSelect) {
+        districtSelect.innerHTML = '<option value="">All Districts</option>';
+        Array.from(districts).sort().forEach(d => {
+          const option = document.createElement('option');
+          option.value = d;
+          option.textContent = d;
+          districtSelect.appendChild(option);
+        });
+      }
+
+      // Set week range
+      const weeks = malariaState.rows.map(r => r._week).filter(w => w > 0);
+      if (weeks.length > 0) {
+        const minWeek = Math.min(...weeks);
+        const maxWeek = Math.max(...weeks);
+        const weekFromInput = document.getElementById('malaria_filter_week_from');
+        const weekToInput = document.getElementById('malaria_filter_week_to');
+        if (weekFromInput) weekFromInput.value = minWeek;
+        if (weekToInput) weekToInput.value = maxWeek;
+      }
+
+      // Render dashboard
+      renderMalariaAll();
+
+    } catch (error) {
+      console.error('Error loading sheet:', error);
+      alert('Error loading sheet: ' + sheetName);
+    }
+  }
+
   // File input handler
   fileInput.addEventListener('change', function (e) {
     const file = e.target.files[0];
@@ -10563,55 +10639,32 @@ window.renderAll = renderAll;
       try {
         const data = new Uint8Array(evt.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
+        currentWorkbook = workbook;
 
-        // Try to find MUALLIM sheet, otherwise use first sheet
-        let sheetName = workbook.SheetNames.find(name => name.toUpperCase().includes('MUALLIM'));
-        if (!sheetName) sheetName = workbook.SheetNames[0];
+        // Populate sheet selector
+        const sheetSelector = document.getElementById('malaria_sheet_selector');
+        if (sheetSelector) {
+          sheetSelector.innerHTML = '<option value="">- Select district sheet -</option>';
 
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+          // Filter out "Form responses 1" and add other sheets
+          const districtSheets = workbook.SheetNames.filter(name =>
+            !name.toLowerCase().includes('form response')
+          );
 
-        if (jsonData.length === 0) {
-          alert('No data found in the Excel file');
-          return;
-        }
-
-        const headers = Object.keys(jsonData[0]);
-        malariaState.columns = inferMalariaColumns(headers);
-        malariaState.rows = preprocessMalariaRows(jsonData);
-
-        // Populate district filter
-        const districts = new Set();
-        malariaState.rows.forEach(r => {
-          if (r._district && r._district !== 'Unknown') {
-            districts.add(r._district);
-          }
-        });
-
-        if (districtSelect) {
-          districtSelect.innerHTML = '<option value="">All Districts</option>';
-          Array.from(districts).sort().forEach(d => {
+          districtSheets.forEach(sheetName => {
             const option = document.createElement('option');
-            option.value = d;
-            option.textContent = d;
-            districtSelect.appendChild(option);
+            option.value = sheetName;
+            option.textContent = sheetName.toUpperCase();
+            sheetSelector.appendChild(option);
           });
-        }
 
-        // Set week range
-        const weeks = malariaState.rows.map(r => r._week).filter(w => w > 0);
-        if (weeks.length > 0) {
-          const minWeek = Math.min(...weeks);
-          const maxWeek = Math.max(...weeks);
-          const weekFromInput = document.getElementById('malaria_filter_week_from');
-          const weekToInput = document.getElementById('malaria_filter_week_to');
-          if (weekFromInput) weekFromInput.value = minWeek;
-          if (weekToInput) weekToInput.value = maxWeek;
+          // Auto-select MUALLIM if it exists
+          const muallimSheet = districtSheets.find(name => name.toUpperCase().includes('MUALLIM'));
+          if (muallimSheet) {
+            sheetSelector.value = muallimSheet;
+            loadMalariaSheet(muallimSheet);
+          }
         }
-
-        // Show content and render
-        if (contentDiv) contentDiv.style.display = 'block';
-        renderMalariaAll();
 
       } catch (error) {
         console.error('Error processing malaria file:', error);
@@ -10619,6 +10672,14 @@ window.renderAll = renderAll;
       }
     };
     reader.readAsArrayBuffer(file);
+  });
+
+  // Sheet selector handler
+  document.getElementById('malaria_sheet_selector')?.addEventListener('change', function() {
+    const sheetName = this.value;
+    if (sheetName) {
+      loadMalariaSheet(sheetName);
+    }
   });
 
   // Filter change listeners
