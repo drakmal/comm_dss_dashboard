@@ -2503,11 +2503,11 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="filters-row" style="margin-bottom: 12px;">
       <div class="filter-field">
         <label for="malaria_filter_week_from"><strong>From Week</strong></label>
-        <input type="number" id="malaria_filter_week_from" min="1" max="53" value="1" style="width:80px;" />
+        <select id="malaria_filter_week_from" style="width:80px;"></select>
       </div>
       <div class="filter-field">
         <label for="malaria_filter_week_to"><strong>to</strong></label>
-        <input type="number" id="malaria_filter_week_to" min="1" max="53" value="53" style="width:80px;" />
+        <select id="malaria_filter_week_to" style="width:80px;"></select>
       </div>
     </div>
     <div class="kpi-grid">
@@ -10608,6 +10608,35 @@ window.renderAll = renderAll;
   // Store workbook for sheet selection
   let currentWorkbook = null;
 
+  // Helper function to populate week dropdowns with options 1-53
+  function populateWeekDropdowns(fromValue = 1, toValue = 53) {
+    const weekFromSelect = document.getElementById('malaria_filter_week_from');
+    const weekToSelect = document.getElementById('malaria_filter_week_to');
+
+    if (weekFromSelect && weekToSelect) {
+      // Clear existing options
+      weekFromSelect.innerHTML = '';
+      weekToSelect.innerHTML = '';
+
+      // Populate with options 1-53
+      for (let i = 1; i <= 53; i++) {
+        const optionFrom = document.createElement('option');
+        optionFrom.value = i;
+        optionFrom.textContent = i;
+        weekFromSelect.appendChild(optionFrom);
+
+        const optionTo = document.createElement('option');
+        optionTo.value = i;
+        optionTo.textContent = i;
+        weekToSelect.appendChild(optionTo);
+      }
+
+      // Set selected values
+      weekFromSelect.value = fromValue;
+      weekToSelect.value = toValue;
+    }
+  }
+
   // Function to load data from selected sheet
   function loadMalariaSheet(sheetName) {
     if (!currentWorkbook) return;
@@ -10642,26 +10671,15 @@ window.renderAll = renderAll;
       const validWeeks = weeks.filter(w => w > 0);
       console.log('Valid weeks (> 0):', validWeeks);
 
-      const weekFromInput = document.getElementById('malaria_filter_week_from');
-      const weekToInput = document.getElementById('malaria_filter_week_to');
-
       if (validWeeks.length > 0) {
         const maxWeek = Math.max(...validWeeks);
         const toWeek = Math.max(maxWeek, 53); // Use highest week or 53, whichever is greater
         console.log('Week range: 1 to', toWeek);
-
-        if (weekFromInput) {
-          weekFromInput.value = 1;
-          console.log('Set From Week to: 1');
-        }
-        if (weekToInput) {
-          weekToInput.value = toWeek;
-          console.log('Set To Week to:', toWeek);
-        }
+        populateWeekDropdowns(1, toWeek);
+        console.log('Populated week dropdowns: 1 to', toWeek);
       } else {
         console.warn('No valid weeks found in data! Using default 1-53');
-        if (weekFromInput) weekFromInput.value = 1;
-        if (weekToInput) weekToInput.value = 53;
+        populateWeekDropdowns(1, 53);
       }
 
       // Render dashboard
@@ -10758,6 +10776,10 @@ window.renderAll = renderAll;
     mapState.delayVisible = this.checked;
     updateMalariaMapMarkers(malariaState.filteredRows);
   });
+
+  // Initialize week dropdowns with default values (1-53)
+  populateWeekDropdowns(1, 53);
+  console.log('Malaria week dropdowns initialized with default range 1-53');
 })();
 </script>
 
