@@ -2509,12 +2509,6 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
         <label for="malaria_filter_week_to"><strong>to</strong></label>
         <input type="number" id="malaria_filter_week_to" min="1" max="53" value="53" style="width:80px;" />
       </div>
-      <div class="filter-field">
-        <label for="malaria_filter_district"><strong>District</strong></label>
-        <select id="malaria_filter_district">
-          <option value="">All Districts</option>
-        </select>
-      </div>
     </div>
     <div class="kpi-grid">
       <div class="kpi-box">
@@ -9532,7 +9526,6 @@ window.renderAll = renderAll;
 // ========================================
 (function () {
   const fileInput = document.getElementById('fileInput_malaria');
-  const districtSelect = document.getElementById('malaria_filter_district');
 
   if (!fileInput) return;
 
@@ -9896,11 +9889,9 @@ window.renderAll = renderAll;
   function applyMalariaFilters() {
     const weekFrom = parseInt(document.getElementById('malaria_filter_week_from')?.value) || 1;
     const weekTo = parseInt(document.getElementById('malaria_filter_week_to')?.value) || 53;
-    const selectedDistrict = document.getElementById('malaria_filter_district')?.value || '';
 
     return malariaState.rows.filter(r => {
       if (r._week < weekFrom || r._week > weekTo) return false;
-      if (selectedDistrict && r._district !== selectedDistrict) return false;
       return true;
     });
   }
@@ -10592,24 +10583,6 @@ window.renderAll = renderAll;
       malariaState.columns = inferMalariaColumns(headers);
       malariaState.rows = preprocessMalariaRows(jsonData);
 
-      // Populate district filter
-      const districts = new Set();
-      malariaState.rows.forEach(r => {
-        if (r._district && r._district !== 'Unknown') {
-          districts.add(r._district);
-        }
-      });
-
-      if (districtSelect) {
-        districtSelect.innerHTML = '<option value="">All Districts</option>';
-        Array.from(districts).sort().forEach(d => {
-          const option = document.createElement('option');
-          option.value = d;
-          option.textContent = d;
-          districtSelect.appendChild(option);
-        });
-      }
-
       // Set week range
       const weeks = malariaState.rows.map(r => r._week).filter(w => w > 0);
       if (weeks.length > 0) {
@@ -10701,7 +10674,6 @@ window.renderAll = renderAll;
   // Filter change listeners
   document.getElementById('malaria_filter_week_from')?.addEventListener('change', renderMalariaAll);
   document.getElementById('malaria_filter_week_to')?.addEventListener('change', renderMalariaAll);
-  document.getElementById('malaria_filter_district')?.addEventListener('change', renderMalariaAll);
   document.getElementById('malaria_trend_date_mode')?.addEventListener('change', () => {
     updateMalariaWeeklyTrend(malariaState.filteredRows);
   });
