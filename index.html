@@ -10634,6 +10634,8 @@ window.renderAll = renderAll;
     const file = e.target.files[0];
     if (!file) return;
 
+    console.log('Malaria file selected:', file.name);
+
     const reader = new FileReader();
     reader.onload = function (evt) {
       try {
@@ -10641,8 +10643,12 @@ window.renderAll = renderAll;
         const workbook = XLSX.read(data, { type: 'array' });
         currentWorkbook = workbook;
 
+        console.log('Workbook loaded. Sheet names:', workbook.SheetNames);
+
         // Populate sheet selector
         const sheetSelector = document.getElementById('malaria_sheet_selector');
+        console.log('Sheet selector element found:', !!sheetSelector);
+
         if (sheetSelector) {
           sheetSelector.innerHTML = '<option value="">- Select district sheet -</option>';
 
@@ -10651,6 +10657,8 @@ window.renderAll = renderAll;
             !name.toLowerCase().includes('form response')
           );
 
+          console.log('District sheets after filtering:', districtSheets);
+
           districtSheets.forEach(sheetName => {
             const option = document.createElement('option');
             option.value = sheetName;
@@ -10658,12 +10666,19 @@ window.renderAll = renderAll;
             sheetSelector.appendChild(option);
           });
 
+          console.log('Sheet selector populated with', districtSheets.length, 'sheets');
+
           // Auto-select MUALLIM if it exists
           const muallimSheet = districtSheets.find(name => name.toUpperCase().includes('MUALLIM'));
           if (muallimSheet) {
+            console.log('Auto-selecting MUALLIM sheet:', muallimSheet);
             sheetSelector.value = muallimSheet;
             loadMalariaSheet(muallimSheet);
+          } else {
+            console.log('MUALLIM sheet not found, user must select manually');
           }
+        } else {
+          console.error('Sheet selector element not found!');
         }
 
       } catch (error) {
