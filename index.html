@@ -9775,6 +9775,19 @@ window.renderAll = renderAll;
     return 'Other';
   }
 
+  // Helper: Clean week values (handles "ME 14", "ME20", "meme50", etc.)
+  function cleanWeekValue(val) {
+    if (!val || val === '') return 0;
+    // Convert to string and clean
+    let str = val.toString().trim();
+    // Remove "ME" prefix (case insensitive) and any following spaces
+    str = str.replace(/^me\s*/i, '');
+    // Extract first continuous number sequence
+    const match = str.match(/\d+/);
+    const result = match ? parseInt(match[0]) : 0;
+    return result;
+  }
+
   // Preprocessing
   function preprocessMalariaRows(rows) {
     const cols = malariaState.columns;
@@ -9844,20 +9857,20 @@ window.renderAll = renderAll;
       const patientStatus = (r[cols.patientStatus] || '').toString().toUpperCase();
       r._alive = patientStatus === 'HIDUP';
 
-      // Parse week for filtering
+      // Parse week for filtering - FIXED to handle "ME" prefix
       const onsetWeekValue = r[cols.onsetWeek];
       const epidWeekValue = r[cols.epidWeek];
-      const onsetWeekParsed = parseInt(onsetWeekValue);
-      const epidWeekParsed = parseInt(epidWeekValue);
+      const onsetWeekParsed = cleanWeekValue(onsetWeekValue);
+      const epidWeekParsed = cleanWeekValue(epidWeekValue);
       r._week = onsetWeekParsed || epidWeekParsed || 0;
 
-      // Debug first 3 rows
-      if (index < 3) {
+      // Debug first 5 rows to show cleaning in action
+      if (index < 5) {
         console.log(`Row ${index + 1}:`, {
-          onsetWeekValue,
-          epidWeekValue,
-          onsetWeekParsed,
-          epidWeekParsed,
+          onsetWeekRaw: onsetWeekValue,
+          epidWeekRaw: epidWeekValue,
+          onsetWeekCleaned: onsetWeekParsed,
+          epidWeekCleaned: epidWeekParsed,
           finalWeek: r._week
         });
       }
@@ -10625,27 +10638,30 @@ window.renderAll = renderAll;
       console.log('All extracted weeks:', weeks);
       console.log('Rows with week = 0 or undefined:', weeks.filter(w => !w || w === 0).length);
 
-      // Set week range
+      // Set week range - always start from 1, end at max week found (or 53)
       const validWeeks = weeks.filter(w => w > 0);
       console.log('Valid weeks (> 0):', validWeeks);
 
-      if (validWeeks.length > 0) {
-        const minWeek = Math.min(...validWeeks);
-        const maxWeek = Math.max(...validWeeks);
-        console.log('Week range:', minWeek, 'to', maxWeek);
+      const weekFromInput = document.getElementById('malaria_filter_week_from');
+      const weekToInput = document.getElementById('malaria_filter_week_to');
 
-        const weekFromInput = document.getElementById('malaria_filter_week_from');
-        const weekToInput = document.getElementById('malaria_filter_week_to');
+      if (validWeeks.length > 0) {
+        const maxWeek = Math.max(...validWeeks);
+        const toWeek = Math.max(maxWeek, 53); // Use highest week or 53, whichever is greater
+        console.log('Week range: 1 to', toWeek);
+
         if (weekFromInput) {
-          weekFromInput.value = minWeek;
-          console.log('Set From Week to:', minWeek);
+          weekFromInput.value = 1;
+          console.log('Set From Week to: 1');
         }
         if (weekToInput) {
-          weekToInput.value = maxWeek;
-          console.log('Set To Week to:', maxWeek);
+          weekToInput.value = toWeek;
+          console.log('Set To Week to:', toWeek);
         }
       } else {
-        console.warn('No valid weeks found in data!');
+        console.warn('No valid weeks found in data! Using default 1-53');
+        if (weekFromInput) weekFromInput.value = 1;
+        if (weekToInput) weekToInput.value = 53;
       }
 
       // Render dashboard
