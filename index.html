@@ -659,8 +659,9 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       display: flex;
       gap: 10px;
       margin: 14px 0 0;
-      flex-wrap: wrap;
-      
+      flex-wrap: nowrap;
+      overflow-x: auto;
+
       /* make ONLY the tabs bar stick */
       position: sticky;
       top: 0;
@@ -682,10 +683,13 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     .tab-btn {
       border: 1px solid #d0d0d0;
       background: #fff;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      flex-shrink: 1;
+      min-width: fit-content;
     }
 
     .tab-btn.active {
@@ -1003,6 +1007,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <button class="tab-btn" data-tab="hiv">HIV Dashboard</button>
     <button class="tab-btn" data-tab="hepc">Hep C Dashboard</button>
     <button class="tab-btn" data-tab="dengue">Dengue Dashboard</button>
+    <button class="tab-btn" data-tab="malaria">Malaria Dashboard</button>
 </div>
 
 <div class="card dosm-card">
@@ -2472,6 +2477,305 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <button class="download-btn" onclick="downloadDashboard('dengue')">
       <span class="download-icon">📥</span>
       Download Dengue Report
+    </button>
+  </div>
+
+</section>
+
+<section class="tab-panel" data-tab="malaria" id="tab-malaria">
+  <h2>1. Upload Malaria Excel file</h2>
+  <p class="subtitle">Upload malaria Excel file obtained from JKN. This dashboard will be updated automatically once the VekPro system is online.</p>
+  <div class="card">
+    <div class="upload-row">
+      <label for="fileInput_malaria"><b>Load Malaria Excel (.xls/.xlsx)</b></label>
+      <input type="file" id="fileInput_malaria" accept=".xls,.xlsx" />
+    </div>
+    <div style="margin-top:12px;">
+      <label for="malaria_sheet_selector"><strong>Select district sheet:</strong></label>
+      <select id="malaria_sheet_selector" style="margin-left:8px; padding:6px 12px;">
+        <option value="">- Select after file upload -</option>
+      </select>
+    </div>
+  </div>
+
+  <h2>2. Filters and key numbers</h2>
+  <div class="card">
+    <div class="filters-row" style="margin-bottom: 12px;">
+      <div class="filter-field">
+        <label for="malaria_filter_week_from"><strong>From Week</strong></label>
+        <select id="malaria_filter_week_from" style="width:80px;"></select>
+      </div>
+      <div class="filter-field">
+        <label for="malaria_filter_week_to"><strong>to</strong></label>
+        <select id="malaria_filter_week_to" style="width:80px;"></select>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Total Cases</div>
+        <div class="kpi-value" id="malaria_kpi_total">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Incidence (per 100k)</div>
+        <div class="kpi-value" id="malaria_kpi_incidence">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Deaths</div>
+        <div class="kpi-value" id="malaria_kpi_deaths">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_deaths_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Imported Cases</div>
+        <div class="kpi-value" id="malaria_kpi_imported">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_imported_pct">-%</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Severe Cases</div>
+        <div class="kpi-value" id="malaria_kpi_severe">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_severe_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Uncomplicated</div>
+        <div class="kpi-value" id="malaria_kpi_uncomplicated">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_uncomplicated_pct">-%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Treatment Completion</div>
+        <div class="kpi-value" id="malaria_kpi_treatment_rate">-%</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Onset → Notif (median days)</div>
+        <div class="kpi-value" id="malaria_kpi_onset_notif">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Notif → Investigation (median days)</div>
+        <div class="kpi-value" id="malaria_kpi_notif_invest">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Diagnosis → Admission (median days)</div>
+        <div class="kpi-value" id="malaria_kpi_diag_admit">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">With Coordinates</div>
+        <div class="kpi-value" id="malaria_kpi_coords_pct">-%</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Top Locality</div>
+        <div class="kpi-value" id="malaria_kpi_top_locality" style="font-size:0.9rem;">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_top_locality_count">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Top Sub-district</div>
+        <div class="kpi-value" id="malaria_kpi_top_mukim" style="font-size:0.9rem;">-</div>
+        <div class="kpi-subtitle" id="malaria_kpi_top_mukim_count">-</div>
+      </div>
+    </div>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>3. Weekly trend</h2>
+  <div class="card">
+    <div class="filters-row" style="margin-bottom:8px;">
+      <div class="filter-field">
+        <label for="malaria_trend_date_mode"><strong>Trend Date</strong></label>
+        <select id="malaria_trend_date_mode">
+          <option value="onset">Onset Week</option>
+          <option value="notif">Notification Week</option>
+          <option value="diagnosis">Diagnosis Week</option>
+        </select>
+      </div>
+    </div>
+    <canvas id="malaria_weekly_trend"></canvas>
+    <div class="note">All numbers update based on filters above.</div>
+  </div>
+
+  <h2>4. Case distribution map</h2>
+  <div class="card">
+    <div class="note">Date slider follows the Section 2 epid week filter.</div>
+    <div id="malaria_case_map" class="map-container"></div>
+    <div class="slider-row">
+      <span class="muted">Date</span>
+      <div class="slider-field">
+        <input type="range" id="malaria_map_slider" min="0" max="0" step="1" value="0" disabled>
+        <span id="malaria_map_date_hover" class="slider-hover" aria-hidden="true"></span>
+      </div>
+      <span id="malaria_map_date_label" class="muted">-</span>
+    </div>
+    <div class="map-checkboxes">
+      <label class="checkbox-field" for="malaria_map_show_all">
+        <input type="checkbox" id="malaria_map_show_all">
+        Show all cases
+      </label>
+      <label class="checkbox-field" for="malaria_map_delay">
+        <input type="checkbox" id="malaria_map_delay">
+        7-days delay
+      </label>
+    </div>
+  </div>
+
+  <h2>5. Case profiles</h2>
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Parasite Species</div>
+        <canvas id="malaria_chart_species"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Case Classification</div>
+        <canvas id="malaria_chart_classification"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Severity</div>
+        <canvas id="malaria_chart_severity"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Detection Method</div>
+        <canvas id="malaria_chart_detection"></canvas>
+      </div>
+    </div>
+
+  <h2>6. Demography</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Gender</div>
+        <canvas id="malaria_demo_gender"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Age Group</div>
+        <canvas id="malaria_demo_age"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Citizenship</div>
+        <canvas id="malaria_demo_citizenship"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Ethnicity</div>
+        <canvas id="malaria_demo_ethnicity"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Occupation</div>
+        <canvas id="malaria_demo_occupation"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>7. Top 10</h2>
+  <div class="card">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div>
+        <h3 style="margin-top:0;">Top Localities</h3>
+        <div class="table-container">
+          <table id="malaria_top_locality_table">
+            <thead>
+              <tr>
+                <th>Locality</th>
+                <th>Cases</th>
+                <th>Indigenous</th>
+                <th class="imported-col">Imported</th>
+                <th>Species Found</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-top:0;">Top Sub-districts (Mukim)</h3>
+        <div class="table-container">
+          <table id="malaria_top_mukim_table">
+            <thead>
+              <tr>
+                <th>Sub-district</th>
+                <th>Cases</th>
+                <th>Indigenous</th>
+                <th class="imported-col">Imported</th>
+                <th>Species Found</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>8. Outbreak clusters</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Risk Activity</div>
+        <canvas id="malaria_chart_risk"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Treatment Status</div>
+        <canvas id="malaria_chart_treatment"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Patient Outcome</div>
+        <canvas id="malaria_chart_outcome"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Stratification Color</div>
+        <canvas id="malaria_chart_stratification"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>9. Timeliness</h2>
+  <div class="card">
+    <div class="demography-grid">
+      <div class="demo-card">
+        <div class="demo-block-title">Onset → Notification (days)</div>
+        <canvas id="malaria_timeline_onset_notif"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Notification → Investigation (days)</div>
+        <canvas id="malaria_timeline_notif_invest"></canvas>
+      </div>
+      <div class="demo-card">
+        <div class="demo-block-title">Diagnosis → Admission (days)</div>
+        <canvas id="malaria_timeline_diag_admit"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <h2>10. Contact Tracing</h2>
+  <div class="card">
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-title">Total Contacts</div>
+        <div class="kpi-value" id="malaria_contact_total">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Contacts Screened</div>
+        <div class="kpi-value" id="malaria_contact_screened">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Positive Contacts</div>
+        <div class="kpi-value" id="malaria_contact_positive">-</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-title">Contact Positivity Rate</div>
+        <div class="kpi-value" id="malaria_contact_positivity">-%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="download-section">
+    <h3>Download Dashboard Report</h3>
+    <p>Generate a comprehensive PDF report with all displayed data and public health summary</p>
+    <button class="download-btn" onclick="downloadDashboard('malaria')">
+      <span class="download-icon">📥</span>
+      Download Malaria Report
     </button>
   </div>
 
@@ -9177,6 +9481,1280 @@ window.renderAll = renderAll;
     };
     reader.readAsArrayBuffer(file);
   });
+})();
+
+// ========================================
+// MALARIA DASHBOARD MODULE
+// ========================================
+(function () {
+  const fileInput = document.getElementById('fileInput_malaria');
+
+  if (!fileInput) return;
+
+  console.log('Malaria module initialized successfully');
+
+  // State
+  const malariaState = {
+    rows: [],
+    columns: {},
+    filteredRows: []
+  };
+
+  // Chart instances
+  const charts = {
+    weekly: null,
+    species: null,
+    classification: null,
+    severity: null,
+    detection: null,
+    risk: null,
+    treatment: null,
+    outcome: null,
+    stratification: null,
+    demo: {
+      gender: null,
+      age: null,
+      citizenship: null,
+      ethnicity: null,
+      district: null,
+      occupation: null
+    },
+    timeline: {
+      onsetNotif: null,
+      notifInvest: null,
+      diagAdmit: null
+    }
+  };
+
+  // Tables
+  const tables = {
+    topLocality: document.querySelector('#malaria_top_locality_table tbody'),
+    topMukim: document.querySelector('#malaria_top_mukim_table tbody')
+  };
+
+  // Map state
+  const mapState = {
+    map: null,
+    markers: null,
+    timelineActive: false,
+    minDate: null,
+    maxDate: null,
+    selectedDate: null,
+    showAllCases: true,
+    delayVisible: false,
+    userViewLocked: false,
+    districtOutline: null,
+    selectedDistrictFeature: null
+  };
+
+  // Meteo state (reusing dengue pattern)
+  const meteoState = {
+    enabled: false,
+    variableKey: 'rain_mm',
+    hexLayer: null,
+    hexFeatureCollection: null,
+    meteoCacheByYear: new Map(),
+    meteoMockByYear: new Map(),
+    activeMeteo: null,
+    activeYear: null
+  };
+
+  // Helper functions (local to malaria module)
+  function parseDateAny(v) {
+    if (!v) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // Try DD/MM/YYYY
+    const ddmmyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    let m = s.match(ddmmyyyy);
+    if (m) {
+      const day = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const year = parseInt(m[3], 10);
+      return new Date(year, month, day);
+    }
+
+    // Try YYYY-MM-DD
+    const yyyymmdd = /^(\d{4})-(\d{1,2})-(\d{1,2})/;
+    m = s.match(yyyymmdd);
+    if (m) {
+      const year = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const day = parseInt(m[3], 10);
+      return new Date(year, month, day);
+    }
+
+    // Try Excel serial number
+    const num = parseFloat(s);
+    if (!isNaN(num) && num > 1000) {
+      const epoch = new Date(1899, 11, 30);
+      const days = Math.floor(num);
+      return new Date(epoch.getTime() + days * 86400000);
+    }
+
+    // Try native parse as last resort
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isoWeek(d) {
+    if (!d) return 0;
+    const date = new Date(d.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
+
+  function ageGroupFromYears(age) {
+    if (age < 0) return 'Unknown';
+    if (age <= 5) return '0-5';
+    if (age <= 15) return '6-15';
+    if (age <= 30) return '16-30';
+    if (age <= 45) return '31-45';
+    if (age <= 60) return '46-60';
+    return '>60';
+  }
+
+  function formatNumber(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    return num.toLocaleString();
+  }
+
+  // Column inference
+  function inferMalariaColumns(headers) {
+    const map = {};
+
+    // Helper function (reusing existing findColumnKey from dengue)
+    const find = (keywords) => {
+      for (let i = 0; i < headers.length; i++) {
+        const h = (headers[i] || '').toString().toLowerCase();
+        if (keywords.some(k => h.includes(k.toLowerCase()))) {
+          return headers[i];
+        }
+      }
+      return null;
+    };
+
+    // Temporal
+    map.timestamp = find(['Timestamp']);
+    map.onsetDate = find(['Tarikh onset']);
+    map.notifDate = find(['Tarikh notifikasi']);
+    map.diagnosisDate = find(['Tarikh diagnosa']);
+    map.investigationDate = find(['Tarikh siasatan kes']);
+    map.admissionDate = find(['Tarikh dimasukkan ke hospital']);
+    map.dischargeDate = find(['Tarikh discaj']);
+    map.slideDate = find(['Tarikh slaid diambil']);
+    map.slideExamDate = find(['Tarikh slaid diperiksa']);
+    map.onsetWeek = find(['Week Onset']);
+    map.epidWeek = find(['Minggu Epid']);
+    map.month = find(['Bulan']);
+    map.year = find(['Tahun']);
+
+    // Geographic
+    map.state = find(['Negeri']);
+    map.district = find(['Daerah']);
+    map.mukim = find(['Mukim']);
+    map.residenceLocality = find(['Nama Lokaliti Tempat Tinggal']);
+    map.infectionLocality = find(['Nama Lokaliti Punca Jangkitan']);
+    map.longitude = find(['Longitude GIS']);
+    map.latitude = find(['Latitude GIS']);
+    map.area = find(['Kawasan']);
+    map.localityType = find(['Jenis Lokaliti']);
+
+    // Parasitological
+    map.parasiteSpecies = find(['Jenis parasit']);
+    map.parasiteDensity = find(['Kepadatan']);
+    map.gametocytes = find(['Kehadiran gametosit']);
+    map.qcResult = find(['Keputusan QC']);
+    map.pcrResult = find(['Keputusan PCR']);
+
+    // Classification
+    map.caseClassification = find(['Klasifikasi kes']);
+    map.caseStatus = find(['Status kes']);
+    map.detectionMethod = find(['Cara Pengesanan Kes']);
+    map.severity = find(['Diagnosa Awal', 'Preliminary Diagnosis']);
+
+    // Demographics
+    map.name = find(['Nama']);
+    map.icPassport = find(['kad pengenalan', 'Passport']);
+    map.age = find(['Umur (tahun)']);
+    map.gender = find(['Jantina']);
+    map.pregnant = find(['hamil']);
+    map.ethnicity = find(['Bangsa']);
+    map.citizenship = find(['Warganegara']);
+    map.countryOrigin = find(['negara asal']);
+    map.validDocument = find(['dokumen yang sah']);
+
+    // Occupational
+    map.occupationClass = find(['Kelas Pekerjaan']);
+    map.occupation = find(['Pekerjaan']);
+    map.workplace = find(['Tempat Kerja']);
+    map.riskActivity = find(['Aktiviti Berisiko']);
+
+    // Treatment
+    map.treatment = find(['Jenis Rawatan']);
+    map.treatmentStatus = find(['Status rawatan']);
+    map.treatmentPlace = find(['Tempat rawatan']);
+    map.facility = find(['Nama fasiliti']);
+    map.patientStatus = find(['Satus pesakit']);
+    map.g6pd = find(['G6PD deficiency']);
+
+    // Stratification
+    map.stratStatus = find(['Status Stratifikasi']);
+    map.stratColor = find(['Warna Stratifikasi']);
+
+    // Intervention
+    map.sprayMethod = find(['Kaedah semburan']);
+    map.bednetProvided = find(['kelambu dibekalkan']);
+
+    // Contact tracing
+    map.totalContacts = find(['Bil Kontak', 'Bil. Kontak']);
+    map.contactsScreened = find(['Bil Kontak Diperiksa']);
+    map.contactsPositive = find(['Bil Kontak Positif']);
+    map.contactsTreated = find(['Bil Kontak Dirawat']);
+
+    // Other
+    map.eNotifNo = find(['No Siri e-Notifikasi']);
+    map.caseRegNo = find(['No Daftar Kes']);
+    map.outbreakNo = find(['No Daftar Wabak']);
+    map.fomemaScreening = find(['Kes Saringan FOMEMA']);
+
+    return map;
+  }
+
+  // Parasite species parser
+  function parseMalariaParasite(text) {
+    if (!text) return 'Unknown';
+    const t = text.toString().toUpperCase();
+    if (t.includes('KNOWLESI')) return 'P. knowlesi';
+    if (t.includes('VIVAX')) return 'P. vivax';
+    if (t.includes('FALCIPARUM')) return 'P. falciparum';
+    if (t.includes('MALARIAE')) return 'P. malariae';
+    if (t.includes('OVALE')) return 'P. ovale';
+    if (t.includes('MIXED') || t.includes('CAMPUR')) return 'Mixed';
+    return 'Other';
+  }
+
+  // Helper: Clean week values (handles "ME 14", "ME20", "meme50", etc.)
+  function cleanWeekValue(val) {
+    if (!val || val === '') return 0;
+    // Convert to string and clean
+    let str = val.toString().trim();
+    // Remove "ME" prefix (case insensitive) and any following spaces
+    str = str.replace(/^me\s*/i, '');
+    // Extract first continuous number sequence
+    const match = str.match(/\d+/);
+    const result = match ? parseInt(match[0]) : 0;
+    return result;
+  }
+
+  // Preprocessing
+  function preprocessMalariaRows(rows) {
+    const cols = malariaState.columns;
+
+    console.log('=== Preprocessing ===');
+    console.log('onsetWeek column:', cols.onsetWeek);
+    console.log('epidWeek column:', cols.epidWeek);
+
+    return rows.map((r, index) => {
+      // Parse dates (reuse parseDateAny from shared utilities)
+      r._dates = {
+        onset: parseDateAny(r[cols.onsetDate]),
+        notif: parseDateAny(r[cols.notifDate]),
+        diagnosis: parseDateAny(r[cols.diagnosisDate]),
+        investigation: parseDateAny(r[cols.investigationDate]),
+        admission: parseDateAny(r[cols.admissionDate]),
+        discharge: parseDateAny(r[cols.dischargeDate]),
+        slide: parseDateAny(r[cols.slideDate]),
+        slideExam: parseDateAny(r[cols.slideExamDate])
+      };
+
+      // Parse parasite species
+      r._parasite = parseMalariaParasite(r[cols.parasiteSpecies]);
+
+      // Parse case classification
+      const classification = (r[cols.caseClassification] || '').toString().toUpperCase();
+      r._classification = classification;
+      r._isIndigenous = classification.includes('INDIGENOUS');
+      r._isImported = classification.includes('IMPORTED');
+
+      // Parse severity
+      const severity = (r[cols.severity] || '').toString().toUpperCase();
+      r._severity = severity;
+      r._isSevere = severity.includes('SEVERE');
+      r._isUncomplicated = severity.includes('UNCOMPLICATED');
+
+      // Parse age
+      const ageText = (r[cols.age] || '').toString().toUpperCase();
+      let ageNum = parseFloat(ageText.replace(/[^0-9.]/g, ''));
+      if (isNaN(ageNum)) ageNum = 0;
+      r._age = ageNum;
+      r._ageGroup = ageGroupFromYears(ageNum);
+
+      // Parse coordinates
+      const lat = parseFloat(r[cols.latitude]);
+      const lng = parseFloat(r[cols.longitude]);
+      r._coords = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0 && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      r._lat = lat;
+      r._lng = lng;
+
+      // Calculate timeliness
+      if (r._dates.onset && r._dates.notif) {
+        r._onsetToNotif = Math.round((r._dates.notif - r._dates.onset) / (1000 * 60 * 60 * 24));
+      }
+      if (r._dates.notif && r._dates.investigation) {
+        r._notifToInvest = Math.round((r._dates.investigation - r._dates.notif) / (1000 * 60 * 60 * 24));
+      }
+      if (r._dates.diagnosis && r._dates.admission) {
+        r._diagToAdmit = Math.round((r._dates.admission - r._dates.diagnosis) / (1000 * 60 * 60 * 24));
+      }
+
+      // Treatment completion
+      const treatmentStatus = (r[cols.treatmentStatus] || '').toString().toLowerCase();
+      r._treatmentComplete = treatmentStatus.includes('lengkap');
+
+      // Patient outcome
+      const patientStatus = (r[cols.patientStatus] || '').toString().toUpperCase();
+      r._alive = patientStatus === 'HIDUP';
+
+      // Parse week for filtering - FIXED to handle "ME" prefix
+      const onsetWeekValue = r[cols.onsetWeek];
+      const epidWeekValue = r[cols.epidWeek];
+      const onsetWeekParsed = cleanWeekValue(onsetWeekValue);
+      const epidWeekParsed = cleanWeekValue(epidWeekValue);
+      r._week = onsetWeekParsed || epidWeekParsed || 0;
+
+      // Debug first 5 rows to show cleaning in action
+      if (index < 5) {
+        console.log(`Row ${index + 1}:`, {
+          onsetWeekRaw: onsetWeekValue,
+          epidWeekRaw: epidWeekValue,
+          onsetWeekCleaned: onsetWeekParsed,
+          epidWeekCleaned: epidWeekParsed,
+          finalWeek: r._week
+        });
+      }
+
+      // Detection method
+      r._detectionMethod = (r[cols.detectionMethod] || '').toString().toUpperCase();
+
+      // Risk activity
+      r._riskActivity = (r[cols.riskActivity] || '').toString().trim() || 'Unknown';
+
+      // Occupation
+      r._occupationClass = (r[cols.occupationClass] || '').toString().trim() || 'Unknown';
+
+      // Stratification color
+      r._stratColor = (r[cols.stratColor] || '').toString().toUpperCase();
+
+      // Gender
+      r._gender = (r[cols.gender] || '').toString().toUpperCase();
+
+      // Citizenship
+      const citizenship = (r[cols.citizenship] || '').toString().toLowerCase();
+      r._citizenship = citizenship.includes('ya') ? 'Malaysian' : 'Non-Malaysian';
+
+      // Ethnicity
+      r._ethnicity = (r[cols.ethnicity] || '').toString().trim() || 'Unknown';
+
+      // District
+      r._district = (r[cols.district] || '').toString().trim() || 'Unknown';
+
+      // Mukim
+      r._mukim = (r[cols.mukim] || '').toString().trim() || 'Unknown';
+
+      // Localities
+      r._residenceLocality = (r[cols.residenceLocality] || '').toString().trim() || 'Unknown';
+      r._infectionLocality = (r[cols.infectionLocality] || '').toString().trim() || 'Unknown';
+
+      // Contact tracing
+      r._totalContacts = parseInt(r[cols.totalContacts]) || 0;
+      r._contactsScreened = parseInt(r[cols.contactsScreened]) || 0;
+      r._contactsPositive = parseInt(r[cols.contactsPositive]) || 0;
+      r._contactsTreated = parseInt(r[cols.contactsTreated]) || 0;
+
+      return r;
+    });
+  }
+
+  // Apply filters
+  function applyMalariaFilters() {
+    const weekFrom = parseInt(document.getElementById('malaria_filter_week_from')?.value) || 1;
+    const weekTo = parseInt(document.getElementById('malaria_filter_week_to')?.value) || 53;
+
+    console.log('=== Filtering ===');
+    console.log('Filter: weeks', weekFrom, 'to', weekTo);
+    console.log('Total rows before filter:', malariaState.rows.length);
+
+    const filtered = malariaState.rows.filter(r => {
+      const passWeek = r._week >= weekFrom && r._week <= weekTo;
+      if (!passWeek) {
+        console.log('Row filtered out - week:', r._week, 'outside range', weekFrom, '-', weekTo);
+      }
+      return passWeek;
+    });
+
+    console.log('Total rows after filter:', filtered.length);
+    return filtered;
+  }
+
+  // Helper to show/hide KPI box based on value
+  function toggleKpiBox(valueElementId, value) {
+    const valueElement = document.getElementById(valueElementId);
+    if (valueElement) {
+      const kpiBox = valueElement.closest('.kpi-box');
+      if (kpiBox) {
+        // Hide if value is 0 or '0' or '0.00' etc
+        const numValue = typeof value === 'number' ? value : parseFloat(value);
+        kpiBox.style.display = (numValue === 0 || isNaN(numValue)) ? 'none' : '';
+      }
+    }
+  }
+
+  // Render KPIs
+  function renderMalariaKpis(rows) {
+    const total = rows.length;
+    const population = window.dosmSelectedPopulation || 100000;
+    const incidence = total > 0 ? ((total / population) * 100000).toFixed(2) : '0.00';
+
+    const indigenous = rows.filter(r => r._isIndigenous).length;
+    const imported = rows.filter(r => r._isImported).length;
+    const severe = rows.filter(r => r._isSevere).length;
+    const uncomplicated = rows.filter(r => r._isUncomplicated).length;
+
+    // Parasite species counts
+    const knowlesi = rows.filter(r => r._parasite === 'P. knowlesi').length;
+    const vivax = rows.filter(r => r._parasite === 'P. vivax').length;
+    const falciparum = rows.filter(r => r._parasite === 'P. falciparum').length;
+    const otherSpecies = total - knowlesi - vivax - falciparum;
+
+    // Treatment completion
+    const completed = rows.filter(r => r._treatmentComplete).length;
+    const completionRate = total > 0 ? ((completed / total) * 100).toFixed(1) : '0.0';
+
+    // Case fatality
+    const deaths = rows.filter(r => !r._alive).length;
+    const cfr = total > 0 ? ((deaths / total) * 100).toFixed(2) : '0.00';
+
+    // Coordinates
+    const withCoords = rows.filter(r => r._coords).length;
+    const coordsPct = total > 0 ? ((withCoords / total) * 100).toFixed(1) : '0.0';
+
+    // Timeliness - calculate medians
+    const onsetNotifDelays = rows.map(r => r._onsetToNotif).filter(d => d != null && !isNaN(d));
+    const notifInvestDelays = rows.map(r => r._notifToInvest).filter(d => d != null && !isNaN(d));
+    const diagAdmitDelays = rows.map(r => r._diagToAdmit).filter(d => d != null && !isNaN(d));
+
+    const medianOnsetNotif = onsetNotifDelays.length > 0 ? median(onsetNotifDelays) : 0;
+    const medianNotifInvest = notifInvestDelays.length > 0 ? median(notifInvestDelays) : 0;
+    const medianDiagAdmit = diagAdmitDelays.length > 0 ? median(diagAdmitDelays) : 0;
+
+    // Top localities
+    const localityCounts = new Map();
+    const mukimCounts = new Map();
+    rows.forEach(r => {
+      const loc = r._infectionLocality;
+      const muk = r._mukim;
+      if (loc && loc !== 'Unknown') localityCounts.set(loc, (localityCounts.get(loc) || 0) + 1);
+      if (muk && muk !== 'Unknown') mukimCounts.set(muk, (mukimCounts.get(muk) || 0) + 1);
+    });
+
+    const topLocalities = Array.from(localityCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const topMukims = Array.from(mukimCounts.entries()).sort((a, b) => b[1] - a[1]);
+
+    const topLocality = topLocalities.length > 0 ? topLocalities[0][0] : '-';
+    const topLocalityCount = topLocalities.length > 0 ? topLocalities[0][1] : 0;
+    const topMukim = topMukims.length > 0 ? topMukims[0][0] : '-';
+    const topMukimCount = topMukims.length > 0 ? topMukims[0][1] : 0;
+
+    // Update DOM elements
+    document.getElementById('malaria_kpi_total').textContent = formatNumber(total);
+    document.getElementById('malaria_kpi_incidence').textContent = incidence;
+
+    // Deaths KPI (with fraction and percentage)
+    document.getElementById('malaria_kpi_deaths').textContent = formatNumber(deaths);
+    document.getElementById('malaria_kpi_deaths_pct').textContent = deaths + '/' + total + ' (' + cfr + '%)';
+    toggleKpiBox('malaria_kpi_deaths', deaths);
+
+    document.getElementById('malaria_kpi_indigenous').textContent = formatNumber(indigenous);
+    document.getElementById('malaria_kpi_indigenous_pct').textContent = total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_indigenous', indigenous);
+
+    document.getElementById('malaria_kpi_imported').textContent = formatNumber(imported);
+    document.getElementById('malaria_kpi_imported_pct').textContent = total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_imported', imported);
+
+    document.getElementById('malaria_kpi_knowlesi').textContent = formatNumber(knowlesi);
+    document.getElementById('malaria_kpi_knowlesi_pct').textContent = total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_knowlesi', knowlesi);
+
+    document.getElementById('malaria_kpi_vivax').textContent = formatNumber(vivax);
+    document.getElementById('malaria_kpi_vivax_pct').textContent = total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_vivax', vivax);
+
+    document.getElementById('malaria_kpi_falciparum').textContent = formatNumber(falciparum);
+    document.getElementById('malaria_kpi_falciparum_pct').textContent = total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_falciparum', falciparum);
+
+    document.getElementById('malaria_kpi_other').textContent = formatNumber(otherSpecies);
+    document.getElementById('malaria_kpi_other_pct').textContent = total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_other', otherSpecies);
+
+    document.getElementById('malaria_kpi_severe').textContent = formatNumber(severe);
+    document.getElementById('malaria_kpi_severe_pct').textContent = total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_severe', severe);
+
+    document.getElementById('malaria_kpi_uncomplicated').textContent = formatNumber(uncomplicated);
+    document.getElementById('malaria_kpi_uncomplicated_pct').textContent = total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%';
+    toggleKpiBox('malaria_kpi_uncomplicated', uncomplicated);
+
+    document.getElementById('malaria_kpi_treatment_rate').textContent = completionRate + '%';
+    document.getElementById('malaria_kpi_cfr').textContent = cfr + '%';
+
+    document.getElementById('malaria_kpi_onset_notif').textContent = medianOnsetNotif.toFixed(1);
+    document.getElementById('malaria_kpi_notif_invest').textContent = medianNotifInvest.toFixed(1);
+    document.getElementById('malaria_kpi_diag_admit').textContent = medianDiagAdmit.toFixed(1);
+    document.getElementById('malaria_kpi_coords_pct').textContent = coordsPct + '%';
+
+    document.getElementById('malaria_kpi_top_locality').textContent = topLocality;
+    document.getElementById('malaria_kpi_top_locality_count').textContent = topLocalityCount > 0 ? formatNumber(topLocalityCount) + ' cases' : '-';
+
+    document.getElementById('malaria_kpi_top_mukim').textContent = topMukim;
+    document.getElementById('malaria_kpi_top_mukim_count').textContent = topMukimCount > 0 ? formatNumber(topMukimCount) + ' cases' : '-';
+  }
+
+  // Helper: median calculation
+  function median(arr) {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  }
+
+  // Update weekly trend chart
+  function updateMalariaWeeklyTrend(rows) {
+    const dateMode = document.getElementById('malaria_trend_date_mode')?.value || 'onset';
+    const weekCounts = new Map();
+
+    rows.forEach(r => {
+      let week = r._week;
+      if (dateMode === 'notif' && r._dates.notif) {
+        week = isoWeek(r._dates.notif);
+      } else if (dateMode === 'diagnosis' && r._dates.diagnosis) {
+        week = isoWeek(r._dates.diagnosis);
+      }
+      if (week > 0) {
+        weekCounts.set(week, (weekCounts.get(week) || 0) + 1);
+      }
+    });
+
+    const weeks = Array.from({length: 53}, (_, i) => i + 1);
+    const counts = weeks.map(w => weekCounts.get(w) || 0);
+
+    if (charts.weekly) charts.weekly.destroy();
+    const ctx = document.getElementById('malaria_weekly_trend');
+    if (ctx) {
+      charts.weekly = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: weeks,
+          datasets: [{
+            label: 'Cases',
+            data: counts,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Epidemiological Week' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Number of Cases' } }
+          }
+        }
+      });
+    }
+  }
+
+  // Update classification charts
+  function updateMalariaClassificationCharts(rows) {
+    const createPie = (canvasId, labels, data, colors = null) => {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      return new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors || SHARED_CHART_PALETTE
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    };
+
+    // Parasite species
+    const speciesCounts = new Map();
+    rows.forEach(r => {
+      const species = r._parasite;
+      speciesCounts.set(species, (speciesCounts.get(species) || 0) + 1);
+    });
+    const speciesEntries = Array.from(speciesCounts.entries()).sort((a, b) => b[1] - a[1]);
+    if (charts.species) charts.species.destroy();
+    charts.species = createPie('malaria_chart_species',
+      speciesEntries.map(e => e[0]),
+      speciesEntries.map(e => e[1])
+    );
+
+    // Case classification
+    const indigenousCount = rows.filter(r => r._isIndigenous).length;
+    const importedCount = rows.filter(r => r._isImported).length;
+    const otherClassification = rows.length - indigenousCount - importedCount;
+    if (charts.classification) charts.classification.destroy();
+    charts.classification = createPie('malaria_chart_classification',
+      ['Indigenous', 'Imported', 'Other'],
+      [indigenousCount, importedCount, otherClassification]
+    );
+
+    // Severity
+    const severeCount = rows.filter(r => r._isSevere).length;
+    const uncomplicatedCount = rows.filter(r => r._isUncomplicated).length;
+    const unknownSeverity = rows.length - severeCount - uncomplicatedCount;
+    if (charts.severity) charts.severity.destroy();
+    charts.severity = createPie('malaria_chart_severity',
+      ['Severe', 'Uncomplicated', 'Unknown'],
+      [severeCount, uncomplicatedCount, unknownSeverity]
+    );
+
+    // Detection method
+    const detectionCounts = new Map();
+    rows.forEach(r => {
+      const method = r._detectionMethod || 'Unknown';
+      detectionCounts.set(method, (detectionCounts.get(method) || 0) + 1);
+    });
+    const detectionEntries = Array.from(detectionCounts.entries()).sort((a, b) => b[1] - a[1]);
+    if (charts.detection) charts.detection.destroy();
+    charts.detection = createPie('malaria_chart_detection',
+      detectionEntries.map(e => e[0]),
+      detectionEntries.map(e => e[1])
+    );
+  }
+
+  // Update risk & treatment charts
+  function updateMalariaRiskTreatmentCharts(rows) {
+    const createPie = (canvasId, labels, data) => {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      return new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: SHARED_CHART_PALETTE
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    };
+
+    // Risk activity
+    const riskCounts = new Map();
+    rows.forEach(r => {
+      const risk = r._riskActivity;
+      riskCounts.set(risk, (riskCounts.get(risk) || 0) + 1);
+    });
+    const riskEntries = Array.from(riskCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    if (charts.risk) charts.risk.destroy();
+    charts.risk = createPie('malaria_chart_risk',
+      riskEntries.map(e => e[0]),
+      riskEntries.map(e => e[1])
+    );
+
+    // Treatment status
+    const completedCount = rows.filter(r => r._treatmentComplete).length;
+    const notCompleted = rows.length - completedCount;
+    if (charts.treatment) charts.treatment.destroy();
+    charts.treatment = createPie('malaria_chart_treatment',
+      ['Completed', 'Not Completed'],
+      [completedCount, notCompleted],
+      ['#22c55e', '#ef4444']
+    );
+
+    // Patient outcome
+    const aliveCount = rows.filter(r => r._alive).length;
+    const deceased = rows.filter(r => !r._alive && r._alive !== undefined).length;
+    const unknownOutcome = rows.length - aliveCount - deceased;
+    if (charts.outcome) charts.outcome.destroy();
+    charts.outcome = createPie('malaria_chart_outcome',
+      ['Alive', 'Deceased', 'Unknown'],
+      [aliveCount, deceased, unknownOutcome],
+      ['#22c55e', '#dc2626', '#94a3b8']
+    );
+
+    // Stratification color
+    const stratCounts = new Map();
+    rows.forEach(r => {
+      const color = r._stratColor || 'Unknown';
+      stratCounts.set(color, (stratCounts.get(color) || 0) + 1);
+    });
+    const stratEntries = Array.from(stratCounts.entries());
+    const stratColors = stratEntries.map(([col]) => {
+      if (col.includes('HIJAU')) return '#22c55e';
+      if (col.includes('KUNING')) return '#fbbf24';
+      if (col.includes('MERAH')) return '#dc2626';
+      return '#94a3b8';
+    });
+    if (charts.stratification) charts.stratification.destroy();
+    charts.stratification = createPie('malaria_chart_stratification',
+      stratEntries.map(e => e[0]),
+      stratEntries.map(e => e[1]),
+      stratColors
+    );
+  }
+
+  // Update demography charts
+  function updateMalariaDemographyCharts(rows) {
+    const createPie = (canvasId, labels, data, colors = null) => {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      return new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors || SHARED_CHART_PALETTE
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    };
+
+    const countBy = (field) => {
+      const counts = new Map();
+      rows.forEach(r => {
+        const val = r[field] || 'Unknown';
+        counts.set(val, (counts.get(val) || 0) + 1);
+      });
+      return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    };
+
+    // Gender
+    const genderCounts = countBy('_gender');
+    if (charts.demo.gender) charts.demo.gender.destroy();
+    charts.demo.gender = createPie('malaria_demo_gender',
+      genderCounts.map(e => e[0]),
+      genderCounts.map(e => e[1])
+    );
+
+    // Age groups
+    const AGE_GROUP_ORDER = ['0-5', '6-15', '16-30', '31-45', '46-60', '>60'];
+    const ageCounts = new Map();
+    rows.forEach(r => {
+      const group = r._ageGroup;
+      ageCounts.set(group, (ageCounts.get(group) || 0) + 1);
+    });
+    const ageEntries = AGE_GROUP_ORDER
+      .map(label => [label, ageCounts.get(label) || 0])
+      .filter(([, count]) => count > 0);
+    if (charts.demo.age) charts.demo.age.destroy();
+    charts.demo.age = createPie('malaria_demo_age',
+      ageEntries.map(e => e[0]),
+      ageEntries.map(e => e[1])
+    );
+
+    // Citizenship
+    const citizenshipCounts = countBy('_citizenship');
+    if (charts.demo.citizenship) charts.demo.citizenship.destroy();
+    charts.demo.citizenship = createPie('malaria_demo_citizenship',
+      citizenshipCounts.map(e => e[0]),
+      citizenshipCounts.map(e => e[1])
+    );
+
+    // Ethnicity
+    const ethnicityCounts = countBy('_ethnicity');
+    if (charts.demo.ethnicity) charts.demo.ethnicity.destroy();
+    charts.demo.ethnicity = createPie('malaria_demo_ethnicity',
+      ethnicityCounts.map(e => e[0]),
+      ethnicityCounts.map(e => e[1])
+    );
+
+    // Occupation
+    const occupationCounts = countBy('_occupationClass');
+    if (charts.demo.occupation) charts.demo.occupation.destroy();
+    charts.demo.occupation = createPie('malaria_demo_occupation',
+      occupationCounts.map(e => e[0]),
+      occupationCounts.map(e => e[1])
+    );
+  }
+
+  // Update timeliness charts
+  function updateMalariaTimeliness(rows) {
+    const createBarChart = (canvasId, labels, data) => {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Days',
+            data: data,
+            backgroundColor: '#3b82f6'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Days' } }
+          }
+        }
+      });
+    };
+
+    // Onset → Notif
+    const onsetNotifData = rows.map(r => r._onsetToNotif).filter(d => d != null && !isNaN(d) && d >= 0);
+    const buckets1 = bucketDelays(onsetNotifData);
+    if (charts.timeline.onsetNotif) charts.timeline.onsetNotif.destroy();
+    charts.timeline.onsetNotif = createBarChart('malaria_timeline_onset_notif',
+      Object.keys(buckets1),
+      Object.values(buckets1)
+    );
+
+    // Notif → Investigation
+    const notifInvestData = rows.map(r => r._notifToInvest).filter(d => d != null && !isNaN(d) && d >= 0);
+    const buckets2 = bucketDelays(notifInvestData);
+    if (charts.timeline.notifInvest) charts.timeline.notifInvest.destroy();
+    charts.timeline.notifInvest = createBarChart('malaria_timeline_notif_invest',
+      Object.keys(buckets2),
+      Object.values(buckets2)
+    );
+
+    // Diagnosis → Admission
+    const diagAdmitData = rows.map(r => r._diagToAdmit).filter(d => d != null && !isNaN(d) && d >= 0);
+    const buckets3 = bucketDelays(diagAdmitData);
+    if (charts.timeline.diagAdmit) charts.timeline.diagAdmit.destroy();
+    charts.timeline.diagAdmit = createBarChart('malaria_timeline_diag_admit',
+      Object.keys(buckets3),
+      Object.values(buckets3)
+    );
+  }
+
+  // Helper: bucket delays for histogram
+  function bucketDelays(delays) {
+    const buckets = {
+      '0 days': 0,
+      '1 day': 0,
+      '2-3 days': 0,
+      '4-7 days': 0,
+      '>7 days': 0
+    };
+    delays.forEach(d => {
+      if (d === 0) buckets['0 days']++;
+      else if (d === 1) buckets['1 day']++;
+      else if (d <= 3) buckets['2-3 days']++;
+      else if (d <= 7) buckets['4-7 days']++;
+      else buckets['>7 days']++;
+    });
+    return buckets;
+  }
+
+  // Update top tables
+  function updateMalariaTopTables(rows) {
+    // Top localities
+    const localityCounts = new Map();
+    const localityDetails = new Map();
+
+    rows.forEach(r => {
+      const loc = r._infectionLocality;
+      if (loc && loc !== 'Unknown') {
+        localityCounts.set(loc, (localityCounts.get(loc) || 0) + 1);
+        if (!localityDetails.has(loc)) {
+          localityDetails.set(loc, { indigenous: 0, imported: 0, species: new Map() });
+        }
+        const details = localityDetails.get(loc);
+        if (r._isIndigenous) details.indigenous++;
+        if (r._isImported) details.imported++;
+        details.species.set(r._parasite, (details.species.get(r._parasite) || 0) + 1);
+      }
+    });
+
+    const topLocalities = Array.from(localityCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    // Check if any locality has imported cases
+    let hasImportedLocalities = false;
+    topLocalities.forEach(([name]) => {
+      const details = localityDetails.get(name);
+      if (details.imported > 0) hasImportedLocalities = true;
+    });
+
+    if (tables.topLocality) {
+      tables.topLocality.innerHTML = '';
+      topLocalities.forEach(([name, count]) => {
+        const details = localityDetails.get(name);
+        // List all species found
+        const speciesList = Array.from(details.species.keys())
+          .filter(s => s && s !== 'Unknown')
+          .join(', ') || '-';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${formatNumber(count)}</td>
+          <td>${formatNumber(details.indigenous)}</td>
+          ${hasImportedLocalities ? `<td class="imported-col">${formatNumber(details.imported)}</td>` : ''}
+          <td>${speciesList}</td>
+        `;
+        tables.topLocality.appendChild(tr);
+      });
+    }
+
+    // Hide imported column header if no imported cases
+    const localityTable = document.getElementById('malaria_top_locality_table');
+    if (localityTable) {
+      const importedHeaders = localityTable.querySelectorAll('th.imported-col');
+      importedHeaders.forEach(th => th.style.display = hasImportedLocalities ? '' : 'none');
+    }
+
+    // Top mukims
+    const mukimCounts = new Map();
+    const mukimDetails = new Map();
+
+    rows.forEach(r => {
+      const muk = r._mukim;
+      if (muk && muk !== 'Unknown') {
+        mukimCounts.set(muk, (mukimCounts.get(muk) || 0) + 1);
+        if (!mukimDetails.has(muk)) {
+          mukimDetails.set(muk, { indigenous: 0, imported: 0, species: new Map() });
+        }
+        const details = mukimDetails.get(muk);
+        if (r._isIndigenous) details.indigenous++;
+        if (r._isImported) details.imported++;
+        details.species.set(r._parasite, (details.species.get(r._parasite) || 0) + 1);
+      }
+    });
+
+    const topMukims = Array.from(mukimCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    // Check if any mukim has imported cases
+    let hasImportedMukims = false;
+    topMukims.forEach(([name]) => {
+      const details = mukimDetails.get(name);
+      if (details.imported > 0) hasImportedMukims = true;
+    });
+
+    if (tables.topMukim) {
+      tables.topMukim.innerHTML = '';
+      topMukims.forEach(([name, count]) => {
+        const details = mukimDetails.get(name);
+        // List all species found
+        const speciesList = Array.from(details.species.keys())
+          .filter(s => s && s !== 'Unknown')
+          .join(', ') || '-';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${formatNumber(count)}</td>
+          <td>${formatNumber(details.indigenous)}</td>
+          ${hasImportedMukims ? `<td class="imported-col">${formatNumber(details.imported)}</td>` : ''}
+          <td>${speciesList}</td>
+        `;
+        tables.topMukim.appendChild(tr);
+      });
+    }
+
+    // Hide imported column header if no imported cases
+    const mukimTable = document.getElementById('malaria_top_mukim_table');
+    if (mukimTable) {
+      const importedHeaders = mukimTable.querySelectorAll('th.imported-col');
+      importedHeaders.forEach(th => th.style.display = hasImportedMukims ? '' : 'none');
+    }
+  }
+
+  // Update contact tracing summary
+  function updateMalariaContactSummary(rows) {
+    const totalContacts = rows.reduce((sum, r) => sum + r._totalContacts, 0);
+    const totalScreened = rows.reduce((sum, r) => sum + r._contactsScreened, 0);
+    const totalPositive = rows.reduce((sum, r) => sum + r._contactsPositive, 0);
+    const positivityRate = totalScreened > 0 ? ((totalPositive / totalScreened) * 100).toFixed(2) : '0.00';
+
+    document.getElementById('malaria_contact_total').textContent = formatNumber(totalContacts);
+    document.getElementById('malaria_contact_screened').textContent = formatNumber(totalScreened);
+    document.getElementById('malaria_contact_positive').textContent = formatNumber(totalPositive);
+    document.getElementById('malaria_contact_positivity').textContent = positivityRate + '%';
+  }
+
+  // Initialize map
+  function ensureMalariaMap() {
+    if (mapState.map) return;
+
+    const container = document.getElementById('malaria_case_map');
+    if (!container) return;
+
+    mapState.map = L.map('malaria_case_map').setView([4.0, 102.0], 8);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mapState.map);
+
+    mapState.markers = L.featureGroup().addTo(mapState.map);
+  }
+
+  // Update map markers
+  function updateMalariaMapMarkers(rows) {
+    if (!mapState.map || !mapState.markers) return;
+
+    mapState.markers.clearLayers();
+
+    const validRows = rows.filter(r => r._coords);
+
+    validRows.forEach(r => {
+      const marker = L.circleMarker([r._lat, r._lng], {
+        radius: 5,
+        fillColor: '#dc2626',
+        fillOpacity: 0.8,
+        color: '#000',
+        weight: 1,
+        opacity: 0.8
+      });
+
+      const cols = malariaState.columns;
+      const popupContent = `
+        <strong>${r._parasite}</strong><br>
+        Onset: ${r._dates.onset ? r._dates.onset.toLocaleDateString() : 'N/A'}<br>
+        Severity: ${r._severity || 'Unknown'}<br>
+        Classification: ${r._classification || 'Unknown'}<br>
+        Locality: ${r._infectionLocality}
+      `;
+      marker.bindPopup(popupContent);
+
+      mapState.markers.addLayer(marker);
+    });
+
+    if (validRows.length > 0 && !mapState.userViewLocked) {
+      mapState.map.fitBounds(mapState.markers.getBounds(), { padding: [20, 20] });
+    }
+  }
+
+  // Render all
+  function renderMalariaAll() {
+    const rows = applyMalariaFilters();
+    malariaState.filteredRows = rows;
+
+    renderMalariaKpis(rows);
+    updateMalariaWeeklyTrend(rows);
+    updateMalariaClassificationCharts(rows);
+    updateMalariaRiskTreatmentCharts(rows);
+    updateMalariaDemographyCharts(rows);
+    updateMalariaTimeliness(rows);
+    updateMalariaTopTables(rows);
+    updateMalariaContactSummary(rows);
+
+    ensureMalariaMap();
+    updateMalariaMapMarkers(rows);
+  }
+
+  // Store workbook for sheet selection
+  let currentWorkbook = null;
+
+  // Helper function to populate week dropdowns with options 1-53
+  function populateWeekDropdowns(fromValue = 1, toValue = 53) {
+    const weekFromSelect = document.getElementById('malaria_filter_week_from');
+    const weekToSelect = document.getElementById('malaria_filter_week_to');
+
+    if (weekFromSelect && weekToSelect) {
+      // Clear existing options
+      weekFromSelect.innerHTML = '';
+      weekToSelect.innerHTML = '';
+
+      // Populate with options 1-53
+      for (let i = 1; i <= 53; i++) {
+        const optionFrom = document.createElement('option');
+        optionFrom.value = i;
+        optionFrom.textContent = i;
+        weekFromSelect.appendChild(optionFrom);
+
+        const optionTo = document.createElement('option');
+        optionTo.value = i;
+        optionTo.textContent = i;
+        weekToSelect.appendChild(optionTo);
+      }
+
+      // Set selected values
+      weekFromSelect.value = fromValue;
+      weekToSelect.value = toValue;
+    }
+  }
+
+  // Function to load data from selected sheet
+  function loadMalariaSheet(sheetName) {
+    if (!currentWorkbook) return;
+
+    try {
+      console.log('=== Loading sheet:', sheetName, '===');
+      const worksheet = currentWorkbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+
+      console.log('Raw rows from Excel:', jsonData.length);
+
+      if (jsonData.length === 0) {
+        alert('No data found in sheet: ' + sheetName);
+        return;
+      }
+
+      const headers = Object.keys(jsonData[0]);
+      console.log('Headers found:', headers.length);
+
+      malariaState.columns = inferMalariaColumns(headers);
+      console.log('Column mappings:', malariaState.columns);
+
+      malariaState.rows = preprocessMalariaRows(jsonData);
+      console.log('After preprocessing - Total rows:', malariaState.rows.length);
+
+      // Debug week extraction
+      const weeks = malariaState.rows.map(r => r._week);
+      console.log('All extracted weeks:', weeks);
+      console.log('Rows with week = 0 or undefined:', weeks.filter(w => !w || w === 0).length);
+
+      // Set week range - always start from 1, end at max week found (or 53)
+      const validWeeks = weeks.filter(w => w > 0);
+      console.log('Valid weeks (> 0):', validWeeks);
+
+      if (validWeeks.length > 0) {
+        const maxWeek = Math.max(...validWeeks);
+        const toWeek = Math.max(maxWeek, 53); // Use highest week or 53, whichever is greater
+        console.log('Week range: 1 to', toWeek);
+        populateWeekDropdowns(1, toWeek);
+        console.log('Populated week dropdowns: 1 to', toWeek);
+      } else {
+        console.warn('No valid weeks found in data! Using default 1-53');
+        populateWeekDropdowns(1, 53);
+      }
+
+      // Render dashboard
+      renderMalariaAll();
+
+    } catch (error) {
+      console.error('Error loading sheet:', error);
+      alert('Error loading sheet: ' + sheetName);
+    }
+  }
+
+  // File input handler
+  fileInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    console.log('Malaria file selected:', file.name);
+
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        currentWorkbook = workbook;
+
+        console.log('Workbook loaded. Sheet names:', workbook.SheetNames);
+
+        // Populate sheet selector
+        const sheetSelector = document.getElementById('malaria_sheet_selector');
+        console.log('Sheet selector element found:', !!sheetSelector);
+
+        if (sheetSelector) {
+          sheetSelector.innerHTML = '<option value="">- Select district sheet -</option>';
+
+          // Filter out "Form responses 1" and add other sheets
+          const districtSheets = workbook.SheetNames.filter(name =>
+            !name.toLowerCase().includes('form response')
+          );
+
+          console.log('District sheets after filtering:', districtSheets);
+
+          districtSheets.forEach(sheetName => {
+            const option = document.createElement('option');
+            option.value = sheetName;
+            option.textContent = sheetName.toUpperCase();
+            sheetSelector.appendChild(option);
+          });
+
+          console.log('Sheet selector populated with', districtSheets.length, 'sheets');
+          console.log('User must select a district sheet to load data');
+        } else {
+          console.error('Sheet selector element not found!');
+        }
+
+      } catch (error) {
+        console.error('Error processing malaria file:', error);
+        alert('Error processing the Excel file. Please check the file format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // Sheet selector handler
+  document.getElementById('malaria_sheet_selector')?.addEventListener('change', function() {
+    const sheetName = this.value;
+    if (sheetName) {
+      loadMalariaSheet(sheetName);
+    }
+  });
+
+  // Filter change listeners
+  document.getElementById('malaria_filter_week_from')?.addEventListener('change', renderMalariaAll);
+  document.getElementById('malaria_filter_week_to')?.addEventListener('change', renderMalariaAll);
+  document.getElementById('malaria_trend_date_mode')?.addEventListener('change', () => {
+    updateMalariaWeeklyTrend(malariaState.filteredRows);
+  });
+
+  // Map interaction handlers
+  document.getElementById('malaria_map_show_all')?.addEventListener('change', function() {
+    mapState.showAllCases = this.checked;
+    updateMalariaMapMarkers(malariaState.filteredRows);
+  });
+
+  document.getElementById('malaria_map_delay')?.addEventListener('change', function() {
+    mapState.delayVisible = this.checked;
+    updateMalariaMapMarkers(malariaState.filteredRows);
+  });
+
+  // Initialize week dropdowns with default values (1-53)
+  populateWeekDropdowns(1, 53);
+  console.log('Malaria week dropdowns initialized with default range 1-53');
 })();
 </script>
 
