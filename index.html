@@ -11709,24 +11709,33 @@ function extractMetricInsights(metrics, dashboardType) {
   const DEEPSEEK_MODEL = 'deepseek-reasoner';
   const API_KEY_STORAGE_KEY = 'deepseek_api_key';
 
-  // DOM Elements
-  const sidebar = document.getElementById('chatbotSidebar');
-  const toggleBtn = document.getElementById('chatbotToggleBtn');
-  const closeBtn = document.getElementById('chatbotCloseBtn');
-  const mainContent = document.querySelector('.main-content');
-  const apiKeyInput = document.getElementById('deepseekApiKey');
-  const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-  const apiKeyStatus = document.getElementById('apiKeyStatus');
-  const messagesContainer = document.getElementById('chatbotMessages');
-  const chatInput = document.getElementById('chatbotInput');
-  const sendBtn = document.getElementById('chatbotSendBtn');
-  const contextInfo = document.getElementById('chatbotContextInfo');
+  // DOM Elements (initialized in init())
+  let sidebar, toggleBtn, closeBtn, mainContent, apiKeyInput;
+  let saveApiKeyBtn, apiKeyStatus, messagesContainer, chatInput, sendBtn, contextInfo;
 
   let conversationHistory = [];
   let isProcessing = false;
 
   // Initialize
   function init() {
+    // Get DOM elements
+    sidebar = document.getElementById('chatbotSidebar');
+    toggleBtn = document.getElementById('chatbotToggleBtn');
+    closeBtn = document.getElementById('chatbotCloseBtn');
+    mainContent = document.querySelector('.main-content');
+    apiKeyInput = document.getElementById('deepseekApiKey');
+    saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    apiKeyStatus = document.getElementById('apiKeyStatus');
+    messagesContainer = document.getElementById('chatbotMessages');
+    chatInput = document.getElementById('chatbotInput');
+    sendBtn = document.getElementById('chatbotSendBtn');
+    contextInfo = document.getElementById('chatbotContextInfo');
+
+    if (!sidebar || !toggleBtn) {
+      console.error('Chatbot elements not found in DOM');
+      return;
+    }
+
     loadApiKey();
     setupEventListeners();
     updateContextInfo();
