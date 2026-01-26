@@ -1058,8 +1058,82 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     .chatbot-api-key-section label {
       font-size: 0.8rem;
       color: #555;
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       margin-bottom: 6px;
+    }
+
+    .api-key-info-wrapper {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .api-key-info-icon {
+      width: 16px;
+      height: 16px;
+      background: #667eea;
+      color: #ffffff;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: help;
+      transition: background 0.2s ease;
+    }
+
+    .api-key-info-icon:hover {
+      background: #5a6fd6;
+    }
+
+    .api-key-info-tooltip {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 280px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #333;
+      z-index: 1001;
+    }
+
+    .api-key-info-wrapper:hover .api-key-info-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .api-key-info-tooltip h4 {
+      margin: 0 0 8px 0;
+      font-size: 0.85rem;
+      color: #667eea;
+    }
+
+    .api-key-info-tooltip ol {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .api-key-info-tooltip li {
+      margin: 4px 0;
+    }
+
+    .api-key-info-tooltip a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .api-key-info-tooltip a:hover {
+      text-decoration: underline;
     }
 
     .api-key-input-row {
@@ -12142,7 +12216,22 @@ Guidelines:
   </div>
 
   <div class="chatbot-api-key-section">
-    <label for="deepseekApiKey">DeepSeek API Key:</label>
+    <label for="deepseekApiKey">
+      DeepSeek API Key:
+      <span class="api-key-info-wrapper">
+        <span class="api-key-info-icon">?</span>
+        <div class="api-key-info-tooltip">
+          <h4>How to get your API key</h4>
+          <ol>
+            <li>Go to <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a></li>
+            <li>Sign up or log in to your account</li>
+            <li>Navigate to <strong>API Keys</strong> section</li>
+            <li>Click <strong>Create new API key</strong></li>
+            <li>Copy the key (starts with "sk-")</li>
+          </ol>
+        </div>
+      </span>
+    </label>
     <div class="api-key-input-row">
       <input type="password" id="deepseekApiKey" placeholder="sk-..." autocomplete="off" />
       <button id="saveApiKeyBtn">Save</button>
