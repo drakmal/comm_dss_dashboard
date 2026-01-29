@@ -8735,10 +8735,11 @@ window.renderAll = renderAll;
 
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
-    mapState.map = L.map(mapContainer).setView([4.2105, 101.9758], 6);
+    mapState.map = L.map(mapContainer, { preferCanvas: true }).setView([4.2105, 101.9758], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      crossOrigin: 'anonymous'
     }).addTo(mapState.map);
     const meteoPane = mapState.map.createPane('meteoHexPane');
     meteoPane.style.zIndex = 400;
@@ -9969,60 +9970,66 @@ window.renderAll = renderAll;
     const topMukim = topMukims.length > 0 ? topMukims[0][0] : '-';
     const topMukimCount = topMukims.length > 0 ? topMukims[0][1] : 0;
 
+    // Helper for safe DOM updates
+    const setKpi = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
     // Update DOM elements
-    document.getElementById('malaria_kpi_total').textContent = formatNumber(total);
-    document.getElementById('malaria_kpi_incidence').textContent = incidence;
+    setKpi('malaria_kpi_total', formatNumber(total));
+    setKpi('malaria_kpi_incidence', incidence);
 
     // Deaths KPI (with fraction and percentage)
-    document.getElementById('malaria_kpi_deaths').textContent = formatNumber(deaths);
-    document.getElementById('malaria_kpi_deaths_pct').textContent = deaths + '/' + total + ' (' + cfr + '%)';
+    setKpi('malaria_kpi_deaths', formatNumber(deaths));
+    setKpi('malaria_kpi_deaths_pct', deaths + '/' + total + ' (' + cfr + '%)');
     toggleKpiBox('malaria_kpi_deaths', deaths);
 
-    document.getElementById('malaria_kpi_indigenous').textContent = formatNumber(indigenous);
-    document.getElementById('malaria_kpi_indigenous_pct').textContent = total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_indigenous', formatNumber(indigenous));
+    setKpi('malaria_kpi_indigenous_pct', total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_indigenous', indigenous);
 
-    document.getElementById('malaria_kpi_imported').textContent = formatNumber(imported);
-    document.getElementById('malaria_kpi_imported_pct').textContent = total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_imported', formatNumber(imported));
+    setKpi('malaria_kpi_imported_pct', total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_imported', imported);
 
-    document.getElementById('malaria_kpi_knowlesi').textContent = formatNumber(knowlesi);
-    document.getElementById('malaria_kpi_knowlesi_pct').textContent = total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_knowlesi', formatNumber(knowlesi));
+    setKpi('malaria_kpi_knowlesi_pct', total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_knowlesi', knowlesi);
 
-    document.getElementById('malaria_kpi_vivax').textContent = formatNumber(vivax);
-    document.getElementById('malaria_kpi_vivax_pct').textContent = total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_vivax', formatNumber(vivax));
+    setKpi('malaria_kpi_vivax_pct', total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_vivax', vivax);
 
-    document.getElementById('malaria_kpi_falciparum').textContent = formatNumber(falciparum);
-    document.getElementById('malaria_kpi_falciparum_pct').textContent = total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_falciparum', formatNumber(falciparum));
+    setKpi('malaria_kpi_falciparum_pct', total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_falciparum', falciparum);
 
-    document.getElementById('malaria_kpi_other').textContent = formatNumber(otherSpecies);
-    document.getElementById('malaria_kpi_other_pct').textContent = total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_other', formatNumber(otherSpecies));
+    setKpi('malaria_kpi_other_pct', total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_other', otherSpecies);
 
-    document.getElementById('malaria_kpi_severe').textContent = formatNumber(severe);
-    document.getElementById('malaria_kpi_severe_pct').textContent = total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_severe', formatNumber(severe));
+    setKpi('malaria_kpi_severe_pct', total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_severe', severe);
 
-    document.getElementById('malaria_kpi_uncomplicated').textContent = formatNumber(uncomplicated);
-    document.getElementById('malaria_kpi_uncomplicated_pct').textContent = total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_uncomplicated', formatNumber(uncomplicated));
+    setKpi('malaria_kpi_uncomplicated_pct', total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_uncomplicated', uncomplicated);
 
-    document.getElementById('malaria_kpi_treatment_rate').textContent = completionRate + '%';
-    document.getElementById('malaria_kpi_cfr').textContent = cfr + '%';
+    setKpi('malaria_kpi_treatment_rate', completionRate + '%');
+    setKpi('malaria_kpi_cfr', cfr + '%');
 
-    document.getElementById('malaria_kpi_onset_notif').textContent = medianOnsetNotif.toFixed(1);
-    document.getElementById('malaria_kpi_notif_invest').textContent = medianNotifInvest.toFixed(1);
-    document.getElementById('malaria_kpi_diag_admit').textContent = medianDiagAdmit.toFixed(1);
-    document.getElementById('malaria_kpi_coords_pct').textContent = coordsPct + '%';
+    setKpi('malaria_kpi_onset_notif', medianOnsetNotif.toFixed(1));
+    setKpi('malaria_kpi_notif_invest', medianNotifInvest.toFixed(1));
+    setKpi('malaria_kpi_diag_admit', medianDiagAdmit.toFixed(1));
+    setKpi('malaria_kpi_coords_pct', coordsPct + '%');
 
-    document.getElementById('malaria_kpi_top_locality').textContent = topLocality;
-    document.getElementById('malaria_kpi_top_locality_count').textContent = topLocalityCount > 0 ? formatNumber(topLocalityCount) + ' cases' : '-';
+    setKpi('malaria_kpi_top_locality', topLocality);
+    setKpi('malaria_kpi_top_locality_count', topLocalityCount > 0 ? formatNumber(topLocalityCount) + ' cases' : '-');
 
-    document.getElementById('malaria_kpi_top_mukim').textContent = topMukim;
-    document.getElementById('malaria_kpi_top_mukim_count').textContent = topMukimCount > 0 ? formatNumber(topMukimCount) + ' cases' : '-';
+    setKpi('malaria_kpi_top_mukim', topMukim);
+    setKpi('malaria_kpi_top_mukim_count', topMukimCount > 0 ? formatNumber(topMukimCount) + ' cases' : '-');
   }
 
   // Helper: median calculation
@@ -10526,10 +10533,11 @@ window.renderAll = renderAll;
     const container = document.getElementById('malaria_case_map');
     if (!container) return;
 
-    mapState.map = L.map('malaria_case_map').setView([4.0, 102.0], 8);
+    mapState.map = L.map('malaria_case_map', { preferCanvas: true }).setView([4.0, 102.0], 8);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors',
+      crossOrigin: 'anonymous'
     }).addTo(mapState.map);
 
     mapState.markers = L.featureGroup().addTo(mapState.map);
@@ -10861,7 +10869,8 @@ async function downloadDashboard(dashboardType) {
       'measles': 'Measles Dashboard Report',
       'hiv': 'HIV Dashboard Report',
       'hepc': 'Hepatitis C Dashboard Report',
-      'dengue': 'Dengue Dashboard Report'
+      'dengue': 'Dengue Dashboard Report',
+      'malaria': 'Malaria Dashboard Report'
     };
 
     pdf.text(dashboardTitles[dashboardType] || 'Dashboard Report', pageWidth / 2, 20, { align: 'center' });
@@ -10952,6 +10961,31 @@ async function downloadDashboard(dashboardType) {
         tempWrapper.style.width = `${panel.offsetWidth}px`;
         document.body.appendChild(tempWrapper);
 
+        // Copy select values from originals to clones (cloneNode doesn't preserve values)
+        const originalSelects = originalElements.flatMap(el =>
+          Array.from(el.querySelectorAll('select'))
+        );
+        const clonedSelects = Array.from(tempWrapper.querySelectorAll('select'));
+        clonedSelects.forEach((clonedSelect, idx) => {
+          if (originalSelects[idx]) {
+            clonedSelect.value = originalSelects[idx].value;
+          }
+        });
+
+        // Copy input values as well
+        const originalInputs = originalElements.flatMap(el =>
+          Array.from(el.querySelectorAll('input'))
+        );
+        const clonedInputs = Array.from(tempWrapper.querySelectorAll('input'));
+        clonedInputs.forEach((clonedInput, idx) => {
+          if (originalInputs[idx]) {
+            clonedInput.value = originalInputs[idx].value;
+            if (originalInputs[idx].type === 'checkbox' || originalInputs[idx].type === 'radio') {
+              clonedInput.checked = originalInputs[idx].checked;
+            }
+          }
+        });
+
         // Copy canvas data from originals to clones
         const originalCanvases = originalElements.flatMap(el =>
           Array.from(el.querySelectorAll('canvas'))
@@ -10968,17 +11002,73 @@ async function downloadDashboard(dashboardType) {
           }
         });
 
-        // Capture this section
-        const canvas = await html2canvas(tempWrapper, {
-          scale: 1.2,
-          logging: false,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff'
-        });
+        // Check if this section contains a Leaflet map
+        const hasLeafletMap = originalElements.some(el => el.querySelector('.leaflet-container'));
 
-        // Remove temporary wrapper
-        document.body.removeChild(tempWrapper);
+        let canvas;
+        if (hasLeafletMap) {
+          // For map sections, capture the original elements directly (cloning doesn't work with Leaflet)
+          // Find the parent section that contains the map
+          const mapSection = h2.parentElement || h2.closest('.dash-section');
+
+          // Create a temporary wrapper around the original section
+          const originalWrapper = document.createElement('div');
+          originalWrapper.style.background = '#ffffff';
+          originalWrapper.style.padding = '16px';
+          originalWrapper.style.position = 'absolute';
+          originalWrapper.style.left = '0';
+          originalWrapper.style.top = '0';
+          originalWrapper.style.width = `${panel.offsetWidth}px`;
+          originalWrapper.style.zIndex = '-1';
+
+          // Clone h2 for the header
+          originalWrapper.appendChild(h2.cloneNode(true));
+
+          // Append original elements temporarily (will move them back)
+          const elementPositions = originalElements.map(el => ({
+            element: el,
+            parent: el.parentNode,
+            nextSibling: el.nextSibling
+          }));
+
+          originalElements.forEach(el => originalWrapper.appendChild(el));
+          document.body.appendChild(originalWrapper);
+
+          // Wait a bit for the map to settle
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          canvas = await html2canvas(originalWrapper, {
+            scale: 1.2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff'
+          });
+
+          // Restore original elements to their positions
+          elementPositions.forEach(({ element, parent, nextSibling }) => {
+            if (nextSibling) {
+              parent.insertBefore(element, nextSibling);
+            } else {
+              parent.appendChild(element);
+            }
+          });
+
+          document.body.removeChild(originalWrapper);
+          document.body.removeChild(tempWrapper);
+        } else {
+          // For non-map sections, use the cloned wrapper
+          canvas = await html2canvas(tempWrapper, {
+            scale: 1.2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff'
+          });
+
+          // Remove temporary wrapper
+          document.body.removeChild(tempWrapper);
+        }
 
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
         const imgWidth = contentWidth;
@@ -11025,7 +11115,8 @@ async function downloadDashboard(dashboardType) {
     button.disabled = false;
     button.innerHTML = '<span class="download-icon">✅</span> Download Complete!';
     setTimeout(() => {
-      button.innerHTML = `<span class="download-icon">📥</span> Download ${dashboardTitles[dashboardType].split(' ')[0]} Report`;
+      const title = dashboardTitles[dashboardType] || 'Dashboard';
+      button.innerHTML = `<span class="download-icon">📥</span> Download ${title.split(' ')[0]} Report`;
     }, 3000);
 
   } catch (error) {
