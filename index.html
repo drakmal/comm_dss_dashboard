@@ -10867,7 +10867,8 @@ async function downloadDashboard(dashboardType) {
       'measles': 'Measles Dashboard Report',
       'hiv': 'HIV Dashboard Report',
       'hepc': 'Hepatitis C Dashboard Report',
-      'dengue': 'Dengue Dashboard Report'
+      'dengue': 'Dengue Dashboard Report',
+      'malaria': 'Malaria Dashboard Report'
     };
 
     pdf.text(dashboardTitles[dashboardType] || 'Dashboard Report', pageWidth / 2, 20, { align: 'center' });
@@ -11031,7 +11032,8 @@ async function downloadDashboard(dashboardType) {
     button.disabled = false;
     button.innerHTML = '<span class="download-icon">✅</span> Download Complete!';
     setTimeout(() => {
-      button.innerHTML = `<span class="download-icon">📥</span> Download ${dashboardTitles[dashboardType].split(' ')[0]} Report`;
+      const title = dashboardTitles[dashboardType] || 'Dashboard';
+      button.innerHTML = `<span class="download-icon">📥</span> Download ${title.split(' ')[0]} Report`;
     }, 3000);
 
   } catch (error) {
