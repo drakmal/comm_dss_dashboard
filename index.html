@@ -9969,60 +9969,66 @@ window.renderAll = renderAll;
     const topMukim = topMukims.length > 0 ? topMukims[0][0] : '-';
     const topMukimCount = topMukims.length > 0 ? topMukims[0][1] : 0;
 
+    // Helper for safe DOM updates
+    const setKpi = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
     // Update DOM elements
-    document.getElementById('malaria_kpi_total').textContent = formatNumber(total);
-    document.getElementById('malaria_kpi_incidence').textContent = incidence;
+    setKpi('malaria_kpi_total', formatNumber(total));
+    setKpi('malaria_kpi_incidence', incidence);
 
     // Deaths KPI (with fraction and percentage)
-    document.getElementById('malaria_kpi_deaths').textContent = formatNumber(deaths);
-    document.getElementById('malaria_kpi_deaths_pct').textContent = deaths + '/' + total + ' (' + cfr + '%)';
+    setKpi('malaria_kpi_deaths', formatNumber(deaths));
+    setKpi('malaria_kpi_deaths_pct', deaths + '/' + total + ' (' + cfr + '%)');
     toggleKpiBox('malaria_kpi_deaths', deaths);
 
-    document.getElementById('malaria_kpi_indigenous').textContent = formatNumber(indigenous);
-    document.getElementById('malaria_kpi_indigenous_pct').textContent = total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_indigenous', formatNumber(indigenous));
+    setKpi('malaria_kpi_indigenous_pct', total > 0 ? ((indigenous / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_indigenous', indigenous);
 
-    document.getElementById('malaria_kpi_imported').textContent = formatNumber(imported);
-    document.getElementById('malaria_kpi_imported_pct').textContent = total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_imported', formatNumber(imported));
+    setKpi('malaria_kpi_imported_pct', total > 0 ? ((imported / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_imported', imported);
 
-    document.getElementById('malaria_kpi_knowlesi').textContent = formatNumber(knowlesi);
-    document.getElementById('malaria_kpi_knowlesi_pct').textContent = total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_knowlesi', formatNumber(knowlesi));
+    setKpi('malaria_kpi_knowlesi_pct', total > 0 ? ((knowlesi / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_knowlesi', knowlesi);
 
-    document.getElementById('malaria_kpi_vivax').textContent = formatNumber(vivax);
-    document.getElementById('malaria_kpi_vivax_pct').textContent = total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_vivax', formatNumber(vivax));
+    setKpi('malaria_kpi_vivax_pct', total > 0 ? ((vivax / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_vivax', vivax);
 
-    document.getElementById('malaria_kpi_falciparum').textContent = formatNumber(falciparum);
-    document.getElementById('malaria_kpi_falciparum_pct').textContent = total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_falciparum', formatNumber(falciparum));
+    setKpi('malaria_kpi_falciparum_pct', total > 0 ? ((falciparum / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_falciparum', falciparum);
 
-    document.getElementById('malaria_kpi_other').textContent = formatNumber(otherSpecies);
-    document.getElementById('malaria_kpi_other_pct').textContent = total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_other', formatNumber(otherSpecies));
+    setKpi('malaria_kpi_other_pct', total > 0 ? ((otherSpecies / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_other', otherSpecies);
 
-    document.getElementById('malaria_kpi_severe').textContent = formatNumber(severe);
-    document.getElementById('malaria_kpi_severe_pct').textContent = total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_severe', formatNumber(severe));
+    setKpi('malaria_kpi_severe_pct', total > 0 ? ((severe / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_severe', severe);
 
-    document.getElementById('malaria_kpi_uncomplicated').textContent = formatNumber(uncomplicated);
-    document.getElementById('malaria_kpi_uncomplicated_pct').textContent = total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%';
+    setKpi('malaria_kpi_uncomplicated', formatNumber(uncomplicated));
+    setKpi('malaria_kpi_uncomplicated_pct', total > 0 ? ((uncomplicated / total) * 100).toFixed(1) + '%' : '0%');
     toggleKpiBox('malaria_kpi_uncomplicated', uncomplicated);
 
-    document.getElementById('malaria_kpi_treatment_rate').textContent = completionRate + '%';
-    document.getElementById('malaria_kpi_cfr').textContent = cfr + '%';
+    setKpi('malaria_kpi_treatment_rate', completionRate + '%');
+    setKpi('malaria_kpi_cfr', cfr + '%');
 
-    document.getElementById('malaria_kpi_onset_notif').textContent = medianOnsetNotif.toFixed(1);
-    document.getElementById('malaria_kpi_notif_invest').textContent = medianNotifInvest.toFixed(1);
-    document.getElementById('malaria_kpi_diag_admit').textContent = medianDiagAdmit.toFixed(1);
-    document.getElementById('malaria_kpi_coords_pct').textContent = coordsPct + '%';
+    setKpi('malaria_kpi_onset_notif', medianOnsetNotif.toFixed(1));
+    setKpi('malaria_kpi_notif_invest', medianNotifInvest.toFixed(1));
+    setKpi('malaria_kpi_diag_admit', medianDiagAdmit.toFixed(1));
+    setKpi('malaria_kpi_coords_pct', coordsPct + '%');
 
-    document.getElementById('malaria_kpi_top_locality').textContent = topLocality;
-    document.getElementById('malaria_kpi_top_locality_count').textContent = topLocalityCount > 0 ? formatNumber(topLocalityCount) + ' cases' : '-';
+    setKpi('malaria_kpi_top_locality', topLocality);
+    setKpi('malaria_kpi_top_locality_count', topLocalityCount > 0 ? formatNumber(topLocalityCount) + ' cases' : '-');
 
-    document.getElementById('malaria_kpi_top_mukim').textContent = topMukim;
-    document.getElementById('malaria_kpi_top_mukim_count').textContent = topMukimCount > 0 ? formatNumber(topMukimCount) + ' cases' : '-';
+    setKpi('malaria_kpi_top_mukim', topMukim);
+    setKpi('malaria_kpi_top_mukim_count', topMukimCount > 0 ? formatNumber(topMukimCount) + ' cases' : '-');
   }
 
   // Helper: median calculation
