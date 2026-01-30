@@ -8350,15 +8350,26 @@ window.renderAll = renderAll;
   const meteoLoadingEl = document.getElementById('dengue_meteo_loading');
   const meteoLoadingTextEl = document.getElementById('dengue_meteo_loading_text');
 
-  function showMeteoLoading(message) {
+  function showMeteoLoading(message, isComplete = false, isError = false) {
     if (meteoLoadingEl) {
       meteoLoadingEl.style.display = 'flex';
+      meteoLoadingEl.style.background = isError ? '#fee2e2' : (isComplete ? '#dcfce7' : '#f1f5f9');
+      meteoLoadingEl.style.color = isError ? '#991b1b' : (isComplete ? '#166534' : '#475569');
       if (meteoLoadingTextEl) meteoLoadingTextEl.textContent = message || 'Fetching meteorology data...';
+
+      // Hide spinner for complete/error states
+      const spinner = meteoLoadingEl.querySelector('.loading-spinner');
+      if (spinner) spinner.style.display = (isComplete || isError) ? 'none' : 'block';
     }
   }
 
   function hideMeteoLoading() {
     if (meteoLoadingEl) meteoLoadingEl.style.display = 'none';
+  }
+
+  function showMeteoComplete(message, isError = false) {
+    showMeteoLoading(message, !isError, isError);
+    setTimeout(() => hideMeteoLoading(), 3000);
   }
 
   function openMeteoDb() {
@@ -8511,12 +8522,14 @@ window.renderAll = renderAll;
       await saveMeteoToCache(cacheKey, data);
       console.log('[Meteo] Fetched from Open-Meteo and cached');
 
+      const dateCount = Object.keys(data).length;
+      showMeteoComplete(`Meteorology data loaded (${dateCount} days, ${hexFC.features.length} cells)`);
+
       return data;
     } catch (e) {
       console.error('[Meteo] Failed to fetch from Open-Meteo:', e);
+      showMeteoComplete('Failed to fetch meteorology data. Using fallback.', true);
       return null;
-    } finally {
-      hideMeteoLoading();
     }
   }
 
