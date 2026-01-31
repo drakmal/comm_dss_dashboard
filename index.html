@@ -8325,7 +8325,7 @@ window.renderAll = renderAll;
       // Clip hexagon to district boundary
       let clippedHex = hex;
       try {
-        const intersection = turf.intersect(turf.featureCollection([hex, districtFeature]));
+        const intersection = turf.intersect(hex, districtFeature);
         if (intersection) {
           clippedHex = intersection;
         }
@@ -8596,15 +8596,14 @@ window.renderAll = renderAll;
     }
 
     // Try Open-Meteo API
-    if (hexFC && mapState.minDate && mapState.maxDate) {
-      const startDate = formatDateKey(startOfDay(mapState.minDate));
-      const endDate = formatDateKey(startOfDay(mapState.maxDate));
-      if (startDate && endDate) {
-        const openMeteoData = await getMeteoFromOpenMeteo(hexFC, startDate, endDate);
-        if (openMeteoData && Object.keys(openMeteoData).length > 0) {
-          meteoState.meteoCacheByYear.set(year, openMeteoData);
-          return openMeteoData;
-        }
+    if (hexFC) {
+      // Fetch only the specific year to avoid redundant data downloads
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      const openMeteoData = await getMeteoFromOpenMeteo(hexFC, startDate, endDate);
+      if (openMeteoData && Object.keys(openMeteoData).length > 0) {
+        meteoState.meteoCacheByYear.set(year, openMeteoData);
+        return openMeteoData;
       }
     }
 
