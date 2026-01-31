@@ -8758,7 +8758,6 @@ window.renderAll = renderAll;
       }).addTo(mapState.map);
       requestAnimationFrame(() => {
         mapState.map.invalidateSize(false);
-        mapState.map.panBy([0, 0], { animate: false });
       });
       if (mapState.markers) {
         mapState.markers.bringToFront();
@@ -8975,7 +8974,7 @@ window.renderAll = renderAll;
 
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
-    mapState.map = L.map(mapContainer, { preferCanvas: true }).setView([4.2105, 101.9758], 6);
+    mapState.map = L.map(mapContainer, { preferCanvas: false }).setView([4.2105, 101.9758], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors',
@@ -10770,7 +10769,7 @@ window.renderAll = renderAll;
     const container = document.getElementById('malaria_case_map');
     if (!container) return;
 
-    mapState.map = L.map('malaria_case_map', { preferCanvas: true }).setView([4.0, 102.0], 8);
+    mapState.map = L.map('malaria_case_map', { preferCanvas: false }).setView([4.0, 102.0], 8);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
