@@ -8584,13 +8584,17 @@ window.renderAll = renderAll;
   }
 
   async function getMeteoForYear(year, hexFC) {
+    console.log(`[Meteo] Loading meteorology data for year ${year}`);
+
     if (meteoState.meteoCacheByYear.has(year)) {
+      console.log(`[Meteo] Using cached data for year ${year}`);
       return meteoState.meteoCacheByYear.get(year);
     }
 
     // Try static file first (for backwards compatibility)
     const loaded = await loadMeteoYear(year);
     if (loaded) {
+      console.log(`[Meteo] Loaded from static file for year ${year}, dates:`, Object.keys(loaded).length);
       meteoState.meteoCacheByYear.set(year, loaded);
       return loaded;
     }
@@ -8600,20 +8604,24 @@ window.renderAll = renderAll;
       // Fetch only the specific year to avoid redundant data downloads
       const startDate = `${year}-01-01`;
       const endDate = `${year}-12-31`;
+      console.log(`[Meteo] Fetching from Open-Meteo API: ${startDate} to ${endDate}, cells: ${hexFC.features?.length || 0}`);
       const openMeteoData = await getMeteoFromOpenMeteo(hexFC, startDate, endDate);
       if (openMeteoData && Object.keys(openMeteoData).length > 0) {
+        console.log(`[Meteo] Open-Meteo data received, dates:`, Object.keys(openMeteoData).length);
         meteoState.meteoCacheByYear.set(year, openMeteoData);
         return openMeteoData;
       }
     }
 
     // Fall back to mock data if everything else fails
+    console.log(`[Meteo] Falling back to mock data for year ${year}`);
     if (meteoState.meteoMockByYear.has(year)) {
       return meteoState.meteoMockByYear.get(year);
     }
     const dates = getDateListForYear(year);
     const mock = generateMockMeteo(hexFC, dates);
     meteoState.meteoMockByYear.set(year, mock);
+    console.log(`[Meteo] Generated mock data for year ${year}, dates:`, Object.keys(mock).length);
     return mock;
   }
 
@@ -8660,13 +8668,22 @@ window.renderAll = renderAll;
     const config = METEO_VARIABLES[variableKey];
     if (!config) return;
     const meteo = meteoState.activeMeteo || {};
+
+    // Debug logging
+    let validCount = 0;
+    let totalCount = 0;
+
     meteoState.hexLayer.eachLayer(layer => {
+      totalCount++;
       const cellId = layer.feature?.properties?.cell_id;
       const value = cellId && dateStr ? meteo?.[dateStr]?.[cellId]?.[variableKey] : null;
       const fillColor = getMeteoColor(value, config);
+
+      if (Number.isFinite(value)) validCount++;
+
       layer.setStyle({
-        fillColor: fillColor || '#94a3b8',
-        fillOpacity: Number.isFinite(value) ? 0.55 : 0,
+        fillColor: fillColor || '#e2e8f0',
+        fillOpacity: Number.isFinite(value) ? 0.55 : 0.25,
         color: '#475569',
         weight: 0.5,
         opacity: 1,
@@ -8683,6 +8700,11 @@ window.renderAll = renderAll;
         layer.bindTooltip(tooltipContent, { sticky: true });
       }
     });
+
+    console.log(`[Meteo] Styled ${validCount}/${totalCount} hexagons with data for ${dateStr}, variable: ${variableKey}`);
+    if (validCount === 0 && totalCount > 0) {
+      console.warn('[Meteo] No hexagons have data. Active meteo keys:', Object.keys(meteo).slice(0, 5), 'Current date:', dateStr);
+    }
   }
 
   function removeMeteoLayer() {
