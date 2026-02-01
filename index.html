@@ -11091,18 +11091,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to capture Leaflet map with all layers as canvas
 async function captureLeafletMap(mapInstance) {
   return new Promise((resolve, reject) => {
+    console.log('[captureLeafletMap] Starting capture...');
+    console.log('[captureLeafletMap] window.leafletImage available?', !!window.leafletImage);
+    console.log('[captureLeafletMap] mapInstance valid?', !!mapInstance);
+
     if (!mapInstance || !window.leafletImage) {
-      reject(new Error('Map instance or leaflet-image library not available'));
+      const error = new Error('Map instance or leaflet-image library not available');
+      console.error('[captureLeafletMap]', error);
+      reject(error);
       return;
     }
 
     // Use leaflet-image to capture the map
     // This properly captures tiles, markers, and all Leaflet layers
+    console.log('[captureLeafletMap] Calling leafletImage function...');
     leafletImage(mapInstance, function(err, canvas) {
       if (err) {
+        console.error('[captureLeafletMap] Error from leafletImage:', err);
         reject(err);
         return;
       }
+      console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
       resolve(canvas);
     });
   });
@@ -11278,27 +11287,36 @@ async function downloadDashboard(dashboardType) {
         if (hasLeafletMap) {
           // For map sections, use leaflet-image to properly capture all layers
           try {
+            console.log('[PDF Export] Detected Leaflet map, attempting to capture...');
+
             // Get the map instance from global registry
             // Check which dashboard we're exporting based on dashboardType
             let mapInstance = null;
             if (dashboardType === 'dengue' && window._dengueMapInstance) {
               mapInstance = window._dengueMapInstance;
+              console.log('[PDF Export] Using dengue map instance');
             } else if (dashboardType === 'malaria' && window._malariaMapInstance) {
               mapInstance = window._malariaMapInstance;
+              console.log('[PDF Export] Using malaria map instance');
             }
 
             if (!mapInstance) {
               throw new Error('Map instance not found for ' + dashboardType);
             }
 
+            console.log('[PDF Export] Map instance found, layers:', mapInstance._layers);
+
             // Invalidate size to ensure map is properly rendered
             mapInstance.invalidateSize();
 
             // Wait for tiles to load
+            console.log('[PDF Export] Waiting for tiles to load...');
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // Capture the map with leaflet-image (includes tiles, markers, overlays)
+            console.log('[PDF Export] Calling leaflet-image...');
             const mapCanvas = await captureLeafletMap(mapInstance);
+            console.log('[PDF Export] Map canvas captured successfully:', mapCanvas.width, 'x', mapCanvas.height);
 
             // Create a wrapper to include the h2 header and other elements
             const headerWrapper = document.createElement('div');
