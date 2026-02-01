@@ -8980,6 +8980,8 @@ window.renderAll = renderAll;
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
     mapState.map = L.map(mapContainer, { preferCanvas: false }).setView([4.2105, 101.9758], 6);
+    // Store map instance globally for PDF export
+    window._dengueMapInstance = mapState.map;
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors',
@@ -10779,6 +10781,8 @@ window.renderAll = renderAll;
     if (!container) return;
 
     mapState.map = L.map('malaria_case_map', { preferCanvas: false }).setView([4.0, 102.0], 8);
+    // Store map instance globally for PDF export
+    window._malariaMapInstance = mapState.map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -11274,12 +11278,18 @@ async function downloadDashboard(dashboardType) {
         if (hasLeafletMap) {
           // For map sections, use leaflet-image to properly capture all layers
           try {
-            // Get the map instance (both dengue and malaria use mapState)
-            if (typeof mapState === 'undefined' || !mapState.map) {
-              throw new Error('Map instance not found');
+            // Get the map instance from global registry
+            // Check which dashboard we're exporting based on dashboardType
+            let mapInstance = null;
+            if (dashboardType === 'dengue' && window._dengueMapInstance) {
+              mapInstance = window._dengueMapInstance;
+            } else if (dashboardType === 'malaria' && window._malariaMapInstance) {
+              mapInstance = window._malariaMapInstance;
             }
 
-            const mapInstance = mapState.map;
+            if (!mapInstance) {
+              throw new Error('Map instance not found for ' + dashboardType);
+            }
 
             // Invalidate size to ensure map is properly rendered
             mapInstance.invalidateSize();
