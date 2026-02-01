@@ -8773,6 +8773,10 @@ window.renderAll = renderAll;
     }
     updateMeteoLegend(meteoState.variableKey);
     refreshHexStyles(dateStr, meteoState.variableKey);
+    // Ensure markers stay on top of hexagons
+    if (mapState.markers) {
+      mapState.markers.bringToFront();
+    }
   }
 
   function ageGroupFromYears(age) {
@@ -9159,6 +9163,10 @@ window.renderAll = renderAll;
       } else {
         mapState.map.setView([4.2105, 101.9758], 6);
       }
+    }
+    // Ensure markers are always on top
+    if (mapState.markers) {
+      mapState.markers.bringToFront();
     }
   }
 
