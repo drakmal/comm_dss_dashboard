@@ -32,6 +32,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
+  <script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -11083,6 +11084,26 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+// Function to capture Leaflet map with all layers as canvas
+async function captureLeafletMap(mapInstance) {
+  return new Promise((resolve, reject) => {
+    if (!mapInstance || !window.leafletImage) {
+      reject(new Error('Map instance or leaflet-image library not available'));
+      return;
+    }
+
+    // Use leaflet-image to capture the map
+    // This properly captures tiles, markers, and all Leaflet layers
+    leafletImage(mapInstance, function(err, canvas) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(canvas);
+    });
+  });
+}
+
 // Dashboard Download Functionality
 async function downloadDashboard(dashboardType) {
   const button = event.target.closest('.download-btn');
@@ -11251,55 +11272,83 @@ async function downloadDashboard(dashboardType) {
 
         let canvas;
         if (hasLeafletMap) {
-          // For map sections, capture the original elements directly (cloning doesn't work with Leaflet)
-          // Find the parent section that contains the map
-          const mapSection = h2.parentElement || h2.closest('.dash-section');
-
-          // Create a temporary wrapper around the original section
-          const originalWrapper = document.createElement('div');
-          originalWrapper.style.background = '#ffffff';
-          originalWrapper.style.padding = '16px';
-          originalWrapper.style.position = 'absolute';
-          originalWrapper.style.left = '0';
-          originalWrapper.style.top = '0';
-          originalWrapper.style.width = `${panel.offsetWidth}px`;
-          originalWrapper.style.zIndex = '-1';
-
-          // Clone h2 for the header
-          originalWrapper.appendChild(h2.cloneNode(true));
-
-          // Append original elements temporarily (will move them back)
-          const elementPositions = originalElements.map(el => ({
-            element: el,
-            parent: el.parentNode,
-            nextSibling: el.nextSibling
-          }));
-
-          originalElements.forEach(el => originalWrapper.appendChild(el));
-          document.body.appendChild(originalWrapper);
-
-          // Wait a bit for the map to settle
-          await new Promise(resolve => setTimeout(resolve, 300));
-
-          canvas = await html2canvas(originalWrapper, {
-            scale: 1.2,
-            logging: false,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-          });
-
-          // Restore original elements to their positions
-          elementPositions.forEach(({ element, parent, nextSibling }) => {
-            if (nextSibling) {
-              parent.insertBefore(element, nextSibling);
-            } else {
-              parent.appendChild(element);
+          // For map sections, use leaflet-image to properly capture all layers
+          try {
+            // Get the map instance (both dengue and malaria use mapState)
+            if (typeof mapState === 'undefined' || !mapState.map) {
+              throw new Error('Map instance not found');
             }
-          });
 
-          document.body.removeChild(originalWrapper);
-          document.body.removeChild(tempWrapper);
+            const mapInstance = mapState.map;
+
+            // Invalidate size to ensure map is properly rendered
+            mapInstance.invalidateSize();
+
+            // Wait for tiles to load
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Capture the map with leaflet-image (includes tiles, markers, overlays)
+            const mapCanvas = await captureLeafletMap(mapInstance);
+
+            // Create a wrapper to include the h2 header and other elements
+            const headerWrapper = document.createElement('div');
+            headerWrapper.style.background = '#ffffff';
+            headerWrapper.style.padding = '16px';
+            headerWrapper.appendChild(h2.cloneNode(true));
+
+            // Add other non-map elements (like controls, notes, etc.)
+            originalElements.forEach(el => {
+              if (!el.querySelector('.leaflet-container')) {
+                headerWrapper.appendChild(el.cloneNode(true));
+              }
+            });
+
+            headerWrapper.style.position = 'absolute';
+            headerWrapper.style.left = '-9999px';
+            headerWrapper.style.width = `${panel.offsetWidth}px`;
+            document.body.appendChild(headerWrapper);
+
+            // Capture the header and controls
+            const headerCanvas = await html2canvas(headerWrapper, {
+              scale: 1.2,
+              logging: false,
+              backgroundColor: '#ffffff'
+            });
+
+            document.body.removeChild(headerWrapper);
+
+            // Combine header and map into a single canvas
+            const combinedCanvas = document.createElement('canvas');
+            const padding = 20; // 16px padding from wrapper + some extra
+            combinedCanvas.width = Math.max(headerCanvas.width, mapCanvas.width);
+            combinedCanvas.height = headerCanvas.height + mapCanvas.height + padding;
+
+            const ctx = combinedCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+
+            // Draw header at the top
+            ctx.drawImage(headerCanvas, 0, 0);
+
+            // Draw map below the header
+            ctx.drawImage(mapCanvas, 0, headerCanvas.height + padding);
+
+            canvas = combinedCanvas;
+
+            // Clean up the temporary wrapper
+            document.body.removeChild(tempWrapper);
+          } catch (mapError) {
+            console.error('Error capturing map:', mapError);
+            // Fallback to regular html2canvas if leaflet-image fails
+            canvas = await html2canvas(tempWrapper, {
+              scale: 1.2,
+              logging: false,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff'
+            });
+            document.body.removeChild(tempWrapper);
+          }
         } else {
           // For non-map sections, use the cloned wrapper
           canvas = await html2canvas(tempWrapper, {
