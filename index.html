@@ -11285,12 +11285,11 @@ async function downloadDashboard(dashboardType) {
 
         let canvas;
         if (hasLeafletMap) {
-          // For map sections, use leaflet-image to properly capture all layers
+          // For map sections, must capture ORIGINAL elements (cloning breaks Leaflet rendering)
           try {
-            console.log('[PDF Export] Detected Leaflet map, attempting to capture...');
+            console.log('[PDF Export] Detected Leaflet map, using original elements...');
 
             // Get the map instance from global registry
-            // Check which dashboard we're exporting based on dashboardType
             let mapInstance = null;
             if (dashboardType === 'dengue' && window._dengueMapInstance) {
               mapInstance = window._dengueMapInstance;
@@ -11300,74 +11299,79 @@ async function downloadDashboard(dashboardType) {
               console.log('[PDF Export] Using malaria map instance');
             }
 
-            if (!mapInstance) {
-              throw new Error('Map instance not found for ' + dashboardType);
+            if (mapInstance) {
+              // Force map redraw
+              mapInstance.invalidateSize();
+              console.log('[PDF Export] Map refreshed');
             }
 
-            console.log('[PDF Export] Map instance found, layers:', mapInstance._layers);
+            // Create wrapper with original elements temporarily
+            const originalWrapper = document.createElement('div');
+            originalWrapper.style.background = '#ffffff';
+            originalWrapper.style.padding = '16px';
+            originalWrapper.style.position = 'absolute';
+            originalWrapper.style.left = '0';
+            originalWrapper.style.top = '0';
+            originalWrapper.style.width = `${panel.offsetWidth}px`;
+            originalWrapper.style.zIndex = '99999';  // Put on top
 
-            // Invalidate size to ensure map is properly rendered
-            mapInstance.invalidateSize();
+            // Clone h2 for header
+            originalWrapper.appendChild(h2.cloneNode(true));
 
-            // Wait for tiles to load
-            console.log('[PDF Export] Waiting for tiles to load...');
+            // Store original positions so we can restore them
+            const elementPositions = originalElements.map(el => ({
+              element: el,
+              parent: el.parentNode,
+              nextSibling: el.nextSibling
+            }));
+
+            // Move original elements (not clones!) to wrapper
+            originalElements.forEach(el => originalWrapper.appendChild(el));
+            document.body.appendChild(originalWrapper);
+
+            // Wait for map to settle in new position
+            console.log('[PDF Export] Waiting for layers to render...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (mapInstance) {
+              mapInstance.invalidateSize();  // Redraw after moving
+            }
+
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Capture the map with leaflet-image (includes tiles, markers, overlays)
-            console.log('[PDF Export] Calling leaflet-image...');
-            const mapCanvas = await captureLeafletMap(mapInstance);
-            console.log('[PDF Export] Map canvas captured successfully:', mapCanvas.width, 'x', mapCanvas.height);
+            // Capture with html2canvas
+            console.log('[PDF Export] Capturing with html2canvas...');
+            canvas = await html2canvas(originalWrapper, {
+              scale: 2.0,
+              logging: false,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              imageTimeout: 15000
+            });
 
-            // Create a wrapper to include the h2 header and other elements
-            const headerWrapper = document.createElement('div');
-            headerWrapper.style.background = '#ffffff';
-            headerWrapper.style.padding = '16px';
-            headerWrapper.appendChild(h2.cloneNode(true));
+            console.log('[PDF Export] Canvas captured:', canvas.width, 'x', canvas.height);
 
-            // Add other non-map elements (like controls, notes, etc.)
-            originalElements.forEach(el => {
-              if (!el.querySelector('.leaflet-container')) {
-                headerWrapper.appendChild(el.cloneNode(true));
+            // Restore original elements to their positions
+            elementPositions.forEach(({ element, parent, nextSibling }) => {
+              if (nextSibling && nextSibling.parentNode === parent) {
+                parent.insertBefore(element, nextSibling);
+              } else {
+                parent.appendChild(element);
               }
             });
 
-            headerWrapper.style.position = 'absolute';
-            headerWrapper.style.left = '-9999px';
-            headerWrapper.style.width = `${panel.offsetWidth}px`;
-            document.body.appendChild(headerWrapper);
-
-            // Capture the header and controls
-            const headerCanvas = await html2canvas(headerWrapper, {
-              scale: 1.2,
-              logging: false,
-              backgroundColor: '#ffffff'
-            });
-
-            document.body.removeChild(headerWrapper);
-
-            // Combine header and map into a single canvas
-            const combinedCanvas = document.createElement('canvas');
-            const padding = 20; // 16px padding from wrapper + some extra
-            combinedCanvas.width = Math.max(headerCanvas.width, mapCanvas.width);
-            combinedCanvas.height = headerCanvas.height + mapCanvas.height + padding;
-
-            const ctx = combinedCanvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-
-            // Draw header at the top
-            ctx.drawImage(headerCanvas, 0, 0);
-
-            // Draw map below the header
-            ctx.drawImage(mapCanvas, 0, headerCanvas.height + padding);
-
-            canvas = combinedCanvas;
-
-            // Clean up the temporary wrapper
+            document.body.removeChild(originalWrapper);
             document.body.removeChild(tempWrapper);
+
+            // Refresh map one more time after moving back
+            if (mapInstance) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              mapInstance.invalidateSize();
+            }
           } catch (mapError) {
             console.error('Error capturing map:', mapError);
-            // Fallback to regular html2canvas if leaflet-image fails
+            // Fallback
             canvas = await html2canvas(tempWrapper, {
               scale: 1.2,
               logging: false,
