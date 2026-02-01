@@ -918,6 +918,31 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
       border: 1px solid rgba(0, 0, 0, 0.18);
     }
 
+    .meteo-loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #475569;
+      padding: 8px 12px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #cbd5e1;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Download button styles */
     .download-section {
       margin-top: 32px;
@@ -2359,10 +2384,13 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
           <option value="rh_pct">Relative humidity (%)</option>
         </select>
       </div>
-      <button class="btn" type="button" id="dengue_meteo_export">Export meteo grid</button>
       <div id="dengue_meteo_legend" class="meteo-legend" aria-live="polite"></div>
+      <div id="dengue_meteo_loading" class="meteo-loading" style="display:none;" aria-live="polite">
+        <span class="loading-spinner"></span>
+        <span id="dengue_meteo_loading_text">Fetching meteorology data...</span>
+      </div>
     </div>
-    <div class="note">Meteorology data source: ERA5-Land (Copernicus Climate Data Store). These are model-based reanalysis estimates, summarized within each grid cell.</div>
+    <div class="note">Meteorology data source: Open-Meteo Archive API (ERA5 reanalysis). Data is fetched automatically and cached in your browser.</div>
   </div>
   <h2>5. Lab profiles</h2>
   <div class="card">
@@ -7866,7 +7894,6 @@ window.renderAll = renderAll;
   const dengueDistrictSelect = document.getElementById('dengue_filter_district');
   const meteoToggle = document.getElementById('dengue_meteo_toggle');
   const meteoVariableSelect = document.getElementById('dengue_meteo_variable');
-  const meteoExportBtn = document.getElementById('dengue_meteo_export');
   const meteoLegendEl = document.getElementById('dengue_meteo_legend');
 
   // Expected location for the ADM2 boundary file.
@@ -8239,6 +8266,8 @@ window.renderAll = renderAll;
         fillOpacity: 0.05,
       },
       interactive: false,
+      renderer: L.svg(),
+      pane: 'districtOutlinePane',
     }).addTo(mapState.map);
   }
 
@@ -8293,45 +8322,218 @@ window.renderAll = renderAll;
       const centroid = turf.centroid(hex);
       const [lng, lat] = centroid.geometry.coordinates;
       const cellId = `h_${encodeCoord(lat)}_${encodeCoord(lng)}`;
-      const next = { ...hex };
+      // Clip hexagon to district boundary
+      let clippedHex = hex;
+      try {
+        const intersection = turf.intersect(hex, districtFeature);
+        if (intersection) {
+          clippedHex = intersection;
+        }
+      } catch (e) {
+        // If intersection fails, use original hex
+      }
+      const next = { ...clippedHex };
       next.properties = { ...(hex.properties || {}), cell_id: cellId };
       return next;
     });
     return { type: 'FeatureCollection', features };
   }
 
-  function formatDistrictFilename(value) {
-    const cleaned = normName(value).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-    return cleaned || 'unknown';
+  // ============================================================
+  // Open-Meteo API Integration with IndexedDB Caching
+  // ============================================================
+
+  const METEO_DB_NAME = 'dengue_meteo_cache';
+  const METEO_DB_VERSION = 1;
+  const METEO_STORE_NAME = 'meteo_data';
+
+  const meteoLoadingEl = document.getElementById('dengue_meteo_loading');
+  const meteoLoadingTextEl = document.getElementById('dengue_meteo_loading_text');
+
+  function showMeteoLoading(message, isComplete = false, isError = false) {
+    if (meteoLoadingEl) {
+      meteoLoadingEl.style.display = 'flex';
+      meteoLoadingEl.style.background = isError ? '#fee2e2' : (isComplete ? '#dcfce7' : '#f1f5f9');
+      meteoLoadingEl.style.color = isError ? '#991b1b' : (isComplete ? '#166534' : '#475569');
+      if (meteoLoadingTextEl) meteoLoadingTextEl.textContent = message || 'Fetching meteorology data...';
+
+      // Hide spinner for complete/error states
+      const spinner = meteoLoadingEl.querySelector('.loading-spinner');
+      if (spinner) spinner.style.display = (isComplete || isError) ? 'none' : 'block';
+    }
   }
 
-  function exportMeteoGrid() {
-    const hexFC = meteoState.hexFeatureCollection;
-    if (!hexFC) {
-      console.warn('[Dengue] No meteorology grid available for export.');
-      return;
-    }
-    const districtName = dengueDistrictSelect?.value
-      || getDistrictNameFromFeature(mapState.selectedDistrictFeature)
-      || 'unknown';
-    const payload = {
-      type: 'FeatureCollection',
-      features: hexFC.features,
-      districtName,
-      gridKm: METEO_GRID_KM,
-      createdAt: new Date().toISOString(),
-      source: 'dengue dashboard',
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/geo+json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `hexgrid_${formatDistrictFilename(districtName)}_${METEO_GRID_KM}km.geojson`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+  function hideMeteoLoading() {
+    if (meteoLoadingEl) meteoLoadingEl.style.display = 'none';
   }
+
+  function showMeteoComplete(message, isError = false) {
+    showMeteoLoading(message, !isError, isError);
+    setTimeout(() => hideMeteoLoading(), 3000);
+  }
+
+  function openMeteoDb() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(METEO_DB_NAME, METEO_DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(METEO_STORE_NAME)) {
+          db.createObjectStore(METEO_STORE_NAME, { keyPath: 'cacheKey' });
+        }
+      };
+    });
+  }
+
+  async function getMeteoFromCache(cacheKey) {
+    try {
+      const db = await openMeteoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(METEO_STORE_NAME, 'readonly');
+        const store = tx.objectStore(METEO_STORE_NAME);
+        const request = store.get(cacheKey);
+        request.onsuccess = () => resolve(request.result?.data || null);
+        request.onerror = () => reject(request.error);
+      });
+    } catch (e) {
+      console.warn('[Meteo] IndexedDB cache read failed:', e);
+      return null;
+    }
+  }
+
+  async function saveMeteoToCache(cacheKey, data) {
+    try {
+      const db = await openMeteoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(METEO_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(METEO_STORE_NAME);
+        const request = store.put({ cacheKey, data, timestamp: Date.now() });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    } catch (e) {
+      console.warn('[Meteo] IndexedDB cache write failed:', e);
+    }
+  }
+
+  async function fetchOpenMeteoData(lat, lng, startDate, endDate) {
+    const url = new URL('https://archive-api.open-meteo.com/v1/archive');
+    url.searchParams.set('latitude', lat.toFixed(4));
+    url.searchParams.set('longitude', lng.toFixed(4));
+    url.searchParams.set('start_date', startDate);
+    url.searchParams.set('end_date', endDate);
+    url.searchParams.set('daily', 'precipitation_sum,temperature_2m_mean,relative_humidity_2m_mean');
+    url.searchParams.set('timezone', 'Asia/Kuala_Lumpur');
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`Open-Meteo API error: ${response.status}`);
+    }
+    return response.json();
+  }
+
+  async function fetchMeteoForCells(hexFC, startDate, endDate, onProgress) {
+    const output = {};
+    const features = hexFC.features || [];
+    const total = features.length;
+    let completed = 0;
+
+    // Process cells in batches to avoid rate limiting
+    const BATCH_SIZE = 5;
+    const BATCH_DELAY = 200; // ms between batches
+
+    for (let i = 0; i < features.length; i += BATCH_SIZE) {
+      const batch = features.slice(i, i + BATCH_SIZE);
+      const batchPromises = batch.map(async (feature) => {
+        const cellId = feature.properties?.cell_id;
+        if (!cellId) return;
+
+        // Extract lat/lng from cell_id (format: h_LAT_LNG with p=. and m=-)
+        const match = cellId.match(/^h_([mp\d]+)_([mp\d]+)$/);
+        if (!match) return;
+
+        const lat = parseFloat(match[1].replace(/m/g, '-').replace(/p/g, '.'));
+        const lng = parseFloat(match[2].replace(/m/g, '-').replace(/p/g, '.'));
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        try {
+          const data = await fetchOpenMeteoData(lat, lng, startDate, endDate);
+          if (data?.daily) {
+            const dates = data.daily.time || [];
+            const precip = data.daily.precipitation_sum || [];
+            const temp = data.daily.temperature_2m_mean || [];
+            const rh = data.daily.relative_humidity_2m_mean || [];
+
+            dates.forEach((dateStr, idx) => {
+              if (!output[dateStr]) output[dateStr] = {};
+              output[dateStr][cellId] = {
+                rain_mm: Number.isFinite(precip[idx]) ? Number(precip[idx].toFixed(1)) : null,
+                temp_c: Number.isFinite(temp[idx]) ? Number(temp[idx].toFixed(1)) : null,
+                rh_pct: Number.isFinite(rh[idx]) ? Math.round(rh[idx]) : null,
+              };
+            });
+          }
+        } catch (e) {
+          console.warn(`[Meteo] Failed to fetch data for cell ${cellId}:`, e.message);
+        }
+
+        completed++;
+        if (onProgress) onProgress(completed, total);
+      });
+
+      await Promise.all(batchPromises);
+
+      // Delay between batches to respect rate limits
+      if (i + BATCH_SIZE < features.length) {
+        await new Promise(r => setTimeout(r, BATCH_DELAY));
+      }
+    }
+
+    return output;
+  }
+
+  async function getMeteoFromOpenMeteo(hexFC, startDate, endDate) {
+    if (!hexFC || !hexFC.features || hexFC.features.length === 0) {
+      return null;
+    }
+
+    // Create cache key based on cell IDs and date range
+    const cellIds = hexFC.features.map(f => f.properties?.cell_id).filter(Boolean).sort();
+    const cacheKey = `meteo_${startDate}_${endDate}_${cellIds.join(',')}`;
+
+    // Try to load from cache first
+    const cached = await getMeteoFromCache(cacheKey);
+    if (cached) {
+      console.log('[Meteo] Loaded from IndexedDB cache');
+      return cached;
+    }
+
+    // Fetch from Open-Meteo API
+    showMeteoLoading(`Fetching meteorology data (0/${hexFC.features.length} cells)...`);
+
+    try {
+      const data = await fetchMeteoForCells(hexFC, startDate, endDate, (completed, total) => {
+        showMeteoLoading(`Fetching meteorology data (${completed}/${total} cells)...`);
+      });
+
+      // Save to cache
+      await saveMeteoToCache(cacheKey, data);
+      console.log('[Meteo] Fetched from Open-Meteo and cached');
+
+      const dateCount = Object.keys(data).length;
+      showMeteoComplete(`Meteorology data loaded (${dateCount} days, ${hexFC.features.length} cells)`);
+
+      return data;
+    } catch (e) {
+      console.error('[Meteo] Failed to fetch from Open-Meteo:', e);
+      showMeteoComplete('Failed to fetch meteorology data. Using fallback.', true);
+      return null;
+    }
+  }
+
+  // ============================================================
 
   function getDateListForYear(year) {
     if (!mapState.minDate || !mapState.maxDate) return [];
@@ -8382,20 +8584,44 @@ window.renderAll = renderAll;
   }
 
   async function getMeteoForYear(year, hexFC) {
+    console.log(`[Meteo] Loading meteorology data for year ${year}`);
+
     if (meteoState.meteoCacheByYear.has(year)) {
+      console.log(`[Meteo] Using cached data for year ${year}`);
       return meteoState.meteoCacheByYear.get(year);
     }
+
+    // Try static file first (for backwards compatibility)
     const loaded = await loadMeteoYear(year);
     if (loaded) {
+      console.log(`[Meteo] Loaded from static file for year ${year}, dates:`, Object.keys(loaded).length);
       meteoState.meteoCacheByYear.set(year, loaded);
       return loaded;
     }
+
+    // Try Open-Meteo API
+    if (hexFC) {
+      // Fetch only the specific year to avoid redundant data downloads
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      console.log(`[Meteo] Fetching from Open-Meteo API: ${startDate} to ${endDate}, cells: ${hexFC.features?.length || 0}`);
+      const openMeteoData = await getMeteoFromOpenMeteo(hexFC, startDate, endDate);
+      if (openMeteoData && Object.keys(openMeteoData).length > 0) {
+        console.log(`[Meteo] Open-Meteo data received, dates:`, Object.keys(openMeteoData).length);
+        meteoState.meteoCacheByYear.set(year, openMeteoData);
+        return openMeteoData;
+      }
+    }
+
+    // Fall back to mock data if everything else fails
+    console.log(`[Meteo] Falling back to mock data for year ${year}`);
     if (meteoState.meteoMockByYear.has(year)) {
       return meteoState.meteoMockByYear.get(year);
     }
     const dates = getDateListForYear(year);
     const mock = generateMockMeteo(hexFC, dates);
     meteoState.meteoMockByYear.set(year, mock);
+    console.log(`[Meteo] Generated mock data for year ${year}, dates:`, Object.keys(mock).length);
     return mock;
   }
 
@@ -8442,13 +8668,22 @@ window.renderAll = renderAll;
     const config = METEO_VARIABLES[variableKey];
     if (!config) return;
     const meteo = meteoState.activeMeteo || {};
+
+    // Debug logging
+    let validCount = 0;
+    let totalCount = 0;
+
     meteoState.hexLayer.eachLayer(layer => {
+      totalCount++;
       const cellId = layer.feature?.properties?.cell_id;
       const value = cellId && dateStr ? meteo?.[dateStr]?.[cellId]?.[variableKey] : null;
       const fillColor = getMeteoColor(value, config);
+
+      if (Number.isFinite(value)) validCount++;
+
       layer.setStyle({
-        fillColor: fillColor || '#94a3b8',
-        fillOpacity: Number.isFinite(value) ? 0.55 : 0,
+        fillColor: fillColor || '#e2e8f0',
+        fillOpacity: Number.isFinite(value) ? 0.55 : 0.25,
         color: '#475569',
         weight: 0.5,
         opacity: 1,
@@ -8465,6 +8700,11 @@ window.renderAll = renderAll;
         layer.bindTooltip(tooltipContent, { sticky: true });
       }
     });
+
+    console.log(`[Meteo] Styled ${validCount}/${totalCount} hexagons with data for ${dateStr}, variable: ${variableKey}`);
+    if (validCount === 0 && totalCount > 0) {
+      console.warn('[Meteo] No hexagons have data. Active meteo keys:', Object.keys(meteo).slice(0, 5), 'Current date:', dateStr);
+    }
   }
 
   function removeMeteoLayer() {
@@ -8518,7 +8758,6 @@ window.renderAll = renderAll;
       }).addTo(mapState.map);
       requestAnimationFrame(() => {
         mapState.map.invalidateSize(false);
-        mapState.map.panBy([0, 0], { animate: false });
       });
       if (mapState.markers) {
         mapState.markers.bringToFront();
@@ -8534,6 +8773,10 @@ window.renderAll = renderAll;
     }
     updateMeteoLegend(meteoState.variableKey);
     refreshHexStyles(dateStr, meteoState.variableKey);
+    // Ensure markers stay on top of hexagons
+    if (mapState.markers) {
+      mapState.markers.bringToFront();
+    }
   }
 
   function ageGroupFromYears(age) {
@@ -8735,14 +8978,16 @@ window.renderAll = renderAll;
 
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
-    mapState.map = L.map(mapContainer, { preferCanvas: true }).setView([4.2105, 101.9758], 6);
+    mapState.map = L.map(mapContainer, { preferCanvas: false }).setView([4.2105, 101.9758], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors',
       crossOrigin: 'anonymous'
     }).addTo(mapState.map);
     const meteoPane = mapState.map.createPane('meteoHexPane');
-    meteoPane.style.zIndex = 400;
+    meteoPane.style.zIndex = 350;
+    const districtPane = mapState.map.createPane('districtOutlinePane');
+    districtPane.style.zIndex = 410;
     const casePane = mapState.map.createPane('casePane');
     casePane.style.zIndex = 650;
     mapState.markers = L.featureGroup().addTo(mapState.map);
@@ -8866,7 +9111,7 @@ window.renderAll = renderAll;
         fillColor: '#dc2626',
         fillOpacity: 0.8,
         weight: 1,
-        pane: 'casePane'
+        pane: 'markerPane'
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -8919,6 +9164,10 @@ window.renderAll = renderAll;
       } else {
         mapState.map.setView([4.2105, 101.9758], 6);
       }
+    }
+    // Ensure markers are always on top
+    if (mapState.markers) {
+      mapState.markers.bringToFront();
     }
   }
 
@@ -9418,11 +9667,6 @@ window.renderAll = renderAll;
     meteoVariableSelect.addEventListener('change', () => {
       meteoState.variableKey = meteoVariableSelect.value;
       updateMeteoOverlay();
-    });
-  }
-  if (meteoExportBtn) {
-    meteoExportBtn.addEventListener('click', () => {
-      exportMeteoGrid();
     });
   }
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -10533,7 +10777,7 @@ window.renderAll = renderAll;
     const container = document.getElementById('malaria_case_map');
     if (!container) return;
 
-    mapState.map = L.map('malaria_case_map', { preferCanvas: true }).setView([4.0, 102.0], 8);
+    mapState.map = L.map('malaria_case_map', { preferCanvas: false }).setView([4.0, 102.0], 8);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
