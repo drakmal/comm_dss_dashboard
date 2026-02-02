@@ -11339,15 +11339,21 @@ async function downloadDashboard(dashboardType) {
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Capture with html2canvas
-            console.log('[PDF Export] Capturing with html2canvas...');
+            // Capture with html2canvas with ignoreElements to skip leaflet panes temporarily
+            console.log('[PDF Export] Capturing with html2canvas with special settings...');
             canvas = await html2canvas(originalWrapper, {
               scale: 2.0,
-              logging: false,
+              logging: true,  // Enable logging to see what's happening
               useCORS: true,
               allowTaint: true,
               backgroundColor: '#ffffff',
-              imageTimeout: 15000
+              imageTimeout: 15000,
+              ignoreElements: (element) => {
+                // Try to capture everything, don't ignore anything
+                return false;
+              },
+              // Enable foreignObjectRendering for better SVG support
+              foreignObjectRendering: true
             });
 
             console.log('[PDF Export] Canvas captured:', canvas.width, 'x', canvas.height);
