@@ -7937,6 +7937,10 @@ window.renderAll = renderAll;
     warnedMissingTurf: false,
   };
 
+  // Expose to window for PDF export access
+  window.mapState = mapState;
+  window.meteoState = meteoState;
+
   if (mapShowAllCheckbox) {
     mapState.showAllCases = mapShowAllCheckbox.checked;
   }
@@ -9114,7 +9118,7 @@ window.renderAll = renderAll;
         fillColor: '#dc2626',
         fillOpacity: 0.8,
         weight: 1,
-        pane: 'markerPane'
+        pane: 'casePane'
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -11339,6 +11343,33 @@ async function downloadDashboard(dashboardType) {
 
             await new Promise(resolve => setTimeout(resolve, 500));
 
+            // Hide hexagon and district border layers for PDF (only show red dots)
+            let hiddenMeteoLayer = null;
+            let hiddenDistrictOutline = null;
+
+            if (dashboardType === 'dengue') {
+              // Hide meteorology hexagon layer
+              if (window.meteoState && window.meteoState.hexLayer && mapInstance) {
+                console.log('[PDF Export] Hiding hexagon layer for PDF');
+                hiddenMeteoLayer = window.meteoState.hexLayer;
+                mapInstance.removeLayer(hiddenMeteoLayer);
+              }
+
+              // Hide district outline layer
+              if (window.mapState && window.mapState.districtOutline && mapInstance) {
+                console.log('[PDF Export] Hiding district outline for PDF');
+                hiddenDistrictOutline = window.mapState.districtOutline;
+                mapInstance.removeLayer(hiddenDistrictOutline);
+              }
+
+              // Wait for layers to be removed
+              await new Promise(resolve => setTimeout(resolve, 300));
+
+              if (mapInstance) {
+                mapInstance.invalidateSize();
+              }
+            }
+
             // Capture with html2canvas with ignoreElements to skip leaflet panes temporarily
             console.log('[PDF Export] Capturing with html2canvas with special settings...');
             canvas = await html2canvas(originalWrapper, {
@@ -11367,6 +11398,17 @@ async function downloadDashboard(dashboardType) {
               }
             });
 
+            // Restore hidden layers
+            if (hiddenMeteoLayer && mapInstance) {
+              console.log('[PDF Export] Restoring hexagon layer');
+              mapInstance.addLayer(hiddenMeteoLayer);
+            }
+
+            if (hiddenDistrictOutline && mapInstance) {
+              console.log('[PDF Export] Restoring district outline');
+              mapInstance.addLayer(hiddenDistrictOutline);
+            }
+
             document.body.removeChild(originalWrapper);
             document.body.removeChild(tempWrapper);
 
@@ -11375,8 +11417,32 @@ async function downloadDashboard(dashboardType) {
               await new Promise(resolve => setTimeout(resolve, 100));
               mapInstance.invalidateSize();
             }
+
+            // Bring markers to front after restoring layers
+            if (window.mapState && window.mapState.markers) {
+              window.mapState.markers.bringToFront();
+            }
           } catch (mapError) {
             console.error('Error capturing map:', mapError);
+
+            // Restore hidden layers even in error case
+            let mapInstance = null;
+            if (dashboardType === 'dengue' && window._dengueMapInstance) {
+              mapInstance = window._dengueMapInstance;
+            } else if (dashboardType === 'malaria' && window._malariaMapInstance) {
+              mapInstance = window._malariaMapInstance;
+            }
+
+            if (hiddenMeteoLayer && mapInstance) {
+              console.log('[PDF Export] Restoring hexagon layer (error case)');
+              mapInstance.addLayer(hiddenMeteoLayer);
+            }
+
+            if (hiddenDistrictOutline && mapInstance) {
+              console.log('[PDF Export] Restoring district outline (error case)');
+              mapInstance.addLayer(hiddenDistrictOutline);
+            }
+
             // Fallback
             canvas = await html2canvas(tempWrapper, {
               scale: 1.2,
