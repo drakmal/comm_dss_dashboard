@@ -11106,18 +11106,63 @@ async function captureLeafletMap(mapInstance) {
       return;
     }
 
-    // Use leaflet-image to capture the map
-    // This properly captures tiles, markers, and all Leaflet layers
-    console.log('[captureLeafletMap] Calling leafletImage function...');
-    leafletImage(mapInstance, function(err, canvas) {
-      if (err) {
-        console.error('[captureLeafletMap] Error from leafletImage:', err);
-        reject(err);
+    // Find the tile layer and wait for all tiles to load
+    console.log('[captureLeafletMap] Waiting for tiles to load...');
+    let tileLayer = null;
+    mapInstance.eachLayer(layer => {
+      if (layer instanceof L.TileLayer) {
+        tileLayer = layer;
+      }
+    });
+
+    // Function to check if all tiles are loaded
+    const waitForTiles = () => {
+      if (!tileLayer) {
+        console.log('[captureLeafletMap] No tile layer found, proceeding without tile wait');
+        captureMap();
         return;
       }
-      console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
-      resolve(canvas);
-    });
+
+      // Check if tiles are loading
+      const tilesLoading = tileLayer._loading;
+      console.log('[captureLeafletMap] Tiles loading:', tilesLoading);
+
+      if (!tilesLoading) {
+        console.log('[captureLeafletMap] All tiles loaded, capturing map');
+        captureMap();
+      } else {
+        // Wait for the load event
+        console.log('[captureLeafletMap] Waiting for tiles to finish loading...');
+        tileLayer.once('load', () => {
+          console.log('[captureLeafletMap] Tile load event fired, capturing map');
+          setTimeout(captureMap, 200); // Small delay to ensure rendering is complete
+        });
+
+        // Fallback timeout in case load event doesn't fire
+        setTimeout(() => {
+          console.log('[captureLeafletMap] Timeout reached, capturing map anyway');
+          captureMap();
+        }, 5000);
+      }
+    };
+
+    const captureMap = () => {
+      // Use leaflet-image to capture the map
+      // This properly captures tiles, markers, and all Leaflet layers
+      console.log('[captureLeafletMap] Calling leafletImage function...');
+      leafletImage(mapInstance, function(err, canvas) {
+        if (err) {
+          console.error('[captureLeafletMap] Error from leafletImage:', err);
+          reject(err);
+          return;
+        }
+        console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
+        resolve(canvas);
+      });
+    };
+
+    // Start the process
+    waitForTiles();
   });
 }
 
@@ -11339,9 +11384,18 @@ async function downloadDashboard(dashboardType) {
 
             if (mapInstance) {
               mapInstance.invalidateSize();  // Redraw after moving
+
+              // Force tile layer to reload all tiles
+              console.log('[PDF Export] Forcing tile reload...');
+              mapInstance.eachLayer(layer => {
+                if (layer instanceof L.TileLayer) {
+                  layer.redraw();
+                  console.log('[PDF Export] Tile layer redrawn');
+                }
+              });
             }
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Increased wait time for tiles to load
 
             // Hide hexagon and district border layers for PDF (only show red dots)
             let hiddenMeteoLayer = null;
