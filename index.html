@@ -8997,6 +8997,8 @@ window.renderAll = renderAll;
     districtPane.style.zIndex = 410;
     const casePane = mapState.map.createPane('casePane');
     casePane.style.zIndex = 650;
+    // Create canvas renderer for case markers (so leaflet-image can capture them in PDF)
+    mapState.canvasRenderer = L.canvas({ pane: 'casePane' });
     mapState.markers = L.featureGroup().addTo(mapState.map);
     const lockView = () => {
       if (!mapState._programmaticMove) {
@@ -9118,7 +9120,8 @@ window.renderAll = renderAll;
         fillColor: '#dc2626',
         fillOpacity: 0.8,
         weight: 1,
-        pane: 'casePane'
+        pane: 'casePane',
+        renderer: mapState.canvasRenderer
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -10793,6 +10796,8 @@ window.renderAll = renderAll;
       crossOrigin: 'anonymous'
     }).addTo(mapState.map);
 
+    // Create canvas renderer for case markers (so leaflet-image can capture them in PDF)
+    mapState.canvasRenderer = L.canvas();
     mapState.markers = L.featureGroup().addTo(mapState.map);
   }
 
@@ -10811,7 +10816,8 @@ window.renderAll = renderAll;
         fillOpacity: 0.8,
         color: '#000',
         weight: 1,
-        opacity: 0.8
+        opacity: 0.8,
+        renderer: mapState.canvasRenderer
       });
 
       const cols = malariaState.columns;
