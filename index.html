@@ -9118,8 +9118,7 @@ window.renderAll = renderAll;
         color: '#dc2626',
         fillColor: '#dc2626',
         fillOpacity: 0.8,
-        weight: 1,
-        pane: 'casePane'
+        weight: 1
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -11096,13 +11095,12 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 // Function to capture Leaflet map with all layers as canvas
 async function captureLeafletMap(mapInstance) {
-  return new Promise((resolve, reject) => {
-    console.log('[captureLeafletMap] Starting capture...');
-    console.log('[captureLeafletMap] window.leafletImage available?', !!window.leafletImage);
+  return new Promise(async (resolve, reject) => {
+    console.log('[captureLeafletMap] Starting capture with html2canvas...');
     console.log('[captureLeafletMap] mapInstance valid?', !!mapInstance);
 
-    if (!mapInstance || !window.leafletImage) {
-      const error = new Error('Map instance or leaflet-image library not available');
+    if (!mapInstance) {
+      const error = new Error('Map instance not available');
       console.error('[captureLeafletMap]', error);
       reject(error);
       return;
@@ -11117,54 +11115,46 @@ async function captureLeafletMap(mapInstance) {
       }
     });
 
-    // Function to check if all tiles are loaded
-    const waitForTiles = () => {
-      if (!tileLayer) {
-        console.log('[captureLeafletMap] No tile layer found, proceeding without tile wait');
-        captureMap();
-        return;
-      }
-
-      // Check if tiles are loading
-      const tilesLoading = tileLayer._loading;
-      console.log('[captureLeafletMap] Tiles loading:', tilesLoading);
-
-      if (!tilesLoading) {
-        console.log('[captureLeafletMap] All tiles loaded, capturing map');
-        captureMap();
-      } else {
-        // Wait for the load event
-        console.log('[captureLeafletMap] Waiting for tiles to finish loading...');
+    // Wait for tiles to finish loading
+    if (tileLayer && tileLayer._loading) {
+      console.log('[captureLeafletMap] Waiting for tiles to finish loading...');
+      await new Promise((resolveTiles) => {
         tileLayer.once('load', () => {
-          console.log('[captureLeafletMap] Tile load event fired, capturing map');
-          setTimeout(captureMap, 200); // Small delay to ensure rendering is complete
+          console.log('[captureLeafletMap] Tile load event fired');
+          resolveTiles();
         });
-
-        // Fallback timeout in case load event doesn't fire
-        setTimeout(() => {
-          console.log('[captureLeafletMap] Timeout reached, capturing map anyway');
-          captureMap();
-        }, 5000);
-      }
-    };
-
-    const captureMap = () => {
-      // Use leaflet-image to capture the map
-      // This properly captures tiles, markers, and all Leaflet layers
-      console.log('[captureLeafletMap] Calling leafletImage function...');
-      leafletImage(mapInstance, function(err, canvas) {
-        if (err) {
-          console.error('[captureLeafletMap] Error from leafletImage:', err);
-          reject(err);
-          return;
-        }
-        console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
-        resolve(canvas);
+        // Fallback timeout
+        setTimeout(resolveTiles, 5000);
       });
-    };
+    }
 
-    // Start the process
-    waitForTiles();
+    // Additional wait for rendering
+    await new Promise(r => setTimeout(r, 500));
+
+    try {
+      // Get the map container element
+      const mapContainer = mapInstance.getContainer();
+      console.log('[captureLeafletMap] Capturing map container with html2canvas...');
+
+      // Use html2canvas to capture the map with SVG markers
+      const canvas = await html2canvas(mapContainer, {
+        scale: 2.0,
+        logging: true,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        imageTimeout: 15000,
+        // These options help with SVG rendering
+        foreignObjectRendering: false,
+        removeContainer: false
+      });
+
+      console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
+      resolve(canvas);
+    } catch (err) {
+      console.error('[captureLeafletMap] Error from html2canvas:', err);
+      reject(err);
+    }
   });
 }
 
@@ -11426,62 +11416,31 @@ async function downloadDashboard(dashboardType) {
               }
             }
 
-            // Capture map using leaflet-image library
-            console.log('[PDF Export] Capturing map with leaflet-image...');
+            // Capture map using html2canvas (which properly captures SVG markers)
+            console.log('[PDF Export] Capturing map section with html2canvas...');
             if (mapInstance) {
               try {
-                // Use leafletImage to capture the map with tiles and markers
-                const mapCanvas = await captureLeafletMap(mapInstance);
-                console.log('[PDF Export] Map tiles captured:', mapCanvas.width, 'x', mapCanvas.height);
+                // Wait for map to be fully rendered
+                await captureLeafletMap(mapInstance);
+                console.log('[PDF Export] Map validated as ready for capture');
 
-                // Measure the map container position BEFORE html2canvas runs,
-                // while both elements are still in the live DOM.
-                const mapContainerEl = originalWrapper.querySelector('.leaflet-container');
-                let mapOffsetX = 0, mapOffsetY = 0, mapDisplayW = 0, mapDisplayH = 0;
-                if (mapContainerEl) {
-                  const mapRect = mapContainerEl.getBoundingClientRect();
-                  const wrapperRect = originalWrapper.getBoundingClientRect();
-                  mapOffsetX = mapRect.left - wrapperRect.left;
-                  mapOffsetY = mapRect.top - wrapperRect.top;
-                  mapDisplayW = mapRect.width;
-                  mapDisplayH = mapRect.height;
-                  console.log('[PDF Export] Map offset in wrapper:', mapOffsetX, mapOffsetY, mapDisplayW, 'x', mapDisplayH);
-                }
-
-                // Capture the full wrapper with html2canvas.
-                // The Leaflet container renders as blank here (html2canvas cannot read
-                // canvas pixel data), but all surrounding UI controls are captured correctly.
+                // Capture the full wrapper with html2canvas
+                // This captures tiles, SVG markers, and all UI controls
                 const captureScale = 2.0;
-                const wrapperCanvas = await html2canvas(originalWrapper, {
+                canvas = await html2canvas(originalWrapper, {
                   scale: captureScale,
                   logging: true,
                   useCORS: true,
                   allowTaint: true,
                   backgroundColor: '#ffffff',
-                  imageTimeout: 15000
+                  imageTimeout: 15000,
+                  foreignObjectRendering: false
                 });
 
-                // Composite: paint the wrapper screenshot, then paint the map canvas
-                // on top at the exact position the leaflet-container occupied.
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = wrapperCanvas.width;
-                finalCanvas.height = wrapperCanvas.height;
-                const ctx = finalCanvas.getContext('2d');
-                ctx.drawImage(wrapperCanvas, 0, 0);
-                if (mapDisplayW > 0 && mapDisplayH > 0) {
-                  ctx.drawImage(
-                    mapCanvas,
-                    mapOffsetX * captureScale,
-                    mapOffsetY * captureScale,
-                    mapDisplayW * captureScale,
-                    mapDisplayH * captureScale
-                  );
-                }
-                canvas = finalCanvas;
-                console.log('[PDF Export] Map section captured successfully with tiles and UI');
+                console.log('[PDF Export] Map section captured successfully with tiles, markers, and UI');
               } catch (err) {
-                console.error('[PDF Export] leaflet-image failed, falling back to html2canvas:', err);
-                // Fallback to html2canvas if leaflet-image fails
+                console.error('[PDF Export] html2canvas failed, trying with different options:', err);
+                // Fallback with foreignObjectRendering enabled
                 canvas = await html2canvas(originalWrapper, {
                   scale: 2.0,
                   logging: true,
