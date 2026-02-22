@@ -11432,39 +11432,51 @@ async function downloadDashboard(dashboardType) {
                 const mapCanvas = await captureLeafletMap(mapInstance);
                 console.log('[PDF Export] Map tiles captured:', mapCanvas.width, 'x', mapCanvas.height);
 
-                // Find the map container element and temporarily replace it with the captured canvas
+                // Measure the map container position BEFORE html2canvas runs,
+                // while both elements are still in the live DOM.
                 const mapContainerEl = originalWrapper.querySelector('.leaflet-container');
+                let mapOffsetX = 0, mapOffsetY = 0, mapDisplayW = 0, mapDisplayH = 0;
                 if (mapContainerEl) {
-                  const mapParent = mapContainerEl.parentElement;
-                  const originalMapContainer = mapContainerEl;
-
-                  // Create a temporary div to hold the canvas
-                  const tempMapDiv = document.createElement('div');
-                  tempMapDiv.style.width = mapContainerEl.offsetWidth + 'px';
-                  tempMapDiv.style.height = mapContainerEl.offsetHeight + 'px';
-                  tempMapDiv.appendChild(mapCanvas.cloneNode(true));
-
-                  // Temporarily replace the map container with our canvas
-                  mapParent.replaceChild(tempMapDiv, originalMapContainer);
-
-                  // Now capture the whole wrapper with html2canvas (which will include the map canvas + UI controls)
-                  canvas = await html2canvas(originalWrapper, {
-                    scale: 2.0,
-                    logging: true,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 15000
-                  });
-
-                  // Restore the original map container
-                  mapParent.replaceChild(originalMapContainer, tempMapDiv);
-
-                  console.log('[PDF Export] Map section captured successfully with tiles and UI');
-                } else {
-                  console.warn('[PDF Export] Could not find .leaflet-container, using map canvas only');
-                  canvas = mapCanvas;
+                  const mapRect = mapContainerEl.getBoundingClientRect();
+                  const wrapperRect = originalWrapper.getBoundingClientRect();
+                  mapOffsetX = mapRect.left - wrapperRect.left;
+                  mapOffsetY = mapRect.top - wrapperRect.top;
+                  mapDisplayW = mapRect.width;
+                  mapDisplayH = mapRect.height;
+                  console.log('[PDF Export] Map offset in wrapper:', mapOffsetX, mapOffsetY, mapDisplayW, 'x', mapDisplayH);
                 }
+
+                // Capture the full wrapper with html2canvas.
+                // The Leaflet container renders as blank here (html2canvas cannot read
+                // canvas pixel data), but all surrounding UI controls are captured correctly.
+                const captureScale = 2.0;
+                const wrapperCanvas = await html2canvas(originalWrapper, {
+                  scale: captureScale,
+                  logging: true,
+                  useCORS: true,
+                  allowTaint: true,
+                  backgroundColor: '#ffffff',
+                  imageTimeout: 15000
+                });
+
+                // Composite: paint the wrapper screenshot, then paint the map canvas
+                // on top at the exact position the leaflet-container occupied.
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = wrapperCanvas.width;
+                finalCanvas.height = wrapperCanvas.height;
+                const ctx = finalCanvas.getContext('2d');
+                ctx.drawImage(wrapperCanvas, 0, 0);
+                if (mapDisplayW > 0 && mapDisplayH > 0) {
+                  ctx.drawImage(
+                    mapCanvas,
+                    mapOffsetX * captureScale,
+                    mapOffsetY * captureScale,
+                    mapDisplayW * captureScale,
+                    mapDisplayH * captureScale
+                  );
+                }
+                canvas = finalCanvas;
+                console.log('[PDF Export] Map section captured successfully with tiles and UI');
               } catch (err) {
                 console.error('[PDF Export] leaflet-image failed, falling back to html2canvas:', err);
                 // Fallback to html2canvas if leaflet-image fails
@@ -11475,9 +11487,6 @@ async function downloadDashboard(dashboardType) {
                   allowTaint: true,
                   backgroundColor: '#ffffff',
                   imageTimeout: 15000,
-                  ignoreElements: (element) => {
-                    return false;
-                  },
                   foreignObjectRendering: true
                 });
               }
@@ -11491,9 +11500,6 @@ async function downloadDashboard(dashboardType) {
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 imageTimeout: 15000,
-                ignoreElements: (element) => {
-                  return false;
-                },
                 foreignObjectRendering: true
               });
             }
