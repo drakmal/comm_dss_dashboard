@@ -9118,7 +9118,8 @@ window.renderAll = renderAll;
         color: '#dc2626',
         fillColor: '#dc2626',
         fillOpacity: 0.8,
-        weight: 1
+        weight: 1,
+        pane: 'casePane'
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -10812,7 +10813,8 @@ window.renderAll = renderAll;
         fillOpacity: 0.8,
         color: '#000',
         weight: 1,
-        opacity: 0.8
+        opacity: 0.8,
+        pane: 'casePane'
       });
 
       const cols = malariaState.columns;
@@ -11375,7 +11377,16 @@ async function downloadDashboard(dashboardType) {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             if (mapInstance) {
+              // Save current map view to restore exact positioning
+              const currentCenter = mapInstance.getCenter();
+              const currentZoom = mapInstance.getZoom();
+              console.log('[PDF Export] Saved map view - Center:', currentCenter, 'Zoom:', currentZoom);
+
               mapInstance.invalidateSize();  // Redraw after moving
+
+              // Restore exact map view
+              mapInstance.setView(currentCenter, currentZoom, { animate: false });
+              console.log('[PDF Export] Restored map view to original position');
 
               // Force tile layer to reload all tiles
               console.log('[PDF Export] Forcing tile reload...');
