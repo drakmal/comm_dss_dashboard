@@ -32,6 +32,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
+  <script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -7936,6 +7937,10 @@ window.renderAll = renderAll;
     warnedMissingTurf: false,
   };
 
+  // Expose to window for PDF export access
+  window.mapState = mapState;
+  window.meteoState = meteoState;
+
   if (mapShowAllCheckbox) {
     mapState.showAllCases = mapShowAllCheckbox.checked;
   }
@@ -8979,6 +8984,8 @@ window.renderAll = renderAll;
   function ensureDengueMap() {
     if (mapState.map || !mapContainer || typeof L === 'undefined') return;
     mapState.map = L.map(mapContainer, { preferCanvas: false }).setView([4.2105, 101.9758], 6);
+    // Store map instance globally for PDF export
+    window._dengueMapInstance = mapState.map;
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '&copy; OpenStreetMap contributors',
@@ -8990,6 +8997,7 @@ window.renderAll = renderAll;
     districtPane.style.zIndex = 410;
     const casePane = mapState.map.createPane('casePane');
     casePane.style.zIndex = 650;
+    // Use default SVG renderer for case markers (so leaflet-image can capture them in PDF)
     mapState.markers = L.featureGroup().addTo(mapState.map);
     const lockView = () => {
       if (!mapState._programmaticMove) {
@@ -9111,7 +9119,7 @@ window.renderAll = renderAll;
         fillColor: '#dc2626',
         fillOpacity: 0.8,
         weight: 1,
-        pane: 'markerPane'
+        pane: 'casePane'
       });
       const lokaliti = val(r, dengueState.columns.lokaliti);
       const mukim = val(r, dengueState.columns.mukim);
@@ -10778,12 +10786,15 @@ window.renderAll = renderAll;
     if (!container) return;
 
     mapState.map = L.map('malaria_case_map', { preferCanvas: false }).setView([4.0, 102.0], 8);
+    // Store map instance globally for PDF export
+    window._malariaMapInstance = mapState.map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       crossOrigin: 'anonymous'
     }).addTo(mapState.map);
 
+    // Use default SVG renderer for case markers (so leaflet-image can capture them in PDF)
     mapState.markers = L.featureGroup().addTo(mapState.map);
   }
 
@@ -10802,7 +10813,8 @@ window.renderAll = renderAll;
         fillOpacity: 0.8,
         color: '#000',
         weight: 1,
-        opacity: 0.8
+        opacity: 0.8,
+        pane: 'casePane'
       });
 
       const cols = malariaState.columns;
@@ -11083,6 +11095,71 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+// Function to capture Leaflet map with all layers as canvas
+async function captureLeafletMap(mapInstance) {
+  return new Promise(async (resolve, reject) => {
+    console.log('[captureLeafletMap] Starting capture with html2canvas...');
+    console.log('[captureLeafletMap] mapInstance valid?', !!mapInstance);
+
+    if (!mapInstance) {
+      const error = new Error('Map instance not available');
+      console.error('[captureLeafletMap]', error);
+      reject(error);
+      return;
+    }
+
+    // Find the tile layer and wait for all tiles to load
+    console.log('[captureLeafletMap] Waiting for tiles to load...');
+    let tileLayer = null;
+    mapInstance.eachLayer(layer => {
+      if (layer instanceof L.TileLayer) {
+        tileLayer = layer;
+      }
+    });
+
+    // Wait for tiles to finish loading
+    if (tileLayer && tileLayer._loading) {
+      console.log('[captureLeafletMap] Waiting for tiles to finish loading...');
+      await new Promise((resolveTiles) => {
+        tileLayer.once('load', () => {
+          console.log('[captureLeafletMap] Tile load event fired');
+          resolveTiles();
+        });
+        // Fallback timeout
+        setTimeout(resolveTiles, 5000);
+      });
+    }
+
+    // Additional wait for rendering
+    await new Promise(r => setTimeout(r, 500));
+
+    try {
+      // Get the map container element
+      const mapContainer = mapInstance.getContainer();
+      console.log('[captureLeafletMap] Capturing map container with html2canvas...');
+
+      // Use html2canvas to capture the map with SVG markers
+      const canvas = await html2canvas(mapContainer, {
+        scale: 2.0,
+        logging: true,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        imageTimeout: 15000,
+        // These options help with SVG rendering
+        foreignObjectRendering: false,
+        removeContainer: false
+      });
+
+      console.log('[captureLeafletMap] Success! Canvas dimensions:', canvas.width, 'x', canvas.height);
+      resolve(canvas);
+    } catch (err) {
+      console.error('[captureLeafletMap] Error from html2canvas:', err);
+      reject(err);
+    }
+  });
+}
+
 // Dashboard Download Functionality
 async function downloadDashboard(dashboardType) {
   const button = event.target.closest('.download-btn');
@@ -11251,55 +11328,220 @@ async function downloadDashboard(dashboardType) {
 
         let canvas;
         if (hasLeafletMap) {
-          // For map sections, capture the original elements directly (cloning doesn't work with Leaflet)
-          // Find the parent section that contains the map
-          const mapSection = h2.parentElement || h2.closest('.dash-section');
+          // For map sections, must capture ORIGINAL elements (cloning breaks Leaflet rendering)
+          try {
+            console.log('[PDF Export] Detected Leaflet map, using original elements...');
 
-          // Create a temporary wrapper around the original section
-          const originalWrapper = document.createElement('div');
-          originalWrapper.style.background = '#ffffff';
-          originalWrapper.style.padding = '16px';
-          originalWrapper.style.position = 'absolute';
-          originalWrapper.style.left = '0';
-          originalWrapper.style.top = '0';
-          originalWrapper.style.width = `${panel.offsetWidth}px`;
-          originalWrapper.style.zIndex = '-1';
-
-          // Clone h2 for the header
-          originalWrapper.appendChild(h2.cloneNode(true));
-
-          // Append original elements temporarily (will move them back)
-          const elementPositions = originalElements.map(el => ({
-            element: el,
-            parent: el.parentNode,
-            nextSibling: el.nextSibling
-          }));
-
-          originalElements.forEach(el => originalWrapper.appendChild(el));
-          document.body.appendChild(originalWrapper);
-
-          // Wait a bit for the map to settle
-          await new Promise(resolve => setTimeout(resolve, 300));
-
-          canvas = await html2canvas(originalWrapper, {
-            scale: 1.2,
-            logging: false,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-          });
-
-          // Restore original elements to their positions
-          elementPositions.forEach(({ element, parent, nextSibling }) => {
-            if (nextSibling) {
-              parent.insertBefore(element, nextSibling);
-            } else {
-              parent.appendChild(element);
+            // Get the map instance from global registry
+            let mapInstance = null;
+            if (dashboardType === 'dengue' && window._dengueMapInstance) {
+              mapInstance = window._dengueMapInstance;
+              console.log('[PDF Export] Using dengue map instance');
+            } else if (dashboardType === 'malaria' && window._malariaMapInstance) {
+              mapInstance = window._malariaMapInstance;
+              console.log('[PDF Export] Using malaria map instance');
             }
-          });
 
-          document.body.removeChild(originalWrapper);
-          document.body.removeChild(tempWrapper);
+            if (mapInstance) {
+              // Force map redraw
+              mapInstance.invalidateSize();
+              console.log('[PDF Export] Map refreshed');
+            }
+
+            // Create wrapper with original elements temporarily
+            const originalWrapper = document.createElement('div');
+            originalWrapper.style.background = '#ffffff';
+            originalWrapper.style.padding = '16px';
+            originalWrapper.style.position = 'absolute';
+            originalWrapper.style.left = '0';
+            originalWrapper.style.top = '0';
+            originalWrapper.style.width = `${panel.offsetWidth}px`;
+            originalWrapper.style.zIndex = '99999';  // Put on top
+
+            // Clone h2 for header
+            originalWrapper.appendChild(h2.cloneNode(true));
+
+            // Store original positions so we can restore them
+            const elementPositions = originalElements.map(el => ({
+              element: el,
+              parent: el.parentNode,
+              nextSibling: el.nextSibling
+            }));
+
+            // Move original elements (not clones!) to wrapper
+            originalElements.forEach(el => originalWrapper.appendChild(el));
+            document.body.appendChild(originalWrapper);
+
+            // Wait for map to settle in new position
+            console.log('[PDF Export] Waiting for layers to render...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (mapInstance) {
+              // Save current map view to restore exact positioning
+              const currentCenter = mapInstance.getCenter();
+              const currentZoom = mapInstance.getZoom();
+              console.log('[PDF Export] Saved map view - Center:', currentCenter, 'Zoom:', currentZoom);
+
+              mapInstance.invalidateSize();  // Redraw after moving
+
+              // Restore exact map view
+              mapInstance.setView(currentCenter, currentZoom, { animate: false });
+              console.log('[PDF Export] Restored map view to original position');
+
+              // Force tile layer to reload all tiles
+              console.log('[PDF Export] Forcing tile reload...');
+              mapInstance.eachLayer(layer => {
+                if (layer instanceof L.TileLayer) {
+                  layer.redraw();
+                  console.log('[PDF Export] Tile layer redrawn');
+                }
+              });
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Increased wait time for tiles to load
+
+            // Hide hexagon and district border layers for PDF (only show red dots)
+            let hiddenMeteoLayer = null;
+            let hiddenDistrictOutline = null;
+
+            if (dashboardType === 'dengue') {
+              // Hide meteorology hexagon layer
+              if (window.meteoState && window.meteoState.hexLayer && mapInstance) {
+                console.log('[PDF Export] Hiding hexagon layer for PDF');
+                hiddenMeteoLayer = window.meteoState.hexLayer;
+                mapInstance.removeLayer(hiddenMeteoLayer);
+              }
+
+              // Hide district outline layer
+              if (window.mapState && window.mapState.districtOutline && mapInstance) {
+                console.log('[PDF Export] Hiding district outline for PDF');
+                hiddenDistrictOutline = window.mapState.districtOutline;
+                mapInstance.removeLayer(hiddenDistrictOutline);
+              }
+
+              // Wait for layers to be removed
+              await new Promise(resolve => setTimeout(resolve, 300));
+
+              if (mapInstance) {
+                mapInstance.invalidateSize();
+              }
+            }
+
+            // Capture map using html2canvas (which properly captures SVG markers)
+            console.log('[PDF Export] Capturing map section with html2canvas...');
+            if (mapInstance) {
+              try {
+                // Wait for map to be fully rendered
+                await captureLeafletMap(mapInstance);
+                console.log('[PDF Export] Map validated as ready for capture');
+
+                // Capture the full wrapper with html2canvas
+                // This captures tiles, SVG markers, and all UI controls
+                const captureScale = 2.0;
+                canvas = await html2canvas(originalWrapper, {
+                  scale: captureScale,
+                  logging: true,
+                  useCORS: true,
+                  allowTaint: true,
+                  backgroundColor: '#ffffff',
+                  imageTimeout: 15000,
+                  foreignObjectRendering: false
+                });
+
+                console.log('[PDF Export] Map section captured successfully with tiles, markers, and UI');
+              } catch (err) {
+                console.error('[PDF Export] html2canvas failed, trying with different options:', err);
+                // Fallback with foreignObjectRendering enabled
+                canvas = await html2canvas(originalWrapper, {
+                  scale: 2.0,
+                  logging: true,
+                  useCORS: true,
+                  allowTaint: true,
+                  backgroundColor: '#ffffff',
+                  imageTimeout: 15000,
+                  foreignObjectRendering: true
+                });
+              }
+            } else {
+              // No map instance, use html2canvas
+              console.log('[PDF Export] No map instance found, using html2canvas');
+              canvas = await html2canvas(originalWrapper, {
+                scale: 2.0,
+                logging: true,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                imageTimeout: 15000,
+                foreignObjectRendering: true
+              });
+            }
+
+            console.log('[PDF Export] Canvas captured:', canvas.width, 'x', canvas.height);
+
+            // Restore original elements to their positions
+            elementPositions.forEach(({ element, parent, nextSibling }) => {
+              if (nextSibling && nextSibling.parentNode === parent) {
+                parent.insertBefore(element, nextSibling);
+              } else {
+                parent.appendChild(element);
+              }
+            });
+
+            // Restore hidden layers
+            if (hiddenMeteoLayer && mapInstance) {
+              console.log('[PDF Export] Restoring hexagon layer');
+              mapInstance.addLayer(hiddenMeteoLayer);
+            }
+
+            if (hiddenDistrictOutline && mapInstance) {
+              console.log('[PDF Export] Restoring district outline');
+              mapInstance.addLayer(hiddenDistrictOutline);
+            }
+
+            document.body.removeChild(originalWrapper);
+            document.body.removeChild(tempWrapper);
+
+            // Refresh map one more time after moving back
+            if (mapInstance) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              mapInstance.invalidateSize();
+            }
+
+            // Bring markers to front after restoring layers
+            if (window.mapState && window.mapState.markers) {
+              window.mapState.markers.bringToFront();
+            }
+          } catch (mapError) {
+            console.error('Error capturing map:', mapError);
+
+            // Restore hidden layers even in error case
+            let mapInstance = null;
+            if (dashboardType === 'dengue' && window._dengueMapInstance) {
+              mapInstance = window._dengueMapInstance;
+            } else if (dashboardType === 'malaria' && window._malariaMapInstance) {
+              mapInstance = window._malariaMapInstance;
+            }
+
+            if (hiddenMeteoLayer && mapInstance) {
+              console.log('[PDF Export] Restoring hexagon layer (error case)');
+              mapInstance.addLayer(hiddenMeteoLayer);
+            }
+
+            if (hiddenDistrictOutline && mapInstance) {
+              console.log('[PDF Export] Restoring district outline (error case)');
+              mapInstance.addLayer(hiddenDistrictOutline);
+            }
+
+            // Fallback
+            canvas = await html2canvas(tempWrapper, {
+              scale: 1.2,
+              logging: false,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff'
+            });
+            document.body.removeChild(tempWrapper);
+          }
         } else {
           // For non-map sections, use the cloned wrapper
           canvas = await html2canvas(tempWrapper, {
