@@ -10794,8 +10794,12 @@ window.renderAll = renderAll;
       crossOrigin: 'anonymous'
     }).addTo(mapState.map);
 
-    // Use default SVG renderer for case markers (so leaflet-image can capture them in PDF)
+    // Create casePane so markers render above hexagon/district layers (z-index 650)
+    const casePaneMalaria = mapState.map.createPane('casePane');
+    casePaneMalaria.style.zIndex = 650;
+
     mapState.markers = L.featureGroup().addTo(mapState.map);
+    window._malariaMarkersGroup = mapState.markers;
   }
 
   // Update map markers
@@ -11095,6 +11099,63 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+// Convert Leaflet SVG panes to <img> elements so html2canvas can capture them.
+// html2canvas cannot read SVG elements from Leaflet panes, but it CAN capture <img> elements.
+// Returns an object with a restore() method to undo the conversion.
+// Draw case markers directly on a canvas overlay using Leaflet's own coordinate projection.
+// This avoids the Leaflet SVG viewBox/transform mismatch that occurs when serialising SVG to <img>.
+// markersGroup: the L.featureGroup() that contains the L.circleMarker layers.
+// Returns an object with a restore() method to remove the canvas overlay.
+function overlayMarkersOnCanvas(mapContainer, mapInstance, markersGroup) {
+  if (!markersGroup || !mapInstance) return { restore() {} };
+
+  const width = mapContainer.clientWidth;
+  const height = mapContainer.clientHeight;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  markersGroup.eachLayer(layer => {
+    if (!layer.getLatLng) return;
+    const latlng = layer.getLatLng();
+    if (!latlng || !Number.isFinite(latlng.lat) || !Number.isFinite(latlng.lng)) return;
+    const point = mapInstance.latLngToContainerPoint(latlng);
+    const radius = layer.options.radius || 4;
+    // Skip markers whose centre falls outside the canvas (mimics Leaflet SVG clipping)
+    if (point.x + radius < 0 || point.x - radius > width ||
+        point.y + radius < 0 || point.y - radius > height) return;
+    const fillColor = layer.options.fillColor || layer.options.color || '#dc2626';
+    const strokeColor = layer.options.color || '#dc2626';
+    const weight = layer.options.weight != null ? layer.options.weight : 1;
+    const fillOpacity = layer.options.fillOpacity != null ? layer.options.fillOpacity : 0.8;
+    const strokeOpacity = layer.options.opacity != null ? layer.options.opacity : 1;
+
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+    ctx.globalAlpha = fillOpacity;
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    if (weight > 0) {
+      ctx.globalAlpha = strokeOpacity;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = weight;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  canvas.style.cssText = `position:absolute;left:0;top:0;width:${width}px;height:${height}px;pointer-events:none;z-index:9999;`;
+  mapContainer.appendChild(canvas);
+
+  return {
+    restore() {
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    }
+  };
+}
+
 // Function to capture Leaflet map with all layers as canvas
 async function captureLeafletMap(mapInstance) {
   return new Promise(async (resolve, reject) => {
@@ -11430,13 +11491,23 @@ async function downloadDashboard(dashboardType) {
             // Capture map using html2canvas (which properly captures SVG markers)
             console.log('[PDF Export] Capturing map section with html2canvas...');
             if (mapInstance) {
+              let svgConversion = null;
               try {
-                // Wait for map to be fully rendered
+                // Wait for map to be fully rendered (tiles loaded)
                 await captureLeafletMap(mapInstance);
                 console.log('[PDF Export] Map validated as ready for capture');
 
+                // Draw case markers onto a canvas overlay using Leaflet's own coordinate projection.
+                // This is more reliable than SVG serialisation which loses the transform context.
+                const leafletContainer = mapInstance.getContainer();
+                const markersGroup = dashboardType === 'dengue'
+                  ? window.mapState?.markers
+                  : window._malariaMarkersGroup;
+                svgConversion = overlayMarkersOnCanvas(leafletContainer, mapInstance, markersGroup);
+                console.log('[PDF Export] Markers drawn on canvas overlay for capture');
+
                 // Capture the full wrapper with html2canvas
-                // This captures tiles, SVG markers, and all UI controls
+                // Tiles come from the <img> tile elements; markers come from the canvas overlay
                 const captureScale = 2.0;
                 canvas = await html2canvas(originalWrapper, {
                   scale: captureScale,
@@ -11448,9 +11519,12 @@ async function downloadDashboard(dashboardType) {
                   foreignObjectRendering: false
                 });
 
+                svgConversion.restore();
+                svgConversion = null;
                 console.log('[PDF Export] Map section captured successfully with tiles, markers, and UI');
               } catch (err) {
                 console.error('[PDF Export] html2canvas failed, trying with different options:', err);
+                if (svgConversion) { svgConversion.restore(); svgConversion = null; }
                 // Fallback with foreignObjectRendering enabled
                 canvas = await html2canvas(originalWrapper, {
                   scale: 2.0,
