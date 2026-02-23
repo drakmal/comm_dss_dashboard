@@ -11119,8 +11119,13 @@ function overlayMarkersOnCanvas(mapContainer, mapInstance, markersGroup) {
 
   markersGroup.eachLayer(layer => {
     if (!layer.getLatLng) return;
-    const point = mapInstance.latLngToContainerPoint(layer.getLatLng());
+    const latlng = layer.getLatLng();
+    if (!latlng || !Number.isFinite(latlng.lat) || !Number.isFinite(latlng.lng)) return;
+    const point = mapInstance.latLngToContainerPoint(latlng);
     const radius = layer.options.radius || 4;
+    // Skip markers whose centre falls outside the canvas (mimics Leaflet SVG clipping)
+    if (point.x + radius < 0 || point.x - radius > width ||
+        point.y + radius < 0 || point.y - radius > height) return;
     const fillColor = layer.options.fillColor || layer.options.color || '#dc2626';
     const strokeColor = layer.options.color || '#dc2626';
     const weight = layer.options.weight != null ? layer.options.weight : 1;
