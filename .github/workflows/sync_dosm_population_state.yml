@@ -32,6 +32,11 @@ jobs:
             -o data/population_malaysia.csv \
             "https://storage.dosm.gov.my/population/population_malaysia.csv"
 
+      # The page reads population_compact.json first, so rebuild it from the
+      # new CSVs; otherwise the dashboard keeps showing the old year.
+      - name: Rebuild population_compact.json
+        run: python3 scripts/build_population_compact.py
+
       - name: Commit if changed
         run: |
           if git diff --quiet; then
@@ -42,6 +47,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/population_state.csv data/population_district.csv data/population_malaysia.csv
-          git commit -m "chore: update DOSM population CSVs"
+          git add data/population_state.csv data/population_district.csv data/population_malaysia.csv data/population_compact.json
+          git commit -m "chore: update DOSM population data"
           git push
