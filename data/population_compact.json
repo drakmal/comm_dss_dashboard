@@ -5,750 +5,773 @@ Copyright (C) 2026 drakmal
 
 {
   "version": 1,
-  "generated_at": "2026-01-07T14:37:18.465237Z",
+  "generated_at": "2026-10-23T11:24:14.672334Z",
   "malaysia": {
-    "population": 34231700,
-    "year": "2025"
+    "population": 34389400,
+    "year": "2026"
   },
   "states": {
     "Johor": {
-      "population": 4205900,
-      "year": "2025"
+      "population": 4224300,
+      "year": "2026"
     },
     "Kedah": {
-      "population": 2228000,
-      "year": "2025"
+      "population": 2237400,
+      "year": "2026"
     },
     "Kelantan": {
-      "population": 1907700,
-      "year": "2025"
+      "population": 1925300,
+      "year": "2026"
     },
     "Melaka": {
-      "population": 1052500,
-      "year": "2025"
+      "population": 1057400,
+      "year": "2026"
     },
     "Negeri Sembilan": {
-      "population": 1244600,
-      "year": "2025"
+      "population": 1248500,
+      "year": "2026"
     },
     "Pahang": {
-      "population": 1678200,
-      "year": "2025"
+      "population": 1686200,
+      "year": "2026"
     },
     "Perak": {
-      "population": 2574900,
-      "year": "2025"
+      "population": 2577900,
+      "year": "2026"
     },
     "Perlis": {
-      "population": 297800,
-      "year": "2025"
+      "population": 297300,
+      "year": "2026"
     },
     "Pulau Pinang": {
-      "population": 1803300,
-      "year": "2025"
+      "population": 1808300,
+      "year": "2026"
     },
     "Sabah": {
-      "population": 3759600,
-      "year": "2025"
+      "population": 3767000,
+      "year": "2026"
     },
     "Sarawak": {
-      "population": 2529800,
-      "year": "2025"
+      "population": 2539800,
+      "year": "2026"
     },
     "Selangor": {
-      "population": 7406800,
-      "year": "2025"
+      "population": 7454200,
+      "year": "2026"
     },
     "Terengganu": {
-      "population": 1246900,
-      "year": "2025"
+      "population": 1260900,
+      "year": "2026"
     },
     "W.P. Kuala Lumpur": {
-      "population": 2074100,
-      "year": "2025"
+      "population": 2082300,
+      "year": "2026"
     },
     "W.P. Labuan": {
-      "population": 100900,
-      "year": "2025"
+      "population": 101100,
+      "year": "2026"
     },
     "W.P. Putrajaya": {
-      "population": 120800,
-      "year": "2025"
+      "population": 121400,
+      "year": "2026"
     }
   },
   "districts": {
     "Johor": {
       "Batu Pahat": {
-        "population": 510400,
-        "year": "2024"
+        "population": 513400,
+        "year": "2026"
       },
       "Johor Bahru": {
-        "population": 1800000,
-        "year": "2024"
+        "population": 1827200,
+        "year": "2026"
       },
       "Kluang": {
-        "population": 333800,
-        "year": "2024"
+        "population": 336400,
+        "year": "2026"
       },
       "Kota Tinggi": {
-        "population": 233800,
-        "year": "2024"
+        "population": 235900,
+        "year": "2026"
       },
       "Kulai": {
-        "population": 351400,
-        "year": "2024"
+        "population": 354200,
+        "year": "2026"
       },
       "Mersing": {
-        "population": 81100,
-        "year": "2024"
+        "population": 81700,
+        "year": "2026"
       },
       "Muar": {
-        "population": 323300,
-        "year": "2024"
+        "population": 325000,
+        "year": "2026"
       },
       "Pontian": {
-        "population": 177900,
-        "year": "2024"
+        "population": 177800,
+        "year": "2026"
       },
       "Segamat": {
-        "population": 205100,
-        "year": "2024"
+        "population": 203800,
+        "year": "2026"
       },
       "Tangkak": {
-        "population": 169500,
-        "year": "2024"
+        "population": 168900,
+        "year": "2026"
       }
     },
     "Kedah": {
       "Baling": {
-        "population": 148100,
-        "year": "2024"
+        "population": 150000,
+        "year": "2026"
       },
       "Bandar Baharu": {
-        "population": 45600,
-        "year": "2024"
+        "population": 45700,
+        "year": "2026"
       },
       "Kota Setar": {
-        "population": 381800,
-        "year": "2024"
+        "population": 384100,
+        "year": "2026"
       },
       "Kuala Muda": {
-        "population": 571400,
-        "year": "2024"
+        "population": 577900,
+        "year": "2026"
       },
       "Kubang Pasu": {
-        "population": 253400,
-        "year": "2024"
+        "population": 255000,
+        "year": "2026"
       },
       "Kulim": {
-        "population": 352200,
-        "year": "2024"
+        "population": 355500,
+        "year": "2026"
       },
       "Langkawi": {
-        "population": 99900,
-        "year": "2024"
+        "population": 101200,
+        "year": "2026"
       },
       "Padang Terap": {
-        "population": 67700,
-        "year": "2024"
+        "population": 68000,
+        "year": "2026"
       },
       "Pendang": {
-        "population": 101600,
-        "year": "2024"
+        "population": 102300,
+        "year": "2026"
       },
       "Pokok Sena": {
-        "population": 51000,
-        "year": "2024"
+        "population": 51400,
+        "year": "2026"
       },
       "Sik": {
-        "population": 70200,
-        "year": "2024"
+        "population": 70900,
+        "year": "2026"
       },
       "Yan": {
-        "population": 74700,
-        "year": "2024"
+        "population": 75400,
+        "year": "2026"
       }
     },
     "Kelantan": {
       "Bachok": {
-        "population": 165500,
-        "year": "2024"
+        "population": 169400,
+        "year": "2026"
       },
       "Gua Musang": {
-        "population": 110500,
-        "year": "2024"
+        "population": 112500,
+        "year": "2026"
       },
       "Jeli": {
-        "population": 57800,
-        "year": "2024"
+        "population": 58500,
+        "year": "2026"
       },
       "Kecil Lojing": {
-        "population": 11300,
-        "year": "2024"
+        "population": 12000,
+        "year": "2026"
       },
       "Kota Bharu": {
-        "population": 583800,
-        "year": "2024"
+        "population": 595500,
+        "year": "2026"
       },
       "Kuala Krai": {
-        "population": 111800,
-        "year": "2024"
+        "population": 113000,
+        "year": "2026"
       },
       "Machang": {
-        "population": 116700,
-        "year": "2024"
+        "population": 118600,
+        "year": "2026"
       },
       "Pasir Mas": {
-        "population": 240600,
-        "year": "2024"
+        "population": 245100,
+        "year": "2026"
       },
       "Pasir Puteh": {
-        "population": 143000,
-        "year": "2024"
+        "population": 146400,
+        "year": "2026"
       },
       "Tanah Merah": {
-        "population": 158400,
-        "year": "2024"
+        "population": 161200,
+        "year": "2026"
       },
       "Tumpat": {
-        "population": 189100,
-        "year": "2024"
+        "population": 193100,
+        "year": "2026"
       }
     },
     "Melaka": {
       "Alor Gajah": {
-        "population": 260500,
-        "year": "2024"
+        "population": 262900,
+        "year": "2026"
       },
       "Jasin": {
-        "population": 156400,
-        "year": "2024"
+        "population": 158500,
+        "year": "2026"
       },
       "Melaka Tengah": {
-        "population": 630100,
-        "year": "2024"
+        "population": 636000,
+        "year": "2026"
       }
     },
     "Negeri Sembilan": {
       "Jelebu": {
-        "population": 48700,
-        "year": "2024"
+        "population": 48400,
+        "year": "2026"
       },
       "Jempol": {
-        "population": 131300,
-        "year": "2024"
+        "population": 130400,
+        "year": "2026"
       },
       "Kuala Pilah": {
-        "population": 72300,
-        "year": "2024"
+        "population": 72500,
+        "year": "2026"
       },
       "Port Dickson": {
-        "population": 135200,
-        "year": "2024"
+        "population": 135900,
+        "year": "2026"
       },
       "Rembau": {
-        "population": 49200,
-        "year": "2024"
+        "population": 49700,
+        "year": "2026"
       },
       "Seremban": {
-        "population": 712700,
-        "year": "2024"
+        "population": 720600,
+        "year": "2026"
       },
       "Tampin": {
-        "population": 90600,
-        "year": "2024"
+        "population": 91000,
+        "year": "2026"
       }
     },
     "Pahang": {
       "Bentong": {
-        "population": 121200,
-        "year": "2024"
+        "population": 118700,
+        "year": "2026"
       },
       "Bera": {
-        "population": 101000,
-        "year": "2024"
+        "population": 101400,
+        "year": "2026"
       },
       "Cameron Highlands": {
-        "population": 44500,
-        "year": "2024"
+        "population": 44900,
+        "year": "2026"
       },
       "Jerantut": {
-        "population": 100000,
-        "year": "2024"
+        "population": 100700,
+        "year": "2026"
       },
       "Kuantan": {
-        "population": 571300,
-        "year": "2024"
+        "population": 581400,
+        "year": "2026"
       },
       "Lipis": {
-        "population": 102200,
-        "year": "2024"
+        "population": 104400,
+        "year": "2026"
       },
       "Maran": {
-        "population": 119100,
-        "year": "2024"
+        "population": 120700,
+        "year": "2026"
       },
       "Pekan": {
-        "population": 128000,
-        "year": "2024"
+        "population": 130700,
+        "year": "2026"
       },
       "Raub": {
-        "population": 100100,
-        "year": "2024"
+        "population": 99300,
+        "year": "2026"
       },
       "Rompin": {
-        "population": 102900,
-        "year": "2024"
+        "population": 104900,
+        "year": "2026"
       },
       "Temerloh": {
-        "population": 177900,
-        "year": "2024"
+        "population": 179300,
+        "year": "2026"
       }
     },
     "Perak": {
       "Bagan Datuk": {
-        "population": 83400,
-        "year": "2024"
+        "population": 83500,
+        "year": "2026"
       },
       "Batang Padang": {
-        "population": 126700,
-        "year": "2024"
+        "population": 127200,
+        "year": "2026"
       },
       "Hilir Perak": {
-        "population": 141900,
-        "year": "2024"
+        "population": 141500,
+        "year": "2026"
       },
       "Hulu Perak": {
-        "population": 98300,
-        "year": "2024"
+        "population": 98400,
+        "year": "2026"
       },
       "Kampar": {
-        "population": 99900,
-        "year": "2024"
+        "population": 97700,
+        "year": "2026"
       },
       "Kerian": {
-        "population": 169600,
-        "year": "2024"
+        "population": 170100,
+        "year": "2026"
       },
       "Kinta": {
-        "population": 923300,
-        "year": "2024"
+        "population": 931000,
+        "year": "2026"
       },
       "Kuala Kangsar": {
-        "population": 180000,
-        "year": "2024"
+        "population": 179300,
+        "year": "2026"
       },
       "Larut Dan Matang": {
-        "population": 278200,
-        "year": "2024"
+        "population": 277900,
+        "year": "2026"
       },
       "Manjung": {
-        "population": 255000,
-        "year": "2024"
+        "population": 257000,
+        "year": "2026"
       },
       "Muallim": {
-        "population": 79300,
-        "year": "2024"
+        "population": 79900,
+        "year": "2026"
       },
       "Perak Tengah": {
-        "population": 98700,
-        "year": "2024"
+        "population": 99600,
+        "year": "2026"
       },
       "Selama": {
-        "population": 35200,
-        "year": "2024"
+        "population": 35000,
+        "year": "2026"
       }
     },
     "Perlis": {
       "Perlis": {
-        "population": 296800,
-        "year": "2024"
+        "population": 297300,
+        "year": "2026"
       }
     },
     "Pulau Pinang": {
       "Barat Daya": {
-        "population": 248300,
-        "year": "2024"
+        "population": 250600,
+        "year": "2026"
       },
       "Seberang Perai Selatan": {
-        "population": 188100,
-        "year": "2024"
+        "population": 191000,
+        "year": "2026"
       },
       "Seberang Perai Tengah": {
-        "population": 443200,
-        "year": "2024"
+        "population": 446700,
+        "year": "2026"
       },
       "Seberang Perai Utara": {
-        "population": 351000,
-        "year": "2024"
+        "population": 354700,
+        "year": "2026"
       },
       "Timur Laut": {
-        "population": 569900,
-        "year": "2024"
+        "population": 565300,
+        "year": "2026"
       }
     },
     "Sabah": {
       "Beaufort": {
-        "population": 77600,
-        "year": "2024"
+        "population": 56600,
+        "year": "2026"
       },
       "Beluran": {
-        "population": 90000,
-        "year": "2024"
+        "population": 90900,
+        "year": "2026"
       },
       "Kalabakan": {
-        "population": 58700,
-        "year": "2024"
+        "population": 59300,
+        "year": "2026"
       },
       "Keningau": {
-        "population": 158100,
-        "year": "2024"
+        "population": 157400,
+        "year": "2026"
       },
       "Kinabatangan": {
-        "population": 164200,
-        "year": "2024"
+        "population": 164400,
+        "year": "2026"
       },
       "Kota Belud": {
-        "population": 110900,
-        "year": "2024"
+        "population": 112000,
+        "year": "2026"
       },
       "Kota Kinabalu": {
-        "population": 547000,
-        "year": "2024"
+        "population": 556100,
+        "year": "2026"
       },
       "Kota Marudu": {
-        "population": 73700,
-        "year": "2024"
+        "population": 75500,
+        "year": "2026"
       },
       "Kuala Penyu": {
-        "population": 24500,
-        "year": "2024"
+        "population": 25000,
+        "year": "2026"
       },
       "Kudat": {
-        "population": 93200,
-        "year": "2024"
+        "population": 94200,
+        "year": "2026"
       },
       "Kunak": {
-        "population": 79600,
-        "year": "2024"
+        "population": 76700,
+        "year": "2026"
       },
       "Lahad Datu": {
-        "population": 253700,
-        "year": "2024"
+        "population": 251100,
+        "year": "2026"
+      },
+      "Membakut": {
+        "population": 53800,
+        "year": "2026"
       },
       "Nabawan": {
-        "population": 30700,
-        "year": "2024"
+        "population": 31400,
+        "year": "2026"
       },
       "Papar": {
-        "population": 156300,
-        "year": "2024"
+        "population": 122500,
+        "year": "2026"
       },
       "Penampang": {
-        "population": 167600,
-        "year": "2024"
+        "population": 165500,
+        "year": "2026"
       },
       "Pitas": {
-        "population": 38500,
-        "year": "2024"
+        "population": 39200,
+        "year": "2026"
       },
       "Putatan": {
         "population": 71000,
-        "year": "2024"
+        "year": "2026"
       },
       "Ranau": {
-        "population": 88700,
-        "year": "2024"
+        "population": 89600,
+        "year": "2026"
       },
       "Sandakan": {
-        "population": 499400,
-        "year": "2024"
+        "population": 508300,
+        "year": "2026"
       },
       "Semporna": {
-        "population": 199300,
-        "year": "2024"
+        "population": 202700,
+        "year": "2026"
       },
       "Sipitang": {
-        "population": 40500,
-        "year": "2024"
+        "population": 41000,
+        "year": "2026"
       },
       "Tambunan": {
-        "population": 33300,
-        "year": "2024"
+        "population": 34000,
+        "year": "2026"
       },
       "Tawau": {
-        "population": 413600,
-        "year": "2024"
+        "population": 418100,
+        "year": "2026"
       },
       "Telupid": {
-        "population": 31200,
-        "year": "2024"
+        "population": 29900,
+        "year": "2026"
       },
       "Tenom": {
-        "population": 53800,
-        "year": "2024"
+        "population": 54700,
+        "year": "2026"
       },
       "Tongod": {
-        "population": 45000,
-        "year": "2024"
+        "population": 42500,
+        "year": "2026"
       },
       "Tuaran": {
-        "population": 142100,
-        "year": "2024"
+        "population": 143400,
+        "year": "2026"
       }
     },
     "Sarawak": {
       "Asajaya": {
-        "population": 34900,
-        "year": "2024"
+        "population": 35500,
+        "year": "2026"
       },
       "Bau": {
-        "population": 53900,
-        "year": "2024"
+        "population": 54200,
+        "year": "2026"
       },
       "Belaga": {
-        "population": 22500,
-        "year": "2024"
+        "population": 22700,
+        "year": "2026"
       },
       "Beluru": {
         "population": 26800,
-        "year": "2024"
+        "year": "2026"
       },
       "Betong": {
-        "population": 37000,
-        "year": "2024"
+        "population": 37600,
+        "year": "2026"
       },
       "Bintulu": {
-        "population": 188900,
-        "year": "2024"
+        "population": 189300,
+        "year": "2026"
       },
       "Bukit Mabong": {
-        "population": 10600,
-        "year": "2024"
+        "population": 10700,
+        "year": "2026"
       },
       "Dalat": {
-        "population": 21700,
-        "year": "2024"
+        "population": 22100,
+        "year": "2026"
       },
       "Daro": {
-        "population": 20100,
-        "year": "2024"
+        "population": 20800,
+        "year": "2026"
+      },
+      "Gedong": {
+        "population": 11800,
+        "year": "2026"
       },
       "Julau": {
-        "population": 15600,
-        "year": "2024"
+        "population": 15900,
+        "year": "2026"
       },
       "Kabong": {
-        "population": 19000,
-        "year": "2024"
+        "population": 19400,
+        "year": "2026"
       },
       "Kanowit": {
-        "population": 25000,
-        "year": "2024"
+        "population": 25600,
+        "year": "2026"
       },
       "Kapit": {
-        "population": 37000,
-        "year": "2024"
+        "population": 37800,
+        "year": "2026"
       },
       "Kuching": {
-        "population": 625300,
-        "year": "2024"
+        "population": 628600,
+        "year": "2026"
       },
       "Lawas": {
-        "population": 38100,
-        "year": "2024"
+        "population": 38600,
+        "year": "2026"
       },
       "Limbang": {
-        "population": 46500,
-        "year": "2024"
+        "population": 46800,
+        "year": "2026"
+      },
+      "Lingga": {
+        "population": 8800,
+        "year": "2026"
       },
       "Lubok Antu": {
-        "population": 24600,
-        "year": "2024"
+        "population": 24700,
+        "year": "2026"
       },
       "Lundu": {
-        "population": 34400,
-        "year": "2024"
+        "population": 35100,
+        "year": "2026"
       },
       "Maradong": {
-        "population": 20800,
-        "year": "2024"
+        "population": 20900,
+        "year": "2026"
       },
       "Marudi": {
-        "population": 18400,
-        "year": "2024"
+        "population": 18900,
+        "year": "2026"
       },
       "Matu": {
-        "population": 16400,
-        "year": "2024"
+        "population": 16600,
+        "year": "2026"
       },
       "Miri": {
-        "population": 256200,
-        "year": "2024"
+        "population": 259000,
+        "year": "2026"
       },
       "Mukah": {
-        "population": 42500,
-        "year": "2024"
+        "population": 43000,
+        "year": "2026"
       },
       "Pakan": {
-        "population": 15700,
-        "year": "2024"
+        "population": 15800,
+        "year": "2026"
+      },
+      "Pantu": {
+        "population": 10700,
+        "year": "2026"
       },
       "Pusa": {
-        "population": 20200,
-        "year": "2024"
+        "population": 20400,
+        "year": "2026"
       },
       "Samarahan": {
-        "population": 135500,
-        "year": "2024"
+        "population": 137200,
+        "year": "2026"
       },
       "Saratok": {
-        "population": 23500,
-        "year": "2024"
+        "population": 23600,
+        "year": "2026"
       },
       "Sarikei": {
-        "population": 45000,
-        "year": "2024"
+        "population": 45300,
+        "year": "2026"
       },
       "Sebauh": {
-        "population": 31400,
-        "year": "2024"
+        "population": 31600,
+        "year": "2026"
+      },
+      "Sebuyau": {
+        "population": 12400,
+        "year": "2026"
       },
       "Selangau": {
-        "population": 20500,
-        "year": "2024"
+        "population": 20800,
+        "year": "2026"
       },
       "Serian": {
-        "population": 87600,
-        "year": "2024"
+        "population": 56700,
+        "year": "2026"
       },
       "Sibu": {
-        "population": 255300,
-        "year": "2024"
+        "population": 257100,
+        "year": "2026"
+      },
+      "Siburan": {
+        "population": 32200,
+        "year": "2026"
       },
       "Simunjan": {
-        "population": 37000,
-        "year": "2024"
+        "population": 12000,
+        "year": "2026"
       },
       "Song": {
-        "population": 10300,
-        "year": "2024"
+        "population": 10400,
+        "year": "2026"
       },
       "Sri Aman": {
-        "population": 61300,
-        "year": "2024"
+        "population": 43100,
+        "year": "2026"
       },
       "Subis": {
-        "population": 55400,
-        "year": "2024"
+        "population": 55800,
+        "year": "2026"
       },
       "Tanjung Manis": {
-        "population": 7900,
-        "year": "2024"
+        "population": 8000,
+        "year": "2026"
       },
       "Tatau": {
-        "population": 32000,
-        "year": "2024"
+        "population": 32600,
+        "year": "2026"
       },
       "Tebedu": {
-        "population": 25700,
-        "year": "2024"
+        "population": 25600,
+        "year": "2026"
       },
       "Telang Usan": {
-        "population": 17500,
-        "year": "2024"
+        "population": 17300,
+        "year": "2026"
       }
     },
     "Selangor": {
       "Gombak": {
-        "population": 980300,
-        "year": "2024"
+        "population": 991900,
+        "year": "2026"
       },
       "Klang": {
-        "population": 1174900,
-        "year": "2024"
+        "population": 1191200,
+        "year": "2026"
       },
       "Kuala Langat": {
-        "population": 326300,
-        "year": "2024"
+        "population": 331600,
+        "year": "2026"
       },
       "Kuala Selangor": {
-        "population": 298400,
-        "year": "2024"
+        "population": 305000,
+        "year": "2026"
       },
       "Petaling": {
-        "population": 2360000,
-        "year": "2024"
+        "population": 2382000,
+        "year": "2026"
       },
       "Sabak Bernam": {
-        "population": 110300,
-        "year": "2024"
+        "population": 110900,
+        "year": "2026"
       },
       "Sepang": {
-        "population": 346900,
-        "year": "2024"
+        "population": 354100,
+        "year": "2026"
       },
       "Ulu Langat": {
-        "population": 1508100,
-        "year": "2024"
+        "population": 1526400,
+        "year": "2026"
       },
       "Ulu Selangor": {
-        "population": 258100,
-        "year": "2024"
+        "population": 261200,
+        "year": "2026"
       }
     },
     "Terengganu": {
       "Besut": {
-        "population": 165400,
-        "year": "2024"
+        "population": 169400,
+        "year": "2026"
       },
       "Dungun": {
-        "population": 168100,
-        "year": "2024"
+        "population": 171900,
+        "year": "2026"
       },
       "Hulu Terengganu": {
-        "population": 74600,
-        "year": "2024"
+        "population": 75100,
+        "year": "2026"
       },
       "Kemaman": {
-        "population": 231800,
-        "year": "2024"
+        "population": 238000,
+        "year": "2026"
       },
       "Kuala Nerus": {
-        "population": 155900,
-        "year": "2024"
+        "population": 159200,
+        "year": "2026"
       },
       "Kuala Terengganu": {
-        "population": 245400,
-        "year": "2024"
+        "population": 251300,
+        "year": "2026"
       },
       "Marang": {
-        "population": 126700,
-        "year": "2024"
+        "population": 130700,
+        "year": "2026"
       },
       "Setiu": {
-        "population": 64300,
-        "year": "2024"
+        "population": 65300,
+        "year": "2026"
       }
     },
     "W.P. Kuala Lumpur": {
       "W.P. Kuala Lumpur": {
-        "population": 2067500,
-        "year": "2024"
+        "population": 2082300,
+        "year": "2026"
       }
     },
     "W.P. Labuan": {
       "W.P. Labuan": {
-        "population": 100800,
-        "year": "2024"
+        "population": 101100,
+        "year": "2026"
       }
     },
     "W.P. Putrajaya": {
       "W.P. Putrajaya": {
-        "population": 120300,
-        "year": "2024"
+        "population": 121400,
+        "year": "2026"
       }
     }
   }
 }
-
