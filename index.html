@@ -1905,7 +1905,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 </section>
 
 <section class="tab-panel" data-tab="hiv" id="tab-hiv">
-  <h2>1. Upload myHCC Excel file</h2>
+  <h2>1. Upload myHCC HIV Excel file</h2>
   <p class="subtitle"> from <a href="http://47.88.194.2/MHCC/Login.aspx" target="_blank">MyHCC</a> > Home > Reports Management > HIV > site = All > klik 'Treatment Cascade Data'.</p>
   <div class="card">
     <div class="upload-row">
@@ -2066,7 +2066,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     </div>
     <canvas id="hiv_year_bar"></canvas>
   </div>
-  <h2>4. Demographics and risk profiles</h2>
+  <h2>5. Demographics and risk profiles</h2>
   <div class="card">
     <p class="muted" id="hiv_demo_filters">Filters on: Site: All • Risk group: All • Year: All • Yearly trend: All years</p>
     <div class="demography-grid">      <div class="demo-card">
@@ -2108,7 +2108,7 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
 </section>
 
 <section class="tab-panel" data-tab="hepc" id="tab-hepc">
-  <h2>1. Upload myHCC Excel file</h2>
+  <h2>1. Upload myHCC Hep C Excel file</h2>
   <p class="subtitle"> from <a href="http://47.88.194.2/MHCC/Login.aspx" target="_blank">MyHCC</a> > Home > Reports Management > Hep C > site = All > klik 'Treatment Cascade Data'.</p>
   <div class="card">
     <div class="upload-row">
@@ -2471,12 +2471,12 @@ Copyright (C) 2026 drakmal / a.akmal@moh.gov.my
     <div class="note" style="margin-top:10px;">Map placeholder (coordinate plotting can be added later).</div>
   </div>
 
-  <h2>7. Outbreak clusters</h2>
+  <h2>8. Outbreak clusters</h2>
   <div class="card">
     <div id="dengue_cluster_grid" class="cluster-grid"></div>
   </div>
 
-  <h2>8. Timeliness</h2>
+  <h2>9. Timeliness</h2>
   <div class="card">
     <div class="demography-grid">
       <div class="demo-card">
@@ -7930,7 +7930,6 @@ window.renderAll = renderAll;
     hexFeatureCollection: null,
     districtKey: null,
     meteoCacheByYear: new Map(),
-    meteoMockByYear: new Map(),
     activeMeteo: null,
     activeYear: null,
     warnedMissingDistrict: false,
@@ -8298,16 +8297,6 @@ window.renderAll = renderAll;
     },
   };
 
-  function hashString(input) {
-    let hash = 0;
-    const str = String(input);
-    for (let i = 0; i < str.length; i += 1) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash);
-  }
-
   function encodeCoord(value) {
     return value.toFixed(4).replace(/-/g, 'm').replace(/\./g, 'p');
   }
@@ -8523,59 +8512,24 @@ window.renderAll = renderAll;
         showMeteoLoading(`Fetching meteorology data (${completed}/${total} cells)...`);
       });
 
+      const dateCount = Object.keys(data).length;
+      // Don't cache an empty result, or a failed fetch would never be retried
+      if (dateCount === 0) return null;
+
       // Save to cache
       await saveMeteoToCache(cacheKey, data);
       console.log('[Meteo] Fetched from Open-Meteo and cached');
 
-      const dateCount = Object.keys(data).length;
       showMeteoComplete(`Meteorology data loaded (${dateCount} days, ${hexFC.features.length} cells)`);
 
       return data;
     } catch (e) {
       console.error('[Meteo] Failed to fetch from Open-Meteo:', e);
-      showMeteoComplete('Failed to fetch meteorology data. Using fallback.', true);
       return null;
     }
   }
 
   // ============================================================
-
-  function getDateListForYear(year) {
-    if (!mapState.minDate || !mapState.maxDate) return [];
-    const start = startOfDay(mapState.minDate);
-    const end = startOfDay(mapState.maxDate);
-    if (!start || !end) return [];
-    const dates = [];
-    const cursor = new Date(start.getTime());
-    while (cursor <= end) {
-      if (cursor.getFullYear() === Number(year)) {
-        dates.push(formatDateKey(cursor));
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return dates;
-  }
-
-  function generateMockMeteo(hexFC, dateList) {
-    const output = {};
-    const dates = dateList.length ? dateList : [getCurrentMapDateKey()].filter(Boolean);
-    dates.forEach(dateStr => {
-      output[dateStr] = {};
-      hexFC.features.forEach(feature => {
-        const cellId = feature.properties?.cell_id;
-        if (!cellId) return;
-        const rain = (hashString(`${cellId}-${dateStr}`) % 60) / 1.2;
-        const temp = 24 + (hashString(`${cellId}-${dateStr}-t`) % 90) / 10;
-        const rh = 60 + (hashString(`${cellId}-${dateStr}-h`) % 35);
-        output[dateStr][cellId] = {
-          rain_mm: Number(rain.toFixed(1)),
-          temp_c: Number(temp.toFixed(1)),
-          rh_pct: Math.round(rh),
-        };
-      });
-    });
-    return output;
-  }
 
   async function loadMeteoYear(year) {
     try {
@@ -8590,6 +8544,8 @@ window.renderAll = renderAll;
 
   async function getMeteoForYear(year, hexFC) {
     console.log(`[Meteo] Loading meteorology data for year ${year}`);
+    // Clear any "unavailable" warning left over from a previous year/district
+    hideMeteoLoading();
 
     if (meteoState.meteoCacheByYear.has(year)) {
       console.log(`[Meteo] Using cached data for year ${year}`);
@@ -8618,16 +8574,11 @@ window.renderAll = renderAll;
       }
     }
 
-    // Fall back to mock data if everything else fails
-    console.log(`[Meteo] Falling back to mock data for year ${year}`);
-    if (meteoState.meteoMockByYear.has(year)) {
-      return meteoState.meteoMockByYear.get(year);
-    }
-    const dates = getDateListForYear(year);
-    const mock = generateMockMeteo(hexFC, dates);
-    meteoState.meteoMockByYear.set(year, mock);
-    console.log(`[Meteo] Generated mock data for year ${year}, dates:`, Object.keys(mock).length);
-    return mock;
+    // No real data available: leave the grid empty (N/A) rather than show
+    // made-up values, and keep the warning visible until data loads.
+    console.warn(`[Meteo] No meteorology data available for year ${year}`);
+    showMeteoLoading(`Meteorology data unavailable for ${year} (Open-Meteo could not be reached). Grid cells show N/A. Reload the page to retry.`, false, true);
+    return null;
   }
 
   function formatMeteoValue(value, key) {
@@ -9807,7 +9758,6 @@ window.renderAll = renderAll;
     hexLayer: null,
     hexFeatureCollection: null,
     meteoCacheByYear: new Map(),
-    meteoMockByYear: new Map(),
     activeMeteo: null,
     activeYear: null
   };
